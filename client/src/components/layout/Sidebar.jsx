@@ -1,19 +1,20 @@
 import { Link, useLocation } from "wouter";
-import { 
-  LayoutDashboard, 
-  Columns3, 
-  Briefcase, 
-  Calculator, 
-  User, 
-  FileText, 
-  History, 
-  Home, 
-  MessageSquare, 
-  Headphones, 
-  Megaphone, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Columns3,
+  Briefcase,
+  Calculator,
+  User,
+  FileText,
+  History,
+  Home,
+  MessageSquare,
+  Headphones,
+  Megaphone,
+  Settings,
   LogOut,
-  Search
+  Search,
+  FilePlus
 } from "lucide-react";
 
 const menuItems = {
@@ -23,6 +24,7 @@ const menuItems = {
     { icon: Briefcase, label: "Propostas", path: "/propostas" },
   ],
   ferramentas: [
+    { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta" },
     { icon: Calculator, label: "Simulador", path: "/simulador" },
     { icon: User, label: "Análise de Perfil", path: "/perfil" },
     { icon: FileText, label: "Documentação", path: "/documentacao" },
@@ -82,9 +84,8 @@ export function Sidebar() {
             <div className="flex flex-col gap-1">
               {menuItems.analise.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${
-                    location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                  }`}>
+                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                    }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
                   </div>
@@ -98,9 +99,8 @@ export function Sidebar() {
             <div className="flex flex-col gap-1">
               {menuItems.ferramentas.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${
-                    location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                  }`}>
+                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                    }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
                   </div>
