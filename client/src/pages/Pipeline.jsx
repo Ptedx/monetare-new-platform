@@ -1,13 +1,24 @@
 import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Search, Filter, ChevronDown } from "lucide-react";
+import { Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PipelineBoard } from "@/components/pipeline/PipelineBoard";
 import { ProposalDetail } from "@/components/proposals/ProposalDetail";
 
 export function Pipeline() {
-  const [sortBy, setSortBy] = useState('priority'); // Default sort
+  const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
   const [selectedCard, setSelectedCard] = useState(null);
+
+  const handleSort = (key) => {
+    setSortConfig(current => {
+      if (current.key === key) {
+        // Toggle direction
+        return { ...current, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      // New key, default to desc for numbers/priority
+      return { key, direction: 'desc' };
+    });
+  };
 
   const handleCardClick = (card) => {
     setSelectedCard(card);
@@ -15,6 +26,14 @@ export function Pipeline() {
 
   const handleBack = () => {
     setSelectedCard(null);
+  };
+
+  // Helper to get icon based on current sort
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) return <ChevronDown className="w-4 h-4 ml-2" />;
+    return sortConfig.direction === 'asc'
+      ? <ChevronUp className="w-4 h-4 ml-2" />
+      : <ChevronDown className="w-4 h-4 ml-2" />; // or maybe flip it visually
   };
 
   // If a card is selected, show details
@@ -42,27 +61,27 @@ export function Pipeline() {
           </Button>
 
           <Button
-            onClick={() => setSortBy('priority')}
-            className={`rounded-full border-0 px-4 ${sortBy === 'priority' ? 'bg-[#92dc49] hover:bg-[#7ab635] text-white' : 'bg-gray-100 text-gray-600'}`}
+            onClick={() => handleSort('priority')}
+            className={`rounded-full border-0 px-4 ${sortConfig.key === 'priority' ? 'bg-[#92dc49] hover:bg-[#7ab635] text-white' : 'bg-gray-100 text-gray-600'}`}
           >
             Prioridade
-            <ChevronDown className="w-4 h-4 ml-2" />
+            {getSortIcon('priority')}
           </Button>
 
           <Button
-            onClick={() => setSortBy('value')}
-            className={`rounded-full border-0 px-4 ${sortBy === 'value' ? 'bg-[#92dc49] hover:bg-[#7ab635] text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+            onClick={() => handleSort('value')}
+            className={`rounded-full border-0 px-4 ${sortConfig.key === 'value' ? 'bg-[#92dc49] hover:bg-[#7ab635] text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
           >
             Valor
-            <ChevronDown className="w-4 h-4 ml-2" />
+            {getSortIcon('value')}
           </Button>
 
           <Button
-            onClick={() => setSortBy('date')}
-            className={`rounded-full border-0 px-4 ${sortBy === 'date' ? 'bg-[#92dc49] hover:bg-[#7ab635] text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
+            onClick={() => handleSort('date')}
+            className={`rounded-full border-0 px-4 ${sortConfig.key === 'date' ? 'bg-[#92dc49] hover:bg-[#7ab635] text-white' : 'bg-white border border-gray-200 text-gray-600'}`}
           >
             Data
-            <ChevronDown className="w-4 h-4 ml-2" />
+            {getSortIcon('date')}
           </Button>
 
           <Button variant="outline" className="rounded-full border-gray-200 text-gray-600 px-4">
@@ -81,7 +100,7 @@ export function Pipeline() {
         </div>
 
         <div className="flex-1 overflow-x-hidden">
-          <PipelineBoard sortBy={sortBy} onCardClick={handleCardClick} />
+          <PipelineBoard sortConfig={sortConfig} onCardClick={handleCardClick} />
         </div>
       </div>
     </Layout>

@@ -3,9 +3,9 @@ import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Send, 
-  User, 
+import {
+  Send,
+  User,
   Search,
   Phone,
   Video,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 const mockContacts = [
-  { name: "João Silva", role: "Analista GEPEC", online: true, lastMessage: "Ok, vou verificar a documentação" },
+  { name: "João Silva", role: "Analista CECAD", online: true, lastMessage: "Ok, vou verificar a documentação" },
   { name: "Maria Santos", role: "Analista GECRE", online: true, lastMessage: "Proposta aprovada!" },
   { name: "Carlos Oliveira", role: "Gerente GEOPE", online: false, lastMessage: "Aguardando parecer técnico" },
   { name: "Ana Paula", role: "Analista GERPF", online: false, lastMessage: "Documentos recebidos" },
@@ -51,12 +51,11 @@ export function Chat() {
           </div>
           <div className="overflow-y-auto">
             {mockContacts.map((contact, index) => (
-              <div 
+              <div
                 key={index}
                 onClick={() => setSelectedContact(contact)}
-                className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${
-                  selectedContact.name === contact.name ? 'bg-[#e8f5e0]' : 'hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-3 p-4 cursor-pointer transition-colors ${selectedContact.name === contact.name ? 'bg-[#e8f5e0]' : 'hover:bg-gray-50'
+                  }`}
               >
                 <div className="relative">
                   <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
@@ -107,15 +106,14 @@ export function Chat() {
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {mockMessages.map((msg, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                  msg.isMe 
-                    ? 'bg-[#92dc49] text-white rounded-br-none' 
+                <div className={`max-w-[70%] rounded-2xl px-4 py-2 ${msg.isMe
+                    ? 'bg-[#92dc49] text-white rounded-br-none'
                     : 'bg-white text-gray-800 rounded-bl-none shadow-sm'
-                }`}>
+                  }`}>
                   {!msg.isMe && (
                     <p className="text-xs font-medium text-gray-500 mb-1">{msg.sender}</p>
                   )}
@@ -131,7 +129,7 @@ export function Chat() {
               <Button variant="ghost" size="sm">
                 <Paperclip className="w-5 h-5 text-gray-500" />
               </Button>
-              <Input 
+              <Input
                 placeholder="Digite sua mensagem..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -141,7 +139,7 @@ export function Chat() {
               <Button variant="ghost" size="sm">
                 <Smile className="w-5 h-5 text-gray-500" />
               </Button>
-              <Button 
+              <Button
                 onClick={handleSend}
                 className="bg-[#92dc49] hover:bg-[#7ab635]"
               >

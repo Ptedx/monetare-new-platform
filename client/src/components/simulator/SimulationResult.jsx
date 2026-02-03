@@ -3,7 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
 
+import { useLocation } from "wouter";
+
 export function SimulationResult({ data, onBack }) {
+    const [, setLocation] = useLocation();
     const { financeValue, term, rate, gracePeriod, amortizationSystem } = data;
 
     const calculateAmortization = () => {
@@ -76,11 +79,19 @@ export function SimulationResult({ data, onBack }) {
 
     return (
         <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-4 mb-8">
-                <Button variant="ghost" size="icon" onClick={onBack}>
-                    <ArrowLeft className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={onBack}>
+                        <ArrowLeft className="w-6 h-6" />
+                    </Button>
+                    <h1 className="text-4xl font-bold">Resultados de Simulação</h1>
+                </div>
+                <Button
+                    className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full px-6"
+                    onClick={() => setLocation("/cadastro-proposta")}
+                >
+                    Cadastrar Proposta
                 </Button>
-                <h1 className="text-4xl font-bold">Resultados de Simulação</h1>
             </div>
 
             <div className="flex items-center gap-4 mb-8">

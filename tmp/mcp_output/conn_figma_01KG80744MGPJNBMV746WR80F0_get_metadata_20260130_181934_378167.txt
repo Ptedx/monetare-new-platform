@@ -29,7 +29,7 @@
               <line id="1:1435" name="Line 1" x="115" y="5.126953125" width="0.00001967012485692976" height="576.8721923828125" />
               <frame id="1:1436" name="Frame 1" x="4" y="4" width="222" height="103">
                 <frame id="1:1437" name="Frame 40099" x="0" y="0" width="222" height="103">
-                  <text id="1:1438" name="1. GEPEC" x="16" y="16" width="52" height="9" />
+                  <text id="1:1438" name="1. CECAD" x="16" y="16" width="52" height="9" />
                   <frame id="1:1439" name="Frame 40098" x="16" y="49" width="190" height="38">
                     <text id="1:1440" name="R$ 585.000.000" x="0" y="0" width="137" height="13" />
                     <frame id="1:1441" name="Frame 1" x="0" y="21" width="67" height="17">

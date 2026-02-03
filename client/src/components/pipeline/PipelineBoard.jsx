@@ -6,7 +6,7 @@ import { PipelineColumn } from "./PipelineColumn";
 const initialColumns = {
     "col-1": {
         id: "col-1",
-        name: "1. GEPEC",
+        name: "1. CECAD",
         totalValue: "R$ 585.000.000",
         count: 3,
         cards: [
@@ -62,52 +62,112 @@ const initialColumns = {
 
 const columnOrder = ["col-1", "col-2", "col-3", "col-4", "col-5", "col-6"];
 
-export function PipelineBoard({ sortBy, onCardClick }) {
+export function PipelineBoard({ sortConfig, onCardClick }) {
     const [columns, setColumns] = useState(initialColumns);
 
-    // Effect to sort columns when sortBy changes
+    // Load proposals from localStorage and merge
     useEffect(() => {
-        if (!sortBy) return;
+        const storedProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
 
-        const newColumns = { ...columns };
+        setColumns(prevColumns => {
+            const workingColumns = JSON.parse(JSON.stringify(initialColumns)); // Start fresh from initial + localStorage to avoid duplicates issue
+            // Actually, we should probably respect current state if we want drag to persist?
+            // But we already established that re-sorting resets order.
+            // Using initialColumns + storedProposals ensures clean state every time sort changes or proposals load
 
-        Object.keys(newColumns).forEach(colId => {
-            const col = newColumns[colId];
-            if (col.cards.length > 0) {
-                let sortedCards = [...col.cards];
-                if (sortBy === 'value') {
-                    sortedCards.sort((a, b) => b.rawValue - a.rawValue);
-                } else if (sortBy === 'date') {
-                    sortedCards.sort((a, b) => a.days - b.days);
-                } else if (sortBy === 'priority') {
-                    // Mock priority: AA > A > B > C > D
-                    const ratingWeight = { 'AA': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
-                    sortedCards.sort((a, b) => ratingWeight[b.rating] - ratingWeight[a.rating]);
+            // Let's stick to safe merge into a copy of prevColumns to avoid resetting if user drifted,
+            // BUT we must dedupe carefully.
+            // Re-creating from initialColumns is safer for "Sort".
+            // Let's go with: workingColumns = { ...prevColumns } but we must not add duplicates.
+            // And we must RE-SORT everything.
+
+            // Wait, if we use { ...prevColumns }, we are operating on the ALREADY existing cards.
+            // If we re-sort, we just re-order them. 
+            // We only need to ADD storedProposals if they are missing.
+
+            // BUT if we want to ensure "Default Sort" works on page load, we must run this.
+
+            const currentColumns = { ...prevColumns };
+
+            storedProposals.forEach(p => {
+                let targetColId = "col-1";
+                if (p.stage.includes("2.")) targetColId = "col-2";
+                else if (p.stage.includes("3.")) targetColId = "col-3";
+                else if (p.stage.includes("4.")) targetColId = "col-4";
+
+                if (currentColumns[targetColId].cards.some(c => c.id === String(p.id))) {
+                    return;
                 }
-                col.cards = sortedCards;
+
+                const rawValue = p.value ? parseFloat(p.value.replace(/[^0-9,]/g, '').replace(',', '.')) : 0;
+
+                const dateParts = p.date.split('/');
+                const createdDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+                const daysDiff = Math.floor((new Date() - createdDate) / (1000 * 60 * 60 * 24));
+
+                const newCard = {
+                    id: String(p.id),
+                    name: p.name,
+                    value: p.value,
+                    rawValue: rawValue,
+                    rating: p.score || "B",
+                    analyst: "Ag. Brasília",
+                    days: daysDiff >= 0 ? daysDiff : 0,
+                    type: p.segment
+                };
+
+                currentColumns[targetColId].cards.push(newCard);
+                currentColumns[targetColId].count = currentColumns[targetColId].cards.length;
+            });
+
+            // Re-calculate totals
+            Object.keys(currentColumns).forEach(colId => {
+                const col = currentColumns[colId];
+                const total = col.cards.reduce((sum, card) => sum + card.rawValue, 0);
+                col.totalValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+            });
+
+            // Apply Sort
+            if (sortConfig && sortConfig.key) {
+                const { key, direction } = sortConfig;
+                const multiplier = direction === 'asc' ? 1 : -1;
+
+                Object.keys(currentColumns).forEach(colId => {
+                    const col = currentColumns[colId];
+                    if (col.cards.length > 0) {
+                        let sortedCards = [...col.cards];
+
+                        if (key === 'value') {
+                            sortedCards.sort((a, b) => (a.rawValue - b.rawValue) * multiplier);
+                        } else if (key === 'date') {
+                            // Date logic: 'desc' = Newest (Smallest days). 'asc' = Oldest (Largest days).
+                            if (direction === 'desc') {
+                                sortedCards.sort((a, b) => a.days - b.days);
+                            } else {
+                                sortedCards.sort((a, b) => b.days - a.days);
+                            }
+                        } else if (key === 'priority') {
+                            const ratingWeight = { 'AA': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+                            sortedCards.sort((a, b) => {
+                                const weightA = ratingWeight[a.rating] || 0;
+                                const weightB = ratingWeight[b.rating] || 0;
+                                return (weightA - weightB) * multiplier;
+                            });
+                        }
+                        col.cards = sortedCards;
+                    }
+                });
             }
+
+            return currentColumns;
         });
 
-        setColumns(newColumns);
-    }, [sortBy]);
+    }, [sortConfig]);
 
     // Special modification to PipelineColumn to pass onClick
     const ModifiedPipelineColumn = ({ column }) => {
-        // We need to clone the PipelineColumn or pass the onClick prop down deeply.
-        // For simplicity, let's just inline the logic or assume PipelineColumn accepts it.
-        // But PipelineColumn imports PipelineCard directly. 
-        // We will need to update PipelineColumn to pass the props.
-        // Let's assume we updated PipelineColumn to accept onCardClick?
-        // Actually, let's just rewrite PipelineColumn here quickly or import it?
-        // Wait, I already updated PipelineColumn in the previous step but I didn't add onCardClick there.
-        // I should update PipelineColumn to pass ...props to PipelineCard or specifically onCardClick.
-        // Let's do a quick inline re-implementation or helper since we can't easily modify the import's behavior without editing that file too.
-        // Better: Update PipelineColumn.jsx as well.
-        // For now, I will assume I'll update PipelineColumn next.
         return <PipelineColumn column={column} onCardClick={onCardClick} />;
     }
-
-    // Re-importing inside the file won't work. I need to make sure PipelineColumn accepts `onCardClick`.
 
     const onDragEnd = (result) => {
         const { destination, source, draggableId } = result;
@@ -171,7 +231,6 @@ export function PipelineBoard({ sortBy, onCardClick }) {
             <div className="flex h-full gap-6 overflow-x-auto pb-4">
                 {columnOrder.map((columnId) => {
                     const column = columns[columnId];
-                    // We need custom PipelineColumn that passes onCardClick
                     return (
                         <PipelineColumnKeyed
                             key={column.id}
@@ -185,8 +244,7 @@ export function PipelineBoard({ sortBy, onCardClick }) {
     );
 }
 
-// Helper to avoid circular dependency issues if I was editing multiple files in one go
-// But I can just edit PipelineColumn.jsx separately.
+// Helper to avoid circular dependency issues
 import { PipelineColumn as OriginalPipelineColumn } from "./PipelineColumn";
 function PipelineColumnKeyed({ column, onCardClick }) {
     return <OriginalPipelineColumn column={column} onCardClick={onCardClick} />;
