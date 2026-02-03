@@ -111,7 +111,7 @@ const getStatusColor = (status) => {
   return status === "ATRASO" ? "text-red-500 font-bold" : "text-green-500 font-bold";
 };
 
-export function ProposalList({ onSelectProposal }) {
+export function ProposalList({ onSelectProposal, title }) {
   const [proposals, setProposals] = useState([]);
   const [search, setSearch] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("all");
@@ -155,7 +155,7 @@ export function ProposalList({ onSelectProposal }) {
   return (
     <div className="p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold mb-6">Propostas aguardando análise</h1>
+        <h1 className="text-3xl font-bold mb-6">{title || "Propostas aguardando análise"}</h1>
 
         <div className="flex items-center gap-4 mb-8">
           <div className="relative w-72">

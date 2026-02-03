@@ -99,24 +99,80 @@ export function CadastroProposta() {
         ));
     };
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const userRole = localStorage.getItem('userRole') || 'projetista'; // Default to projetista for creation flow usually
+
     const handleSubmit = () => {
-        const newProposal = {
-            id: Date.now(), // simple unique ID
-            name: formData.companyName,
-            score: "B", // Initial score default
-            status: "OK",
-            segment: (formData.industry === "Agronegócio" || formData.sector === "Agronomia") ? "Rural" : "Corporate",
-            stage: "1. Cadastro",
-            value: formData.projectValue,
-            date: new Date().toLocaleDateString('pt-BR'),
-            line: formData.creditType === "Fno" ? "FNO - Agro" : "Outro"
-        };
+        setIsSubmitting(true);
+        setTimeout(() => {
+            const newProposal = {
+                id: Date.now(), // simple unique ID
+                name: formData.companyName,
+                score: "B", // Initial score default
+                status: "OK",
+                segment: (formData.industry === "Agronegócio" || formData.sector === "Agronomia") ? "Rural" : "Corporate",
+                stage: "1. Cadastro",
+                value: formData.projectValue,
+                date: new Date().toLocaleDateString('pt-BR'),
+                line: formData.creditType === "Fno" ? "FNO - Agro" : "Outro"
+            };
 
-        const existingProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
-        localStorage.setItem("proposals", JSON.stringify([newProposal, ...existingProposals]));
+            const existingProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
+            localStorage.setItem("proposals", JSON.stringify([newProposal, ...existingProposals]));
 
-        setLocation("/propostas");
+            setIsSubmitting(false);
+            setIsSuccess(true);
+        }, 2000);
     };
+
+    if (isSubmitting) {
+        return (
+            <Layout>
+                <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+                    <div className="bg-white p-12 rounded-3xl shadow-sm text-center w-full max-w-2xl mx-4">
+                        <div className="flex flex-col items-center justify-center gap-6">
+                            <h2 className="text-2xl font-bold text-gray-900">Cadastro de Proposta</h2>
+                            <div className="w-16 h-16 border-4 border-[#92dc49] border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-gray-500">Processando cadastro...</p>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
+
+    if (isSuccess) {
+        return (
+            <Layout>
+                <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+                    <div className="bg-white p-12 rounded-3xl shadow-sm text-center w-full max-w-2xl mx-4">
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center">
+                                <CheckCircle2 className="w-10 h-10 text-[#92dc49]" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-gray-900">Proposta cadastrada<br />com sucesso</h2>
+                            <div className="flex gap-4 mt-4">
+                                <Button
+                                    variant="outline"
+                                    className="rounded-full px-8 py-6"
+                                    onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                >
+                                    Visualizar
+                                </Button>
+                                <Button
+                                    className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white px-8 py-6 shadow-lg shadow-green-100"
+                                    onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                >
+                                    Ir para {userRole === 'gerente' ? 'Propostas' : 'Carteira'}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
 
     return (
         <Layout>

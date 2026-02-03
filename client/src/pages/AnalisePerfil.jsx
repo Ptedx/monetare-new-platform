@@ -21,9 +21,11 @@ export function AnalisePerfil() {
   return (
     <Layout>
       <div className="p-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">Análise de Perfil</h1>
-        </div>
+        {step === 'search' && (
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold">Análise de Perfil</h1>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-6">
           {step === 'search' && (

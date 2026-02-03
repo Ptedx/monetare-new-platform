@@ -72,18 +72,18 @@ export function Sidebar() {
     <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">
       <div className="w-[72px] border-r border-gray-200 flex flex-col items-center justify-between py-6 px-2 bg-white">
         <div className="flex flex-col gap-4 items-center">
-          <Link href="/">
+          <Link href="/dashboard">
             <div className="flex flex-col items-center gap-1 cursor-pointer">
-              <div className="bg-[#92dc49] rounded-2xl p-2 w-full flex justify-center">
-                <Home className="w-8 h-8 text-white" />
+              <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
               </div>
               <span className="text-[11px] text-gray-600">Home</span>
             </div>
           </Link>
           <Link href="/chat">
             <div className="flex flex-col items-center gap-1 cursor-pointer">
-              <div className="rounded-2xl p-2 w-full flex justify-center hover:bg-gray-100">
-                <MessageSquare className="w-8 h-8 text-gray-600" />
+              <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/chat' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                <MessageSquare className={`w-8 h-8 ${location === '/chat' ? 'text-white' : 'text-gray-600'}`} />
               </div>
               <span className="text-[11px] text-gray-600">Chat</span>
             </div>
