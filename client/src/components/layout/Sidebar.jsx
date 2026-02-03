@@ -22,6 +22,7 @@ const menuItems = {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Columns3, label: "Pipeline", path: "/pipeline" },
     { icon: Briefcase, label: "Propostas", path: "/propostas" },
+    { icon: Briefcase, label: "Carteira", path: "/carteira" }, // Added Carteira
   ],
   ferramentas: [
     { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta" },
@@ -34,6 +35,38 @@ const menuItems = {
 
 export function Sidebar() {
   const [location] = useLocation();
+  const userRole = localStorage.getItem('userRole') || 'gerente';
+
+  // Role definitions for display
+  const roleNames = {
+    gerente: 'Gerente de Contas',
+    analista: 'Analista',
+    projetista: 'Projetista'
+  };
+
+  // Filter logic
+  const filteredMenuItems = {
+    analise: menuItems.analise.filter(item => {
+      // Carteira: Only for Analista and Projetista
+      if (item.label === "Carteira") {
+        return userRole === 'analista' || userRole === 'projetista';
+      }
+      // Propostas: Only for Gerente
+      if (item.label === "Propostas") {
+        return userRole === 'gerente';
+      }
+      // Default: show for all (Dashboard, Pipeline)
+      return true;
+    }),
+    ferramentas: menuItems.ferramentas.filter(item => {
+      // Cadastro de Proposta: Only for Projetista
+      if (item.label === "Cadastro de Proposta") {
+        return userRole === 'projetista';
+      }
+      // Others (Simulador, Perfil, Docs, Histórico) are for everyone
+      return true;
+    })
+  };
 
   return (
     <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">
@@ -82,7 +115,7 @@ export function Sidebar() {
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-gray-900">Análise</span>
             <div className="flex flex-col gap-1">
-              {menuItems.analise.map((item) => (
+              {filteredMenuItems.analise.map((item) => (
                 <Link key={item.path} href={item.path}>
                   <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
                     }`}>
@@ -97,7 +130,7 @@ export function Sidebar() {
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-gray-900">Ferramentas</span>
             <div className="flex flex-col gap-1">
-              {menuItems.ferramentas.map((item) => (
+              {filteredMenuItems.ferramentas.map((item) => (
                 <Link key={item.path} href={item.path}>
                   <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
                     }`}>
@@ -114,8 +147,10 @@ export function Sidebar() {
           <div className="w-7 h-7 rounded-full bg-[#c8ff93] flex items-center justify-center">
             <User className="w-4 h-4 text-gray-700" />
           </div>
-          <span className="text-[11px] font-medium flex-1">Gerente de Contas</span>
-          <LogOut className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" />
+          <span className="text-[11px] font-medium flex-1">{roleNames[userRole] || 'Usuário'}</span>
+          <Link href="/">
+            <LogOut className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" />
+          </Link>
         </div>
       </div>
     </div>

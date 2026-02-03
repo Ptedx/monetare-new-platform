@@ -15,6 +15,7 @@ import { Documentacao } from "@/pages/Documentacao";
 import { Historico } from "@/pages/Historico";
 import { Chat } from "@/pages/Chat";
 import { CadastroProposta } from "@/pages/CadastroProposta";
+import { Carteira } from "@/pages/Carteira";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/pipeline" component={Pipeline} />
       <Route path="/propostas" component={Propostas} />
+      <Route path="/carteira" component={Carteira} />
       <Route path="/simulador" component={Simulador} />
       <Route path="/perfil" component={AnalisePerfil} />
       <Route path="/documentacao" component={Documentacao} />

@@ -31,61 +31,41 @@ export function Login() {
 
         <Card className="p-8 shadow-2xl">
           <form onSubmit={handleLogin}>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="email">E-mail</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                  <Input 
-                    id="email"
-                    type="email"
-                    placeholder="seu.email@empresa.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
-                  <Input 
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" />
-                  <label htmlFor="remember" className="text-sm text-gray-600">
-                    Lembrar-me
-                  </label>
-                </div>
-                <a href="#" className="text-sm text-[#92dc49] hover:underline">
-                  Esqueci a senha
-                </a>
-              </div>
-
-              <Button 
-                type="submit" 
-                className="w-full bg-[#92dc49] hover:bg-[#7ab635] text-white py-6"
+            <div className="grid gap-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('userRole', 'gerente');
+                  setLocation("/dashboard");
+                }}
+                className="w-full bg-[#92dc49] hover:bg-[#7ab635] text-white py-6 flex items-center gap-3"
               >
-                Entrar
+                <User className="w-5 h-5" />
+                Entrar como Gerente de Contas
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('userRole', 'analista');
+                  setLocation("/dashboard");
+                }}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-6 flex items-center gap-3"
+              >
+                <User className="w-5 h-5" />
+                Entrar como Analista
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('userRole', 'projetista');
+                  setLocation("/dashboard");
+                }}
+                className="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 py-6 flex items-center gap-3"
+              >
+                <User className="w-5 h-5" />
+                Entrar como Projetista
               </Button>
             </div>
           </form>
