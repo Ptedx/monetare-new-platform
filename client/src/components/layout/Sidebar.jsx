@@ -47,6 +47,11 @@ export function Sidebar() {
   // Filter logic
   const filteredMenuItems = {
     analise: menuItems.analise.filter(item => {
+      // Ambregulatorio: Only Dashboard
+      if (userRole === 'ambregulatorio') {
+        return item.label === 'Dashboard';
+      }
+
       // Carteira: Only for Analista and Projetista
       if (item.label === "Carteira") {
         return userRole === 'analista' || userRole === 'projetista';
@@ -59,6 +64,11 @@ export function Sidebar() {
       return true;
     }),
     ferramentas: menuItems.ferramentas.filter(item => {
+      // Ambregulatorio: No tools
+      if (userRole === 'ambregulatorio') {
+        return false;
+      }
+
       // Cadastro de Proposta: Only for Projetista
       if (item.label === "Cadastro de Proposta") {
         return userRole === 'projetista';
@@ -72,22 +82,36 @@ export function Sidebar() {
     <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">
       <div className="w-[72px] border-r border-gray-200 flex flex-col items-center justify-between py-6 px-2 bg-white">
         <div className="flex flex-col gap-4 items-center">
-          <Link href="/dashboard">
-            <div className="flex flex-col items-center gap-1 cursor-pointer">
-              <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
+          {userRole !== 'ambregulatorio' && (
+            <>
+              <Link href="/dashboard">
+                <div className="flex flex-col items-center gap-1 cursor-pointer">
+                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
+                  </div>
+                  <span className="text-[11px] text-gray-600">Home</span>
+                </div>
+              </Link>
+              <Link href="/chat">
+                <div className="flex flex-col items-center gap-1 cursor-pointer">
+                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/chat' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                    <MessageSquare className={`w-8 h-8 ${location === '/chat' ? 'text-white' : 'text-gray-600'}`} />
+                  </div>
+                  <span className="text-[11px] text-gray-600">Chat</span>
+                </div>
+              </Link>
+            </>
+          )}
+          {userRole === 'ambregulatorio' && (
+            <Link href="/dashboard">
+              <div className="flex flex-col items-center gap-1 cursor-pointer">
+                <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                  <Home className={`w-8 h-8 ${location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
+                </div>
+                <span className="text-[11px] text-gray-600">Home</span>
               </div>
-              <span className="text-[11px] text-gray-600">Home</span>
-            </div>
-          </Link>
-          <Link href="/chat">
-            <div className="flex flex-col items-center gap-1 cursor-pointer">
-              <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/chat' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                <MessageSquare className={`w-8 h-8 ${location === '/chat' ? 'text-white' : 'text-gray-600'}`} />
-              </div>
-              <span className="text-[11px] text-gray-600">Chat</span>
-            </div>
-          </Link>
+            </Link>
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
