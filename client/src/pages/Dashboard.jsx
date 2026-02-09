@@ -2,6 +2,8 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { RegulatoryDashboard } from "@/components/dashboard/RegulatoryDashboard";
+import { AnalystDashboard } from "@/components/dashboard/AnalystDashboard";
+import { ManagerDashboard } from "@/components/dashboard/ManagerDashboard";
 
 export function Dashboard() {
   const userRole = localStorage.getItem('userRole') || 'gerente';
