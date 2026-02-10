@@ -425,4 +425,104 @@ export async function registerRoutes(app: Express) {
       res.status(500).json({ message: error.message });
     }
   });
+
+  app.get("/api/audit-trail", requireAuth, async (req, res) => {
+    try {
+      const currentUser = req.user as Express.User;
+      const filters: any = { userId: currentUser.id };
+
+      if (req.query.days) {
+        const days = parseInt(req.query.days as string);
+        if (!isNaN(days)) {
+          const since = new Date();
+          since.setDate(since.getDate() - days);
+          filters.since = since;
+        }
+      }
+
+      const entries = await storage.getAuditTrail(filters);
+      res.json(entries);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/chat/users", requireAuth, async (req, res) => {
+    try {
+      const currentUser = req.user as Express.User;
+      const allUsers = await storage.getAllUsers();
+      const filtered = allUsers
+        .filter(u => u.id !== currentUser.id)
+        .map(({ password, ...u }) => u);
+      res.json(filtered);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/chat/conversations", requireAuth, async (req, res) => {
+    try {
+      const currentUser = req.user as Express.User;
+      const convs = await storage.getConversationsForUser(currentUser.id);
+      res.json(convs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/chat/conversations", requireAuth, async (req, res) => {
+    try {
+      const currentUser = req.user as Express.User;
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ message: "userId é obrigatório" });
+      }
+      const conv = await storage.getOrCreateConversation([currentUser.id, userId]);
+      res.json(conv);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/chat/conversations/:id/messages", requireAuth, async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const currentUser = req.user as Express.User;
+      await storage.markMessagesRead(conversationId, currentUser.id);
+      const msgs = await storage.getMessages(conversationId);
+      res.json(msgs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/chat/conversations/:id/messages", requireAuth, async (req, res) => {
+    try {
+      const conversationId = parseInt(req.params.id);
+      const currentUser = req.user as Express.User;
+      const { content } = req.body;
+      if (!content?.trim()) {
+        return res.status(400).json({ message: "Mensagem vazia" });
+      }
+      const msg = await storage.createMessage({
+        conversationId,
+        senderId: currentUser.id,
+        content: content.trim(),
+        read: false,
+      });
+
+      await storage.createAuditEntry({
+        userId: currentUser.id,
+        action: "message_sent",
+        entityType: "conversation",
+        entityId: String(conversationId),
+        details: `Message sent in conversation ${conversationId}`,
+        ipAddress: req.ip || null,
+      });
+
+      res.status(201).json(msg);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
 }

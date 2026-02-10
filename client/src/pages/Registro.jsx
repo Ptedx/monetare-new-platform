@@ -70,6 +70,7 @@ export function Registro() {
   const [currentStep, setCurrentStep] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [cepLoading, setCepLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -107,6 +108,41 @@ export function Registro() {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCEPChange = async (value) => {
+    const formattedValue = formatCEP(value);
+    handleChange("zipCode", formattedValue);
+
+    // Extract clean digits
+    const cleanCEP = value.replace(/\D/g, "");
+
+    // If we have 8 digits, fetch from ViaCEP
+    if (cleanCEP.length === 8) {
+      setCepLoading(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+          // CEP not found, don't fill anything but don't show error either
+          // User can manually enter the address
+        } else {
+          // Auto-fill the address fields
+          setFormData((prev) => ({
+            ...prev,
+            address: data.logradouro || "",
+            neighborhood: data.bairro || "",
+            city: data.localidade || "",
+            state: data.uf || "",
+          }));
+        }
+      } catch (err) {
+        // Network error - silently fail, user can manually enter
+      } finally {
+        setCepLoading(false);
+      }
+    }
   };
 
   const handleNext = () => {
@@ -409,7 +445,27 @@ export function Registro() {
     if (step.id === "address") {
       return (
         <div className="space-y-4">
-          <InputField icon={<MapPin className="w-4 h-4" />} label="CEP" value={formData.zipCode} onChange={(v) => handleChange("zipCode", formatCEP(v))} placeholder="00000-000" testId="input-cep" />
+          <div className="space-y-2">
+            <Label className="text-gray-700 font-medium text-sm">CEP</Label>
+            <div className="relative group">
+              <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded bg-gray-100 text-gray-500 group-focus-within:bg-[#92dc49]/10 group-focus-within:text-[#92dc49] transition-colors">
+                <MapPin className="w-4 h-4" />
+              </div>
+              <Input
+                type="text"
+                className="pl-12 pr-10 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#92dc49] focus:ring-[#92dc49]/20 transition-all rounded-xl"
+                value={formData.zipCode}
+                onChange={(e) => handleCEPChange(e.target.value)}
+                placeholder="00000-000"
+                data-testid="input-cep"
+              />
+              {cepLoading && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#92dc49]">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              )}
+            </div>
+          </div>
           <InputField label="Endereço" value={formData.address} onChange={(v) => handleChange("address", v)} placeholder="Rua, número, complemento" testId="input-address" />
           <InputField label="Bairro" value={formData.neighborhood} onChange={(v) => handleChange("neighborhood", v)} placeholder="Bairro" testId="input-neighborhood" />
           <div className="grid grid-cols-[1fr_100px] gap-3">

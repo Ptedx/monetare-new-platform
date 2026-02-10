@@ -37,6 +37,8 @@ export function CadastroProposta() {
     const [, setLocation] = useLocation();
     const [documents, setDocuments] = useState(initialDocuments);
     const [uploadingIds, setUploadingIds] = useState([]);
+    const [proposalId, setProposalId] = useState(null);
+    const [showDocuments, setShowDocuments] = useState(false);
     const { data: user } = useQuery({ queryKey: ["/api/auth/me"] });
     const userRole = user?.role || 'projetista';
 
@@ -72,18 +74,41 @@ export function CadastroProposta() {
         window.history.back();
     };
 
-    const handleUpload = (id) => {
+    const handleUpload = async (id) => {
+        if (!proposalId) {
+            setSubmitError("Proposta nao foi criada. Por favor, crie a proposta primeiro.");
+            return;
+        }
+
+        const doc = documents.find(d => d.id === id);
+        if (!doc) return;
+
         setUploadingIds(prev => [...prev, id]);
-        setDocuments(prev => prev.map(doc =>
-            doc.id === id ? { ...doc, status: 'uploading' } : doc
+        setDocuments(prev => prev.map(d =>
+            d.id === id ? { ...d, status: 'uploading' } : d
         ));
 
-        setTimeout(() => {
-            setDocuments(prev => prev.map(doc =>
-                doc.id === id ? { ...doc, status: 'done', errorMsg: null } : doc
+        try {
+            const response = await apiRequest("POST", `/api/proposals/${proposalId}/documents`, {
+                title: doc.title,
+                category: doc.category,
+                status: "uploaded",
+                fileName: doc.title,
+            });
+
+            if (response) {
+                setDocuments(prev => prev.map(d =>
+                    d.id === id ? { ...d, status: 'done', errorMsg: null } : d
+                ));
+                queryClient.invalidateQueries({ queryKey: [`/api/proposals/${proposalId}`] });
+            }
+        } catch (error) {
+            setDocuments(prev => prev.map(d =>
+                d.id === id ? { ...d, status: 'error', errorMsg: error.message || "Erro ao fazer upload do documento." } : d
             ));
+        } finally {
             setUploadingIds(prev => prev.filter(uid => uid !== id));
-        }, 1500);
+        }
     };
 
     const handleDelete = (id) => {
@@ -109,7 +134,7 @@ export function CadastroProposta() {
             const segment = (formData.industry === "Agronegocio" || formData.sector === "Agronomia") ? "Rural" : "Corporate";
             const creditLine = formData.creditType === "Fno" ? "FNO - Agro" : formData.creditType || null;
 
-            await apiRequest("POST", "/api/proposals", {
+            const res = await apiRequest("POST", "/api/proposals", {
                 name: formData.companyName,
                 segment,
                 stage: "1. Cadastro",
@@ -124,12 +149,17 @@ export function CadastroProposta() {
                 score: "B",
                 priority: "media",
             });
+            const proposal = await res.json();
 
-            queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
-            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-
-            setIsSubmitting(false);
-            setIsSuccess(true);
+            if (proposal && proposal.id) {
+                setProposalId(proposal.id);
+                queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+                setIsSubmitting(false);
+                setIsSuccess(true);
+            } else {
+                throw new Error("Falha ao criar proposta: ID nao retornado");
+            }
         } catch (error) {
             setIsSubmitting(false);
             setSubmitError(error.message || "Erro ao cadastrar proposta.");
@@ -152,7 +182,7 @@ export function CadastroProposta() {
         );
     }
 
-    if (isSuccess) {
+    if (isSuccess && !showDocuments) {
         return (
             <Layout>
                 <div className="flex items-center justify-center h-[calc(100vh-64px)]">
@@ -162,21 +192,23 @@ export function CadastroProposta() {
                                 <CheckCircle2 className="w-10 h-10 text-[#92dc49]" />
                             </div>
                             <h2 className="text-2xl font-bold text-gray-900">Proposta cadastrada<br />com sucesso</h2>
+                            <p className="text-gray-500">Deseja enviar os documentos agora?</p>
                             <div className="flex gap-4 mt-4">
                                 <Button
                                     variant="outline"
                                     className="rounded-full px-8 py-6"
-                                    onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                    onClick={() => setLocation('/propostas')}
                                     data-testid="button-view-proposal"
                                 >
-                                    Visualizar
+                                    Ver Propostas
                                 </Button>
                                 <Button
                                     className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white px-8 py-6 shadow-lg shadow-green-100"
-                                    onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
-                                    data-testid="button-go-to-list"
+                                    onClick={() => setShowDocuments(true)}
+                                    data-testid="button-upload-documents"
                                 >
-                                    Ir para {userRole === 'gerente' ? 'Propostas' : 'Carteira'}
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Enviar Documentos
                                 </Button>
                             </div>
                         </div>

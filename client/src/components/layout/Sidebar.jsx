@@ -21,17 +21,16 @@ import {
 
 const menuItems = {
   analise: [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Columns3, label: "Pipeline", path: "/pipeline" },
-    { icon: Briefcase, label: "Propostas", path: "/propostas" },
-    { icon: Briefcase, label: "Carteira", path: "/carteira" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: ['gerente', 'analista'] },
+    { icon: Columns3, label: "Pipeline", path: "/pipeline", roles: ['gerente', 'analista'] },
+    { icon: Briefcase, label: "Propostas", path: "/propostas", roles: ['cliente', 'projetista'] },
   ],
   ferramentas: [
-    { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta" },
-    { icon: Calculator, label: "Simulador", path: "/simulador" },
-    { icon: User, label: "Análise de Perfil", path: "/perfil" },
-    { icon: FileText, label: "Documentação", path: "/documentacao" },
-    { icon: History, label: "Histórico", path: "/historico" },
+    { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta", roles: ['cliente', 'projetista'] },
+    { icon: Calculator, label: "Simulador", path: "/simulador", roles: ['cliente', 'projetista', 'gerente', 'analista'] },
+    { icon: User, label: "Análise de Perfil", path: "/perfil", roles: ['gerente', 'analista'] },
+    { icon: FileText, label: "Documentação", path: "/documentacao", roles: ['cliente', 'projetista', 'gerente', 'analista'] },
+    { icon: History, label: "Histórico", path: "/historico", roles: ['cliente', 'projetista', 'gerente', 'analista'] },
   ]
 };
 
@@ -58,30 +57,12 @@ export function Sidebar() {
   };
 
   const filteredMenuItems = {
-    analise: menuItems.analise.filter(item => {
-      if (userRole === 'ambregulatorio') {
-        return item.label === 'Dashboard';
-      }
-      if (item.label === "Carteira") {
-        return userRole === 'analista' || userRole === 'projetista';
-      }
-      if (item.label === "Propostas") {
-        return userRole === 'gerente';
-      }
-      return true;
-    }),
-    ferramentas: menuItems.ferramentas.filter(item => {
-      if (userRole === 'ambregulatorio') {
-        return false;
-      }
-      if (item.label === "Cadastro de Proposta") {
-        return userRole === 'projetista';
-      }
-      return true;
-    })
+    analise: menuItems.analise.filter(item => item.roles.includes(userRole)),
+    ferramentas: menuItems.ferramentas.filter(item => item.roles.includes(userRole))
   };
 
-  const displayName = user?.fullName || roleNames[userRole] || 'Usuario';
+  const isClienteOrProjetista = userRole === 'cliente' || userRole === 'projetista';
+  const displayName = isClienteOrProjetista ? 'Usuário' : (user?.fullName || roleNames[userRole] || 'Usuario');
 
   return (
     <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">

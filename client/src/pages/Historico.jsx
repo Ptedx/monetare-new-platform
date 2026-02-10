@@ -1,110 +1,89 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Search, 
-  Calendar, 
-  Filter,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Eye,
-  Download
-} from "lucide-react";
+import { Search, Eye, Download, Loader2 } from "lucide-react";
 
-const mockHistory = [
-  { 
-    id: "PROP-2024-001", 
-    client: "Faz. Soledade", 
-    value: "R$ 550.000.000", 
-    status: "approved",
-    date: "25/01/2024",
-    analyst: "João Silva"
-  },
-  { 
-    id: "PROP-2024-002", 
-    client: "Fernando Fagundes", 
-    value: "R$ 50.000.000", 
-    status: "pending",
-    date: "20/01/2024",
-    analyst: "Maria Santos"
-  },
-  { 
-    id: "PROP-2023-089", 
-    client: "Faz. Aurora", 
-    value: "R$ 250.000.000", 
-    status: "approved",
-    date: "28/11/2023",
-    analyst: "Carlos Oliveira"
-  },
-  { 
-    id: "PROP-2023-078", 
-    client: "Vale do Cedro", 
-    value: "R$ 70.000.000", 
-    status: "rejected",
-    date: "15/10/2023",
-    analyst: "Ana Paula"
-  },
-  { 
-    id: "PROP-2023-065", 
-    client: "Faz. Girassol", 
-    value: "R$ 100.000.000", 
-    status: "approved",
-    date: "10/09/2023",
-    analyst: "João Silva"
-  },
-  { 
-    id: "PROP-2023-042", 
-    client: "Faz. Casa Branca", 
-    value: "R$ 30.000.000", 
-    status: "approved",
-    date: "05/07/2023",
-    analyst: "Maria Santos"
-  },
-];
+// Translation map for audit actions
+const actionTranslations = {
+  user_registered: "Registro de Usuário",
+  proposal_created: "Proposta Criada",
+  proposal_updated: "Proposta Atualizada",
+  credit_analysis_created: "Análise de Crédito",
+  message_sent: "Mensagem Enviada",
+  document_uploaded: "Documento Enviado",
+};
 
-function getStatusBadge(status) {
-  switch(status) {
-    case 'approved':
-      return (
-        <span className="flex items-center gap-1 text-green-700 bg-green-100 px-2 py-1 rounded-full text-sm">
-          <CheckCircle className="w-3 h-3" />
-          Aprovada
-        </span>
-      );
-    case 'rejected':
-      return (
-        <span className="flex items-center gap-1 text-red-700 bg-red-100 px-2 py-1 rounded-full text-sm">
-          <XCircle className="w-3 h-3" />
-          Rejeitada
-        </span>
-      );
-    case 'pending':
-      return (
-        <span className="flex items-center gap-1 text-orange-700 bg-orange-100 px-2 py-1 rounded-full text-sm">
-          <Clock className="w-3 h-3" />
-          Em Análise
-        </span>
-      );
-    default:
-      return null;
-  }
+function translateAction(action) {
+  return actionTranslations[action] || action;
+}
+
+function formatDate(date) {
+  if (!date) return "";
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
 export function Historico() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
 
-  const filteredHistory = mockHistory.filter(item => {
-    const matchesSearch = item.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
+  // Determine days param based on dateFilter
+  const daysParam = dateFilter === "all" ? null : 
+                    dateFilter === "30" ? 30 :
+                    dateFilter === "90" ? 90 :
+                    dateFilter === "365" ? 365 : null;
+
+  // Fetch audit trail data
+  const { data: auditEntries = [], isLoading } = useQuery({
+    queryKey: ["/api/audit-trail", daysParam],
+    queryFn: async () => {
+      const url = new URL("/api/audit-trail", window.location.origin);
+      if (daysParam) {
+        url.searchParams.append("days", String(daysParam));
+      }
+      const response = await fetch(url.toString());
+      if (!response.ok) throw new Error("Failed to fetch audit trail");
+      return response.json();
+    },
   });
+
+  // Client-side filtering and pagination
+  const filteredEntries = useMemo(() => {
+    return auditEntries.filter(item => {
+      const matchesSearch = 
+        translateAction(item.action).toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.details && item.details.toLowerCase().includes(searchTerm.toLowerCase()));
+      return matchesSearch;
+    });
+  }, [auditEntries, searchTerm]);
+
+  // Pagination state
+  const itemsPerPage = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filter changes
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleDateFilterChange = (value) => {
+    setDateFilter(value);
+    setCurrentPage(1);
+  };
 
   return (
     <Layout>
@@ -122,82 +101,107 @@ export function Historico() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
               <Input 
-                placeholder="Buscar por cliente ou ID..."
+                placeholder="Buscar por ação ou detalhes..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10"
+                data-testid="input-search-audit"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="approved">Aprovadas</SelectItem>
-                <SelectItem value="pending">Em Análise</SelectItem>
-                <SelectItem value="rejected">Rejeitadas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="w-[150px]">
+            <Select value={dateFilter} onValueChange={handleDateFilterChange}>
+              <SelectTrigger className="w-[150px]" data-testid="select-date-filter">
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todo Período</SelectItem>
                 <SelectItem value="30">Últimos 30 dias</SelectItem>
                 <SelectItem value="90">Últimos 90 dias</SelectItem>
-                <SelectItem value="year">Este ano</SelectItem>
+                <SelectItem value="365">Este ano</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </Card>
 
         <Card className="overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="text-left p-4 font-medium text-gray-600">ID</th>
-                <th className="text-left p-4 font-medium text-gray-600">Cliente</th>
-                <th className="text-left p-4 font-medium text-gray-600">Valor</th>
-                <th className="text-left p-4 font-medium text-gray-600">Status</th>
-                <th className="text-left p-4 font-medium text-gray-600">Data</th>
-                <th className="text-left p-4 font-medium text-gray-600">Analista</th>
-                <th className="text-left p-4 font-medium text-gray-600">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredHistory.map((item, index) => (
-                <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-mono text-sm">{item.id}</td>
-                  <td className="p-4 font-medium">{item.client}</td>
-                  <td className="p-4">{item.value}</td>
-                  <td className="p-4">{getStatusBadge(item.status)}</td>
-                  <td className="p-4 text-gray-500">{item.date}</td>
-                  <td className="p-4 text-gray-500">{item.analyst}</td>
-                  <td className="p-4">
-                    <Button variant="ghost" size="sm">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                  </td>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-12" data-testid="loader-audit-trail">
+              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            </div>
+          ) : paginatedEntries.length === 0 ? (
+            <div className="flex items-center justify-center p-12" data-testid="text-no-records">
+              <p className="text-gray-500">Nenhum registro encontrado</p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-4 font-medium text-gray-600">ID</th>
+                  <th className="text-left p-4 font-medium text-gray-600">Ação</th>
+                  <th className="text-left p-4 font-medium text-gray-600">Entidade</th>
+                  <th className="text-left p-4 font-medium text-gray-600">Detalhes</th>
+                  <th className="text-left p-4 font-medium text-gray-600">Data</th>
+                  <th className="text-left p-4 font-medium text-gray-600">Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedEntries.map((item, index) => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50 transition-colors" data-testid={`row-audit-${item.id}`}>
+                    <td className="p-4 font-mono text-sm">{item.id}</td>
+                    <td className="p-4 font-medium">{translateAction(item.action)}</td>
+                    <td className="p-4 text-gray-600">{item.entityType || "-"}</td>
+                    <td className="p-4 text-gray-600 max-w-xs truncate">{item.details || "-"}</td>
+                    <td className="p-4 text-gray-500">{formatDate(item.createdAt)}</td>
+                    <td className="p-4">
+                      <Button variant="ghost" size="sm" data-testid={`button-view-${item.id}`}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </Card>
 
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-gray-500">
-            Mostrando {filteredHistory.length} de {mockHistory.length} resultados
-          </p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled>Anterior</Button>
-            <Button variant="outline" size="sm" className="bg-[#92dc49] text-white border-none">1</Button>
-            <Button variant="outline" size="sm">2</Button>
-            <Button variant="outline" size="sm">3</Button>
-            <Button variant="outline" size="sm">Próximo</Button>
+        {filteredEntries.length > 0 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-gray-500" data-testid="text-results-count">
+              Mostrando {startIndex + 1}-{Math.min(endIndex, filteredEntries.length)} de {filteredEntries.length} resultados
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(currentPage - 1)}
+                data-testid="button-prev-page"
+              >
+                Anterior
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <Button
+                  key={page}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={page === currentPage ? "bg-[#92dc49] text-white border-none" : ""}
+                  data-testid={`button-page-${page}`}
+                >
+                  {page}
+                </Button>
+              ))}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(currentPage + 1)}
+                data-testid="button-next-page"
+              >
+                Próximo
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );

@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -187,3 +187,47 @@ export const insertGuaranteeSchema = createInsertSchema(guarantees).omit({
 });
 export type InsertGuarantee = z.infer<typeof insertGuaranteeSchema>;
 export type Guarantee = typeof guarantees.$inferSelect;
+
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertConversation = z.infer<typeof insertConversationSchema>;
+export type Conversation = typeof conversations.$inferSelect;
+
+export const conversationParticipants = pgTable("conversation_participants", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => conversations.id),
+  userId: integer("user_id").references(() => users.id),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+export const insertConversationParticipantSchema = createInsertSchema(conversationParticipants).omit({
+  id: true,
+  joinedAt: true,
+});
+export type InsertConversationParticipant = z.infer<typeof insertConversationParticipantSchema>;
+export type ConversationParticipant = typeof conversationParticipants.$inferSelect;
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => conversations.id),
+  senderId: integer("sender_id").references(() => users.id),
+  content: text("content").notNull(),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;

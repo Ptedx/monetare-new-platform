@@ -25,27 +25,29 @@ declare global {
   }
 }
 
+export let sessionMiddleware: any;
+
 export function setupAuth(app: Express) {
   const PgSession = connectPgSimple(session);
 
-  app.use(
-    session({
-      store: new PgSession({
-        pool: pool,
-        tableName: "session",
-        createTableIfMissing: true,
-      }),
-      secret: process.env.SESSION_SECRET || "siga-platform-secret-key-change-in-production",
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        maxAge: 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-      },
-    })
-  );
+  sessionMiddleware = session({
+    store: new PgSession({
+      pool: pool,
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || "siga-platform-secret-key-change-in-production",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    },
+  });
+
+  app.use(sessionMiddleware);
 
   app.use(passport.initialize());
   app.use(passport.session());
