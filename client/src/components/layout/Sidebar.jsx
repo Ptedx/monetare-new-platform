@@ -1,4 +1,6 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   LayoutDashboard,
   Columns3,
@@ -22,7 +24,7 @@ const menuItems = {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Columns3, label: "Pipeline", path: "/pipeline" },
     { icon: Briefcase, label: "Propostas", path: "/propostas" },
-    { icon: Briefcase, label: "Carteira", path: "/carteira" }, // Added Carteira
+    { icon: Briefcase, label: "Carteira", path: "/carteira" },
   ],
   ferramentas: [
     { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta" },
@@ -34,49 +36,52 @@ const menuItems = {
 };
 
 export function Sidebar() {
-  const [location] = useLocation();
-  const userRole = localStorage.getItem('userRole') || 'gerente';
+  const [location, setLocation] = useLocation();
+  const { data: user } = useQuery({ queryKey: ["/api/auth/me"] });
+  const userRole = user?.role || 'cliente';
 
-  // Role definitions for display
   const roleNames = {
     gerente: 'Gerente de Contas',
     analista: 'Analista',
-    projetista: 'Projetista'
+    projetista: 'Projetista',
+    cliente: 'Cliente'
   };
 
-  // Filter logic
+  const handleLogout = async () => {
+    try {
+      await apiRequest("POST", "/api/auth/logout");
+      queryClient.clear();
+      setLocation("/");
+    } catch (e) {
+      setLocation("/");
+    }
+  };
+
   const filteredMenuItems = {
     analise: menuItems.analise.filter(item => {
-      // Ambregulatorio: Only Dashboard
       if (userRole === 'ambregulatorio') {
         return item.label === 'Dashboard';
       }
-
-      // Carteira: Only for Analista and Projetista
       if (item.label === "Carteira") {
         return userRole === 'analista' || userRole === 'projetista';
       }
-      // Propostas: Only for Gerente
       if (item.label === "Propostas") {
         return userRole === 'gerente';
       }
-      // Default: show for all (Dashboard, Pipeline)
       return true;
     }),
     ferramentas: menuItems.ferramentas.filter(item => {
-      // Ambregulatorio: No tools
       if (userRole === 'ambregulatorio') {
         return false;
       }
-
-      // Cadastro de Proposta: Only for Projetista
       if (item.label === "Cadastro de Proposta") {
         return userRole === 'projetista';
       }
-      // Others (Simulador, Perfil, Docs, Histórico) are for everyone
       return true;
     })
   };
+
+  const displayName = user?.fullName || roleNames[userRole] || 'Usuario';
 
   return (
     <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">
@@ -128,20 +133,22 @@ export function Sidebar() {
 
       <div className="flex-1 flex flex-col justify-between py-6 px-4 bg-white w-[248px]">
         <div className="flex flex-col gap-6">
-          <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500">
+          <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500" data-testid="button-search">
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4" />
-              <span>Faça uma pesquisa...</span>
+              <span>Faca uma pesquisa...</span>
             </div>
-            <span className="bg-gray-300 rounded-full px-2 py-0.5 text-xs">⌘ + K</span>
+            <span className="bg-gray-300 rounded-full px-2 py-0.5 text-xs">Cmd + K</span>
           </button>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-gray-900">Análise</span>
+            <span className="text-sm font-semibold text-gray-900">Analise</span>
             <div className="flex flex-col gap-1">
               {filteredMenuItems.analise.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                  <div
+                    data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
                     }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
@@ -156,7 +163,9 @@ export function Sidebar() {
             <div className="flex flex-col gap-1">
               {filteredMenuItems.ferramentas.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                  <div
+                    data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
                     }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
@@ -171,10 +180,10 @@ export function Sidebar() {
           <div className="w-7 h-7 rounded-full bg-[#c8ff93] flex items-center justify-center">
             <User className="w-4 h-4 text-gray-700" />
           </div>
-          <span className="text-[11px] font-medium flex-1">{roleNames[userRole] || 'Usuário'}</span>
-          <Link href="/">
+          <span className="text-[11px] font-medium flex-1 truncate" data-testid="text-user-name">{displayName}</span>
+          <button onClick={handleLogout} data-testid="button-logout">
             <LogOut className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" />
-          </Link>
+          </button>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,74 +18,66 @@ import {
     FileText
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
-// Document List Data Structure
 const initialDocuments = [
-    { id: 1, title: "Simulação", category: "Preenchimento do checklist", status: 'done' }, // Mocking one already done
-    { id: 2, title: "Contrato Social", category: "Pessoa Jurídica do Empreendimento", status: 'idle' },
-    { id: 3, title: "Balanço patrimonial", category: "Pessoa Jurídica do Empreendimento", status: 'error', errorMsg: "Uma Declaração de Imposto de Renda foi anexada no lugar. Envie o documento correto." },
-    { id: 4, title: "Balancete atualizado", subtitle: "Dos últimos 3 meses", category: "Pessoa Jurídica do Empreendimento", status: 'idle' },
-    { id: 5, title: "Alvará de funcionamento", category: "Pessoa Jurídica do Empreendimento", status: 'done' },
-    { id: 6, title: "Certidão de Inteiro Teor da Matrícula do Imóvel matriz", category: "Pessoa Jurídica do Empreendimento", status: 'idle' },
-    { id: 7, title: "Declaração de Imposto de Renda", category: "Pessoa Jurídica dos Sócios", status: 'idle' },
-    { id: 8, title: "Certidão de Casamento", category: "Pessoa Jurídica dos Sócios", status: 'idle' },
-    { id: 9, title: "RG e CPF", category: "Pessoa Jurídica dos Sócios", status: 'idle' },
-    { id: 10, title: "Comprovante de Endereço atualizado", category: "Pessoa Jurídica dos Sócios", status: 'idle' },
+    { id: 1, title: "Simulacao", category: "Preenchimento do checklist", status: 'idle' },
+    { id: 2, title: "Contrato Social", category: "Pessoa Juridica do Empreendimento", status: 'idle' },
+    { id: 3, title: "Balanco patrimonial", category: "Pessoa Juridica do Empreendimento", status: 'idle' },
+    { id: 4, title: "Balancete atualizado", subtitle: "Dos ultimos 3 meses", category: "Pessoa Juridica do Empreendimento", status: 'idle' },
+    { id: 5, title: "Alvara de funcionamento", category: "Pessoa Juridica do Empreendimento", status: 'idle' },
+    { id: 6, title: "Certidao de Inteiro Teor da Matricula do Imovel matriz", category: "Pessoa Juridica do Empreendimento", status: 'idle' },
+    { id: 7, title: "Declaracao de Imposto de Renda", category: "Pessoa Juridica dos Socios", status: 'idle' },
+    { id: 8, title: "Certidao de Casamento", category: "Pessoa Juridica dos Socios", status: 'idle' },
+    { id: 9, title: "RG e CPF", category: "Pessoa Juridica dos Socios", status: 'idle' },
+    { id: 10, title: "Comprovante de Endereco atualizado", category: "Pessoa Juridica dos Socios", status: 'idle' },
 ];
 
 export function CadastroProposta() {
-    const [, setLocation] = useLocation(); // using wouter's hook
-    // const navigate = useNavigate(); // Removed
+    const [, setLocation] = useLocation();
     const [documents, setDocuments] = useState(initialDocuments);
     const [uploadingIds, setUploadingIds] = useState([]);
+    const { data: user } = useQuery({ queryKey: ["/api/auth/me"] });
+    const userRole = user?.role || 'projetista';
 
-    // Form State
     const [formData, setFormData] = useState({
-        companyName: "Fernando Fagundes",
-        industry: "Agronegócio",
-        size: "100-500",
-        machinery: "50-100",
-        revenue: "R$ 1.300.200.000",
-        email: "financeiro@fffagundes.com.br",
-        phone: "(11) 000000000",
-        zip: "70865-000",
-        state: "DF",
-        city: "Brasília",
-        neighborhood: "Asa Norte",
-        address: "Quadra SQN 410",
-        sector: "Agronomia",
-        creditType: "Fno",
-        projectValue: "R$ 300.000.000",
-        financedValue: "R$ 270.000.000",
-        term: "420 meses",
-        gracePeriod: "32 meses"
+        companyName: "",
+        industry: "",
+        size: "",
+        machinery: "",
+        revenue: "",
+        email: "",
+        phone: "",
+        zip: "",
+        state: "",
+        city: "",
+        neighborhood: "",
+        address: "",
+        sector: "",
+        creditType: "",
+        projectValue: "",
+        financedValue: "",
+        term: "",
+        gracePeriod: ""
     });
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    // Calculate Progress
     const completedCount = documents.filter(d => d.status === 'done').length;
     const progress = Math.round((completedCount / documents.length) * 100);
 
-    // Navigation helper
     const handleBack = () => {
-        // wouter doesn't have useHistory/useNavigate(-1). 
-        // We can use window.history.back() for "back" behavior
         window.history.back();
     };
 
     const handleUpload = (id) => {
-        // Start "simulation"
         setUploadingIds(prev => [...prev, id]);
-
-        // Update doc status to uploading (optional visual, but we use the spinner in the button)
         setDocuments(prev => prev.map(doc =>
             doc.id === id ? { ...doc, status: 'uploading' } : doc
         ));
 
-        // Simulate network delay
         setTimeout(() => {
             setDocuments(prev => prev.map(doc =>
                 doc.id === id ? { ...doc, status: 'done', errorMsg: null } : doc
@@ -101,29 +94,46 @@ export function CadastroProposta() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
-    const userRole = localStorage.getItem('userRole') || 'projetista'; // Default to projetista for creation flow usually
+    const [submitError, setSubmitError] = useState(null);
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
+        if (!formData.companyName) {
+            setSubmitError("Nome da empresa e obrigatorio.");
+            return;
+        }
+
         setIsSubmitting(true);
-        setTimeout(() => {
-            const newProposal = {
-                id: Date.now(), // simple unique ID
-                name: formData.companyName,
-                score: "B", // Initial score default
-                status: "OK",
-                segment: (formData.industry === "Agronegócio" || formData.sector === "Agronomia") ? "Rural" : "Corporate",
-                stage: "1. Cadastro",
-                value: formData.projectValue,
-                date: new Date().toLocaleDateString('pt-BR'),
-                line: formData.creditType === "Fno" ? "FNO - Agro" : "Outro"
-            };
+        setSubmitError(null);
 
-            const existingProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
-            localStorage.setItem("proposals", JSON.stringify([newProposal, ...existingProposals]));
+        try {
+            const segment = (formData.industry === "Agronegocio" || formData.sector === "Agronomia") ? "Rural" : "Corporate";
+            const creditLine = formData.creditType === "Fno" ? "FNO - Agro" : formData.creditType || null;
+
+            await apiRequest("POST", "/api/proposals", {
+                name: formData.companyName,
+                segment,
+                stage: "1. Cadastro",
+                status: "Em Analise",
+                creditLine,
+                creditType: formData.creditType || null,
+                sector: formData.sector || null,
+                projectValue: formData.projectValue ? formData.projectValue.replace(/[^\d.,]/g, '').replace(',', '.') : null,
+                financedValue: formData.financedValue ? formData.financedValue.replace(/[^\d.,]/g, '').replace(',', '.') : null,
+                term: formData.term || null,
+                gracePeriod: formData.gracePeriod || null,
+                score: "B",
+                priority: "media",
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
 
             setIsSubmitting(false);
             setIsSuccess(true);
-        }, 2000);
+        } catch (error) {
+            setIsSubmitting(false);
+            setSubmitError(error.message || "Erro ao cadastrar proposta.");
+        }
     };
 
     if (isSubmitting) {
@@ -157,12 +167,14 @@ export function CadastroProposta() {
                                     variant="outline"
                                     className="rounded-full px-8 py-6"
                                     onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                    data-testid="button-view-proposal"
                                 >
                                     Visualizar
                                 </Button>
                                 <Button
                                     className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white px-8 py-6 shadow-lg shadow-green-100"
                                     onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                    data-testid="button-go-to-list"
                                 >
                                     Ir para {userRole === 'gerente' ? 'Propostas' : 'Carteira'}
                                 </Button>
@@ -177,32 +189,36 @@ export function CadastroProposta() {
     return (
         <Layout>
             <div className="p-8 max-w-7xl mx-auto min-h-screen pb-20">
-                {/* Header */}
                 <div className="flex items-center justify-between mb-8 sticky top-0 bg-[#f8f9fa] z-10 py-4 -mx-8 px-8 border-b border-gray-200 shadow-sm">
                     <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full hover:bg-gray-200">
+                        <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full hover:bg-gray-200" data-testid="button-back">
                             <ChevronLeft className="w-6 h-6 text-gray-600" />
                         </Button>
                         <h1 className="text-3xl font-bold text-gray-900">Cadastro de Proposta</h1>
                     </div>
                     <div className="flex gap-3">
-                        <Button variant="outline" className="rounded-full border-green-700 text-green-700 hover:bg-green-50">
+                        <Button variant="outline" className="rounded-full border-green-700 text-green-700 hover:bg-green-50" data-testid="button-save-draft">
                             <RotateCw className="w-4 h-4 mr-2" />
                             Salvar rascunho
                         </Button>
                         <Button
                             className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
                             onClick={handleSubmit}
+                            data-testid="button-submit"
                         >
-                            Enviar para análise
+                            Enviar para analise
                         </Button>
                     </div>
                 </div>
 
-                {/* Form Sections */}
-                <div className="space-y-8">
+                {submitError && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        {submitError}
+                    </div>
+                )}
 
-                    {/* Dados da Empresa */}
+                <div className="space-y-8">
                     <section>
                         <h2 className="text-xl font-bold mb-6 text-gray-900">Dados da empresa</h2>
                         <Card className="p-8 border-none shadow-none bg-transparent">
@@ -211,13 +227,15 @@ export function CadastroProposta() {
                                     label="Nome da empresa"
                                     value={formData.companyName}
                                     onChange={(v) => handleInputChange("companyName", v)}
-                                    placeholder="Fernando Fagundes"
+                                    placeholder="Digite o nome da empresa"
+                                    testId="input-company-name"
                                 />
                                 <FormItem
-                                    label="Indústria"
+                                    label="Industria"
                                     value={formData.industry}
                                     onChange={(v) => handleInputChange("industry", v)}
-                                    placeholder="Agronegócio"
+                                    placeholder="Ex: Agronegocio"
+                                    testId="input-industry"
                                 />
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -227,25 +245,32 @@ export function CadastroProposta() {
                                             value={formData.size}
                                             onValueChange={(v) => handleInputChange("size", v)}
                                         >
-                                            <SelectTrigger className="bg-white border-gray-200 h-12">
-                                                <SelectValue />
+                                            <SelectTrigger className="bg-white border-gray-200 h-12" data-testid="select-size">
+                                                <SelectValue placeholder="Selecione" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="100-500">100-500 funcionários</SelectItem>
+                                                <SelectItem value="1-10">1-10 funcionarios</SelectItem>
+                                                <SelectItem value="10-50">10-50 funcionarios</SelectItem>
+                                                <SelectItem value="50-100">50-100 funcionarios</SelectItem>
+                                                <SelectItem value="100-500">100-500 funcionarios</SelectItem>
+                                                <SelectItem value="500+">500+ funcionarios</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Qtd de maquinário</Label>
+                                        <Label>Qtd de maquinario</Label>
                                         <Select
                                             value={formData.machinery}
                                             onValueChange={(v) => handleInputChange("machinery", v)}
                                         >
-                                            <SelectTrigger className="bg-white border-gray-200 h-12">
-                                                <SelectValue />
+                                            <SelectTrigger className="bg-white border-gray-200 h-12" data-testid="select-machinery">
+                                                <SelectValue placeholder="Selecione" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="0-10">0-10</SelectItem>
+                                                <SelectItem value="10-50">10-50</SelectItem>
                                                 <SelectItem value="50-100">50-100</SelectItem>
+                                                <SelectItem value="100+">100+</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -254,23 +279,31 @@ export function CadastroProposta() {
                                     label="Receita Bruta Anual"
                                     value={formData.revenue}
                                     onChange={(v) => handleInputChange("revenue", v)}
+                                    placeholder="Ex: R$ 1.000.000"
+                                    testId="input-revenue"
                                 />
 
                                 <FormItem
                                     label="E-mail"
                                     value={formData.email}
                                     onChange={(v) => handleInputChange("email", v)}
+                                    placeholder="email@empresa.com"
+                                    testId="input-email"
                                 />
                                 <FormItem
                                     label="Telefone"
                                     value={formData.phone}
                                     onChange={(v) => handleInputChange("phone", v)}
+                                    placeholder="(00) 00000-0000"
+                                    testId="input-phone"
                                 />
 
                                 <FormItem
                                     label="CEP da empresa"
                                     value={formData.zip}
                                     onChange={(v) => handleInputChange("zip", v)}
+                                    placeholder="00000-000"
+                                    testId="input-zip"
                                 />
                                 <div className="grid grid-cols-[100px_1fr] gap-4">
                                     <div className="space-y-2">
@@ -279,18 +312,46 @@ export function CadastroProposta() {
                                             value={formData.state}
                                             onValueChange={(v) => handleInputChange("state", v)}
                                         >
-                                            <SelectTrigger className="bg-white border-gray-200 h-12">
-                                                <SelectValue />
+                                            <SelectTrigger className="bg-white border-gray-200 h-12" data-testid="select-state">
+                                                <SelectValue placeholder="UF" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="AC">AC</SelectItem>
+                                                <SelectItem value="AL">AL</SelectItem>
+                                                <SelectItem value="AM">AM</SelectItem>
+                                                <SelectItem value="AP">AP</SelectItem>
+                                                <SelectItem value="BA">BA</SelectItem>
+                                                <SelectItem value="CE">CE</SelectItem>
                                                 <SelectItem value="DF">DF</SelectItem>
+                                                <SelectItem value="ES">ES</SelectItem>
+                                                <SelectItem value="GO">GO</SelectItem>
+                                                <SelectItem value="MA">MA</SelectItem>
+                                                <SelectItem value="MG">MG</SelectItem>
+                                                <SelectItem value="MS">MS</SelectItem>
+                                                <SelectItem value="MT">MT</SelectItem>
+                                                <SelectItem value="PA">PA</SelectItem>
+                                                <SelectItem value="PB">PB</SelectItem>
+                                                <SelectItem value="PE">PE</SelectItem>
+                                                <SelectItem value="PI">PI</SelectItem>
+                                                <SelectItem value="PR">PR</SelectItem>
+                                                <SelectItem value="RJ">RJ</SelectItem>
+                                                <SelectItem value="RN">RN</SelectItem>
+                                                <SelectItem value="RO">RO</SelectItem>
+                                                <SelectItem value="RR">RR</SelectItem>
+                                                <SelectItem value="RS">RS</SelectItem>
+                                                <SelectItem value="SC">SC</SelectItem>
+                                                <SelectItem value="SE">SE</SelectItem>
+                                                <SelectItem value="SP">SP</SelectItem>
+                                                <SelectItem value="TO">TO</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
                                     <FormItem
-                                        label="Município da Empresa"
+                                        label="Municipio da Empresa"
                                         value={formData.city}
                                         onChange={(v) => handleInputChange("city", v)}
+                                        placeholder="Cidade"
+                                        testId="input-city"
                                     />
                                 </div>
 
@@ -298,19 +359,22 @@ export function CadastroProposta() {
                                     label="Bairro"
                                     value={formData.neighborhood}
                                     onChange={(v) => handleInputChange("neighborhood", v)}
+                                    placeholder="Bairro"
+                                    testId="input-neighborhood"
                                 />
                                 <FormItem
-                                    label="Endereço completo"
+                                    label="Endereco completo"
                                     value={formData.address}
                                     onChange={(v) => handleInputChange("address", v)}
+                                    placeholder="Rua, numero, complemento"
+                                    testId="input-address"
                                 />
                             </div>
                         </Card>
                     </section>
 
-                    {/* Informações do projeto */}
                     <section>
-                        <h2 className="text-xl font-bold mb-6 text-gray-900">Informações do projeto</h2>
+                        <h2 className="text-xl font-bold mb-6 text-gray-900">Informacoes do projeto</h2>
                         <Card className="p-8 border-none shadow-none bg-transparent">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                 <div className="space-y-2">
@@ -319,25 +383,31 @@ export function CadastroProposta() {
                                         value={formData.sector}
                                         onValueChange={(v) => handleInputChange("sector", v)}
                                     >
-                                        <SelectTrigger className="bg-white border-gray-200 h-12">
-                                            <SelectValue />
+                                        <SelectTrigger className="bg-white border-gray-200 h-12" data-testid="select-sector">
+                                            <SelectValue placeholder="Selecione" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Agronomia">Agronomia</SelectItem>
+                                            <SelectItem value="Pecuaria">Pecuaria</SelectItem>
+                                            <SelectItem value="Industria">Industria</SelectItem>
+                                            <SelectItem value="Comercio">Comercio</SelectItem>
+                                            <SelectItem value="Servicos">Servicos</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Modalidade do Crédito</Label>
+                                    <Label>Modalidade do Credito</Label>
                                     <Select
                                         value={formData.creditType}
                                         onValueChange={(v) => handleInputChange("creditType", v)}
                                     >
-                                        <SelectTrigger className="bg-white border-gray-200 h-12">
+                                        <SelectTrigger className="bg-white border-gray-200 h-12" data-testid="select-credit-type">
                                             <SelectValue placeholder="Selecione" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Fno">FNO - Agro</SelectItem>
+                                            <SelectItem value="Fne">FNE</SelectItem>
+                                            <SelectItem value="Fco">FCO</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -346,28 +416,35 @@ export function CadastroProposta() {
                                     label="Valor do projeto"
                                     value={formData.projectValue}
                                     onChange={(v) => handleInputChange("projectValue", v)}
+                                    placeholder="Ex: 300000000"
+                                    testId="input-project-value"
                                 />
                                 <FormItem
                                     label="Valor financiado"
                                     value={formData.financedValue}
                                     onChange={(v) => handleInputChange("financedValue", v)}
+                                    placeholder="Ex: 270000000"
+                                    testId="input-financed-value"
                                 />
 
                                 <FormItem
                                     label="Prazo"
                                     value={formData.term}
                                     onChange={(v) => handleInputChange("term", v)}
+                                    placeholder="Ex: 420 meses"
+                                    testId="input-term"
                                 />
                                 <FormItem
-                                    label="Carência"
+                                    label="Carencia"
                                     value={formData.gracePeriod}
                                     onChange={(v) => handleInputChange("gracePeriod", v)}
+                                    placeholder="Ex: 32 meses"
+                                    testId="input-grace-period"
                                 />
                             </div>
                         </Card>
                     </section>
 
-                    {/* Lista de documentos */}
                     <section>
                         <h2 className="text-xl font-bold mb-4 text-gray-900">Lista de documentos</h2>
 
@@ -380,7 +457,6 @@ export function CadastroProposta() {
                         </div>
 
                         <div className="space-y-8">
-                            {/* Group by category if needed, but mockup shows flat list mainly separated by titles. We will map them flat for now but adding headers if category changes could be an improvement. For this task, strict flat list with headers inserted manually or logic. Let's use logic. */}
                             {Object.entries(
                                 documents.reduce((acc, doc) => {
                                     (acc[doc.category] = acc[doc.category] || []).push(doc);
@@ -409,7 +485,6 @@ export function CadastroProposta() {
                                                     </div>
 
                                                     <div className="flex items-center gap-2">
-                                                        {/* Actions based on Status */}
                                                         {doc.status === 'done' ? (
                                                             <>
                                                                 <Button variant="ghost" size="icon" onClick={() => handleDelete(doc.id)} className="text-red-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
@@ -425,6 +500,7 @@ export function CadastroProposta() {
                                                                     size="icon"
                                                                     className="text-green-600 hover:bg-green-50"
                                                                     onClick={() => handleUpload(doc.id)}
+                                                                    data-testid={`button-upload-${doc.id}`}
                                                                 >
                                                                     <Upload className="w-5 h-5" />
                                                                 </Button>
@@ -432,7 +508,6 @@ export function CadastroProposta() {
                                                         )}
                                                     </div>
                                                 </div>
-                                                {/* Error Message */}
                                                 {doc.status === 'error' && doc.errorMsg && (
                                                     <p className="text-xs text-red-500 mt-1 ml-2">{doc.errorMsg}</p>
                                                 )}
@@ -449,8 +524,7 @@ export function CadastroProposta() {
     );
 }
 
-// Helper Component for Form Inputs
-function FormItem({ label, value, onChange, placeholder }) {
+function FormItem({ label, value, onChange, placeholder, testId }) {
     return (
         <div className="space-y-2">
             <Label className="text-gray-700">{label}</Label>
@@ -459,6 +533,7 @@ function FormItem({ label, value, onChange, placeholder }) {
                 onChange={(e) => onChange && onChange(e.target.value)}
                 placeholder={placeholder}
                 className="bg-white border-gray-200 h-12 text-base shadow-sm focus-visible:ring-[#92dc49]"
+                data-testid={testId}
             />
         </div>
     );
