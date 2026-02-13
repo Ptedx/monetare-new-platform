@@ -28,8 +28,14 @@ export function Login() {
         email: email.toLowerCase().trim(),
         password,
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      setLocation("/dashboard");
+      const user = await res.json();
+      queryClient.setQueryData(["/api/auth/me"], user);
+
+      if (user.role === 'cliente') {
+        setLocation("/propostas");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (err) {
       setError(err.message?.includes("401") ? "Email ou senha incorretos." : "Erro ao fazer login. Tente novamente.");
     } finally {

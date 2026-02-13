@@ -17,6 +17,7 @@ import { Historico } from "@/pages/Historico";
 import { Chat } from "@/pages/Chat";
 import { CadastroProposta } from "@/pages/CadastroProposta";
 import { Carteira } from "@/pages/Carteira";
+import { Configuracoes } from "@/pages/Configuracoes";
 
 function Router() {
   return (
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/documentacao" component={Documentacao} />
       <Route path="/historico" component={Historico} />
       <Route path="/chat" component={Chat} />
+      <Route path="/configuracoes" component={Configuracoes} />
       <Route path="/cadastro-proposta" component={CadastroProposta} />
       <Route component={NotFound} />
     </Switch>

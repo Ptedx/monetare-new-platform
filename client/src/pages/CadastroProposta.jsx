@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,11 @@ const initialDocuments = [
 export function CadastroProposta() {
     const [, setLocation] = useLocation();
     const [documents, setDocuments] = useState(initialDocuments);
+
+    useEffect(() => {
+        console.log("[DEBUG] Documents state updated:", documents);
+    }, [documents]);
+
     const [uploadingIds, setUploadingIds] = useState([]);
     const [proposalId, setProposalId] = useState(null);
     const [showDocuments, setShowDocuments] = useState(false);
@@ -63,8 +68,81 @@ export function CadastroProposta() {
         gracePeriod: ""
     });
 
+    const maskCurrency = (value) => {
+        if (!value) return "";
+        value = value.replace(/\D/g, "");
+        value = (Number(value) / 100).toFixed(2) + "";
+        value = value.replace(".", ",");
+        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+        return `R$ ${value}`;
+    };
+
+    const maskPhone = (value) => {
+        if (!value) return "";
+        value = value.replace(/\D/g, "");
+        if (value.length > 11) value = value.slice(0, 11);
+        if (value.length > 10) {
+            return value.replace(/^(\d\d)(\d{5})(\d{4}).*/, "($1) $2-$3");
+        } else if (value.length > 5) {
+            return value.replace(/^(\d\d)(\d{4})(\d{0,4}).*/, "($1) $2-$3");
+        } else if (value.length > 2) {
+            return value.replace(/^(\d\d)(\d{0,5}).*/, "($1) $2");
+        } else {
+            return value.replace(/^(\d*)/, "($1");
+        }
+    };
+
+    const maskCEP = (value) => {
+        if (!value) return "";
+        value = value.replace(/\D/g, "");
+        if (value.length > 8) value = value.slice(0, 8);
+        return value.replace(/^(\d{5})(\d)/, "$1-$2");
+    };
+
+    const checkCEP = async (cep) => {
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length === 8) {
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+                const data = await response.json();
+                if (!data.erro) {
+                    setFormData(prev => ({
+                        ...prev,
+                        address: data.logradouro,
+                        neighborhood: data.bairro,
+                        city: data.localidade,
+                        state: data.uf,
+                        zip: maskCEP(cleanCep) // Ensure format is correct
+                    }));
+                }
+            } catch (error) {
+                console.error("Erro ao buscar CEP:", error);
+            }
+        }
+    };
+
+    const cleanCurrency = (value) => {
+        if (!value) return null;
+        const digits = value.replace(/\D/g, "");
+        if (!digits) return null;
+        return (parseInt(digits) / 100).toFixed(2);
+    };
+
     const handleInputChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        let formattedValue = value;
+
+        if (field === 'revenue' || field === 'projectValue' || field === 'financedValue') {
+            formattedValue = maskCurrency(value);
+        } else if (field === 'phone') {
+            formattedValue = maskPhone(value);
+        } else if (field === 'zip') {
+            formattedValue = maskCEP(value);
+            if (formattedValue.replace(/\D/g, '').length === 8) {
+                checkCEP(formattedValue);
+            }
+        }
+
+        setFormData(prev => ({ ...prev, [field]: formattedValue }));
     };
 
     const completedCount = documents.filter(d => d.status === 'done').length;
@@ -74,52 +152,163 @@ export function CadastroProposta() {
         window.history.back();
     };
 
-    const handleUpload = async (id) => {
-        if (!proposalId) {
-            setSubmitError("Proposta nao foi criada. Por favor, crie a proposta primeiro.");
+    const fileInputRef = useState(null);
+
+    const handleUploadClick = (id) => {
+        const fileInput = document.getElementById(`file-upload-${id}`);
+        if (fileInput) fileInput.click();
+    };
+
+    const handleFileChange = async (event, id) => {
+        console.log("[DEBUG] handleFileChange started", { id });
+        const file = event.target.files[0];
+        if (!file) {
+            console.log("[DEBUG] No file selected");
             return;
         }
 
+        console.log("[DEBUG] File selected:", file.name);
+
+        if (file.type !== "application/pdf") {
+            console.log("[DEBUG] Invalid file type", file.type);
+            setDocuments(prev => prev.map(d =>
+                d.id === id ? { ...d, status: 'error', errorMsg: "Apenas arquivos PDF sao permitidos." } : d
+            ));
+            return;
+        }
+
+        let currentProposalId = proposalId;
+        console.log("[DEBUG] Current proposalId:", currentProposalId);
+
+        if (!currentProposalId) {
+            console.log("[DEBUG] No proposalId, attempting to save draft...");
+            currentProposalId = await handleSaveDraft();
+            console.log("[DEBUG] Validated proposalId after saveDraft:", currentProposalId);
+            if (!currentProposalId) {
+                console.warn("[DEBUG] Failed to obtain proposalId. Aborting upload.");
+                setDocuments(prev => prev.map(d =>
+                    d.id === id ? { ...d, status: 'error', errorMsg: "Preencha o Nome da Empresa para salvar o rascunho antes de enviar." } : d
+                ));
+                return;
+            }
+        }
+
         const doc = documents.find(d => d.id === id);
-        if (!doc) return;
+        if (!doc) {
+            console.error("[DEBUG] Document not found in state:", id);
+            return;
+        }
 
         setUploadingIds(prev => [...prev, id]);
         setDocuments(prev => prev.map(d =>
             d.id === id ? { ...d, status: 'uploading' } : d
         ));
 
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', doc.title);
+        formData.append('category', doc.category);
+        formData.append('status', 'uploaded');
+
         try {
-            const response = await apiRequest("POST", `/api/proposals/${proposalId}/documents`, {
-                title: doc.title,
-                category: doc.category,
-                status: "uploaded",
-                fileName: doc.title,
+            console.log("[DEBUG] sending fetch request to", `/api/proposals/${currentProposalId}/documents`);
+            // We need to use fetch directly here instead of apiRequest helper because
+            // apiRequest sets Content-Type to application/json automatically if data is present
+            // but for FormData browser sets it automatically with boundary
+            const res = await fetch(`/api/proposals/${currentProposalId}/documents`, {
+                method: "POST",
+                body: formData
             });
 
-            if (response) {
-                setDocuments(prev => prev.map(d =>
-                    d.id === id ? { ...d, status: 'done', errorMsg: null } : d
-                ));
-                queryClient.invalidateQueries({ queryKey: [`/api/proposals/${proposalId}`] });
+            console.log("[DEBUG] fetch response status:", res.status);
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error("[DEBUG] fetch error response:", errorData);
+                throw new Error(errorData.message || "Erro ao enviar arquivo");
             }
+
+            const uploadedDoc = await res.json();
+            console.log("[DEBUG] Upload success", { uploadedDoc, fileName: file.name, id });
+
+            setDocuments(prev => {
+                const newDocs = prev.map(d => {
+                    if (d.id === id) {
+                        return { ...d, status: 'done', errorMsg: null, fileName: file.name, url: uploadedDoc.url };
+                    }
+                    return d;
+                });
+                return newDocs;
+            });
+            queryClient.invalidateQueries({ queryKey: [`/api/proposals/${currentProposalId}`] });
+
         } catch (error) {
+            console.error("[DEBUG] Catch block error:", error);
             setDocuments(prev => prev.map(d =>
                 d.id === id ? { ...d, status: 'error', errorMsg: error.message || "Erro ao fazer upload do documento." } : d
             ));
         } finally {
+            console.log("[DEBUG] Finally block executed for id:", id);
             setUploadingIds(prev => prev.filter(uid => uid !== id));
+            // Reset input
+            event.target.value = '';
         }
     };
 
     const handleDelete = (id) => {
         setDocuments(prev => prev.map(doc =>
-            doc.id === id ? { ...doc, status: 'idle' } : doc
+            doc.id === id ? { ...doc, status: 'idle', fileName: null, url: null } : doc
         ));
     };
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [submitError, setSubmitError] = useState(null);
+
+    const handleSaveDraft = async () => {
+        console.log("[DEBUG] handleSaveDraft started");
+        if (!formData.companyName) {
+            console.warn("[DEBUG] Validation failed: Company name is required");
+            setSubmitError("Nome da empresa é obrigatório para salvar rascunho.");
+            return null;
+        }
+
+        try {
+            console.log("[DEBUG] Creating proposal draft...");
+            const segment = (formData.industry === "Agronegocio" || formData.sector === "Agronomia") ? "Rural" : "Corporate";
+            const creditLine = formData.creditType === "Fno" ? "FNO - Agro" : formData.creditType || null;
+
+            const res = await apiRequest("POST", "/api/proposals", {
+                name: formData.companyName,
+                segment,
+                stage: "1. Cadastro",
+                status: "Rascunho",
+                creditLine,
+                creditType: formData.creditType || null,
+                sector: formData.sector || null,
+                projectValue: cleanCurrency(formData.projectValue),
+                financedValue: cleanCurrency(formData.financedValue),
+                term: formData.term || null,
+                gracePeriod: formData.gracePeriod || null,
+                score: "B",
+                priority: "media",
+            });
+            const proposal = await res.json();
+            console.log("[DEBUG] Proposal draft created:", proposal);
+
+            if (proposal && proposal.id) {
+                setProposalId(proposal.id);
+                // Don't show success screen for draft, just toast or keep on page
+                queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+                return proposal.id;
+            }
+            return null;
+        } catch (error) {
+            console.error("[DEBUG] Error saving draft:", error);
+            setSubmitError(error.message || "Erro ao salvar rascunho.");
+            return null;
+        }
+    };
 
     const handleSubmit = async () => {
         if (!formData.companyName) {
@@ -142,8 +331,8 @@ export function CadastroProposta() {
                 creditLine,
                 creditType: formData.creditType || null,
                 sector: formData.sector || null,
-                projectValue: formData.projectValue ? formData.projectValue.replace(/[^\d.,]/g, '').replace(',', '.') : null,
-                financedValue: formData.financedValue ? formData.financedValue.replace(/[^\d.,]/g, '').replace(',', '.') : null,
+                projectValue: cleanCurrency(formData.projectValue),
+                financedValue: cleanCurrency(formData.financedValue),
                 term: formData.term || null,
                 gracePeriod: formData.gracePeriod || null,
                 score: "B",
@@ -229,7 +418,7 @@ export function CadastroProposta() {
                         <h1 className="text-3xl font-bold text-gray-900">Cadastro de Proposta</h1>
                     </div>
                     <div className="flex gap-3">
-                        <Button variant="outline" className="rounded-full border-green-700 text-green-700 hover:bg-green-50" data-testid="button-save-draft">
+                        <Button variant="outline" className="rounded-full border-green-700 text-green-700 hover:bg-green-50" onClick={handleSaveDraft} data-testid="button-save-draft">
                             <RotateCw className="w-4 h-4 mr-2" />
                             Salvar rascunho
                         </Button>
@@ -513,10 +702,23 @@ export function CadastroProposta() {
                                                         <div>
                                                             <p className={`font-medium ${doc.status === 'done' ? 'text-green-900' : 'text-gray-900'}`}>{doc.title}</p>
                                                             {doc.subtitle && <p className="text-xs text-gray-500">{doc.subtitle}</p>}
+                                                            {doc.status === 'done' && doc.fileName && (
+                                                                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                                                    <FileText className="w-3 h-3" />
+                                                                    {doc.fileName}
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     </div>
 
                                                     <div className="flex items-center gap-2">
+                                                        <input
+                                                            type="file"
+                                                            id={`file-upload-${doc.id}`}
+                                                            className="hidden"
+                                                            accept=".pdf"
+                                                            onChange={(e) => handleFileChange(e, doc.id)}
+                                                        />
                                                         {doc.status === 'done' ? (
                                                             <>
                                                                 <Button variant="ghost" size="icon" onClick={() => handleDelete(doc.id)} className="text-red-400 hover:text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
@@ -531,7 +733,7 @@ export function CadastroProposta() {
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="text-green-600 hover:bg-green-50"
-                                                                    onClick={() => handleUpload(doc.id)}
+                                                                    onClick={() => handleUploadClick(doc.id)}
                                                                     data-testid={`button-upload-${doc.id}`}
                                                                 >
                                                                     <Upload className="w-5 h-5" />

@@ -5,6 +5,9 @@ import bcrypt from "bcryptjs";
 import passport from "passport";
 import { insertUserSchema, insertProposalSchema, insertProposalDocumentSchema, insertCreditAnalysisSchema, insertGuaranteeSchema } from "@shared/schema";
 import { registerXCurveRoutes } from "./xcurve";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 export async function registerRoutes(app: Express) {
   registerXCurveRoutes(app);
@@ -156,7 +159,12 @@ export async function registerRoutes(app: Express) {
         return res.status(403).json({ message: "Sem permissão" });
       }
 
-      const { pfDetails: pfData, pjDetails: pjData, password: newPassword, ...userData } = req.body;
+      const { pfDetails: pfData, pjDetails: pjData, password: newPassword, role, ...userData } = req.body;
+
+      // [TESTING ONLY] Allow users to update their own role
+      if (role) {
+        (userData as any).role = role;
+      }
 
       if (newPassword) {
         userData.password = await bcrypt.hash(newPassword, 10);
@@ -221,11 +229,51 @@ export async function registerRoutes(app: Express) {
         return res.status(404).json({ message: "Proposta não encontrada" });
       }
 
+      // Fetch related users
+      const client = await storage.getUser(proposal.userId!);
+      let clientDetails = null;
+      if (client) {
+        if (client.personType === "PF") {
+          clientDetails = await storage.getPfDetails(client.id);
+        } else if (client.personType === "PJ") {
+          clientDetails = await storage.getPjDetails(client.id);
+        }
+      }
+
+      const assignedAnalyst = proposal.assignedAnalystId ? await storage.getUser(proposal.assignedAnalystId) : null;
+      const assignedManager = proposal.assignedManagerId ? await storage.getUser(proposal.assignedManagerId) : null;
+
+      // Fetch related documents, analysis, and guarantees
       const documents = await storage.getProposalDocuments(proposalId);
       const analysis = await storage.getCreditAnalysis(proposalId);
       const proposalGuarantees = await storage.getGuarantees(proposalId);
 
-      res.json({ ...proposal, documents, creditAnalysis: analysis, guarantees: proposalGuarantees });
+      // Fetch timeline (audit trail)
+      const timeline = await storage.getAuditTrail({
+        entityType: "proposal",
+        entityId: String(proposalId)
+      });
+
+      res.json({
+        ...proposal,
+        client: client ? {
+          ...client,
+          details: clientDetails,
+          password: undefined // removing password field
+        } : null,
+        analyst: assignedAnalyst ? {
+          fullName: assignedAnalyst.fullName,
+          id: assignedAnalyst.id
+        } : null,
+        manager: assignedManager ? {
+          fullName: assignedManager.fullName,
+          id: assignedManager.id
+        } : null,
+        documents,
+        creditAnalysis: analysis,
+        guarantees: proposalGuarantees,
+        timeline
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -290,13 +338,26 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.post("/api/proposals/:id/documents", requireAuth, async (req, res) => {
+  app.post("/api/proposals/:id/documents", requireAuth, upload.single('file'), async (req, res) => {
     try {
       const proposalId = parseInt(req.params.id);
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ message: "Nenhum arquivo enviado" });
+      }
+
       const doc = await storage.createProposalDocument({
         ...req.body,
         proposalId,
+        fileName: file.originalname,
+        fileType: file.mimetype,
+        fileSize: file.size,
+        // In a real app, you would upload to S3/Blob storage here and save the URL
+        // For now we'll just simulate it
+        url: `/uploads/${file.originalname}`
       });
+
       res.status(201).json(doc);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

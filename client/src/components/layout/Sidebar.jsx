@@ -36,7 +36,8 @@ const menuItems = {
 
 export function Sidebar() {
   const [location, setLocation] = useLocation();
-  const { data: user } = useQuery({ queryKey: ["/api/auth/me"] });
+  const { data: user, isLoading } = useQuery({ queryKey: ["/api/auth/me"] });
+  if (isLoading) return <div className="w-[72px] h-full bg-white border-r border-gray-200" />; // Loading skeleton
   const userRole = user?.role || 'cliente';
 
   const roleNames = {
@@ -70,10 +71,10 @@ export function Sidebar() {
         <div className="flex flex-col gap-4 items-center">
           {userRole !== 'ambregulatorio' && (
             <>
-              <Link href="/dashboard">
+              <Link href={userRole === 'cliente' ? "/propostas" : "/dashboard"}>
                 <div className="flex flex-col items-center gap-1 cursor-pointer">
-                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
+                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'text-white' : 'text-gray-600'}`} />
                   </div>
                   <span className="text-[11px] text-gray-600">Home</span>
                 </div>
@@ -106,9 +107,11 @@ export function Sidebar() {
           <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
             <Megaphone className="w-4 h-4 text-gray-700" />
           </div>
-          <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
-            <Settings className="w-4 h-4 text-gray-700" />
-          </div>
+          <Link href="/configuracoes">
+            <div className={`bg-gray-200 rounded-lg p-2 cursor-pointer transition-colors ${location === '/configuracoes' ? 'bg-[#92dc49]' : 'hover:bg-gray-300'}`}>
+              <Settings className={`w-4 h-4 ${location === '/configuracoes' ? 'text-black' : 'text-gray-700'}`} />
+            </div>
+          </Link>
         </div>
       </div>
 
@@ -130,7 +133,7 @@ export function Sidebar() {
                   <div
                     data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                     className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                    }`}>
+                      }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
                   </div>
@@ -147,7 +150,7 @@ export function Sidebar() {
                   <div
                     data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
                     className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                    }`}>
+                      }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
                   </div>

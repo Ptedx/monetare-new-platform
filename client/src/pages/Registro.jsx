@@ -14,8 +14,8 @@ import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient } from "@tanstack/react-query";
 
 const ESTADOS_BR = [
-  "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT",
-  "PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"
+  "AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT",
+  "PA", "PB", "PE", "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"
 ];
 
 function formatCPF(value) {
@@ -108,6 +108,17 @@ export function Registro() {
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const formatCurrency = (value) => {
+    if (!value) return "";
+    const numberValue = Number(value) / 100;
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numberValue);
+  };
+
+  const handleCurrencyChange = (field, value) => {
+    const cleanValue = value.replace(/\D/g, "");
+    setFormData((prev) => ({ ...prev, [field]: cleanValue }));
   };
 
   const handleCEPChange = async (value) => {
@@ -227,7 +238,7 @@ export function Registro() {
           birthDate: formData.birthDate || null,
           maritalStatus: formData.maritalStatus || null,
           motherName: formData.motherName || null,
-          monthlyIncome: formData.monthlyIncome || null,
+          monthlyIncome: formData.monthlyIncome ? String(Number(formData.monthlyIncome) / 100) : null,
           occupation: formData.occupation || null,
           address: formData.address || null,
           city: formData.city || null,
@@ -241,7 +252,7 @@ export function Registro() {
           tradeName: formData.tradeName || null,
           industry: formData.industry || null,
           companySize: formData.companySize || null,
-          annualRevenue: formData.annualRevenue || null,
+          annualRevenue: formData.annualRevenue ? String(Number(formData.annualRevenue) / 100) : null,
           foundedDate: formData.foundedDate || null,
           machineryCount: formData.machineryCount || null,
           employeeCount: formData.employeeCount || null,
@@ -254,7 +265,22 @@ export function Registro() {
       };
 
       await apiRequest("POST", "/api/auth/register", payload);
-      setIsSuccess(true);
+
+      // Auto login after registration
+      const loginRes = await apiRequest("POST", "/api/auth/login", {
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password
+      });
+
+      const user = await loginRes.json();
+      queryClient.setQueryData(["/api/auth/me"], user);
+
+      // Redirect based on role
+      if (user.role === 'cliente') {
+        setLocation("/propostas");
+      } else {
+        setLocation("/dashboard");
+      }
     } catch (err) {
       const msg = err.message || "";
       if (msg.includes("409")) {
@@ -267,39 +293,10 @@ export function Registro() {
     }
   };
 
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1628160424522-8692793b890a?q=80&w=2574&auto=format&fit=crop')` }}>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#7ab635]/90 to-[#92dc49]/70"></div>
-        </div>
-        <div className="container relative z-10 mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="hidden lg:flex flex-col text-white space-y-6">
-            <h1 className="text-7xl font-bold tracking-tighter">S.I.G.A</h1>
-            <p className="text-2xl font-light text-white/90">Sistema Integrado<br />de Gestão Amazônica</p>
-          </div>
-          <div className="flex justify-center lg:justify-end w-full">
-            <Card className="w-full max-w-md bg-white border-0 shadow-2xl rounded-3xl p-8 md:p-10 bg-white/95">
-              <div className="flex flex-col items-center gap-6 text-center">
-                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-10 h-10 text-[#92dc49]" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900" data-testid="text-register-success">Conta criada com sucesso!</h2>
-                <p className="text-gray-500 text-sm">Sua conta foi registrada. Agora você pode fazer login na plataforma.</p>
-                <Button
-                  onClick={() => setLocation("/")}
-                  data-testid="button-go-login"
-                  className="w-full h-12 bg-[#92dc49] hover:bg-[#7ab635] text-white font-bold text-lg rounded-full shadow-lg shadow-[#92dc49]/40"
-                >
-                  Ir para o Login <ChevronRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Removed success screen as we auto-redirect now
+  /* 
+  if (isSuccess) { ... } 
+  */
 
   const renderStepContent = () => {
     const step = steps[currentStep];
@@ -313,11 +310,10 @@ export function Registro() {
               type="button"
               onClick={() => { setPersonType("PF"); setCurrentStep(0); }}
               data-testid="button-select-pf"
-              className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
-                personType === "PF"
-                  ? "border-[#92dc49] bg-[#92dc49]/5 shadow-md"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
+              className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${personType === "PF"
+                ? "border-[#92dc49] bg-[#92dc49]/5 shadow-md"
+                : "border-gray-200 hover:border-gray-300"
+                }`}
             >
               <User className={`w-8 h-8 ${personType === "PF" ? "text-[#7ab635]" : "text-gray-400"}`} />
               <div className="text-center">
@@ -329,11 +325,10 @@ export function Registro() {
               type="button"
               onClick={() => { setPersonType("PJ"); setCurrentStep(0); }}
               data-testid="button-select-pj"
-              className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
-                personType === "PJ"
-                  ? "border-[#92dc49] bg-[#92dc49]/5 shadow-md"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
+              className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${personType === "PJ"
+                ? "border-[#92dc49] bg-[#92dc49]/5 shadow-md"
+                : "border-gray-200 hover:border-gray-300"
+                }`}
             >
               <Building2 className={`w-8 h-8 ${personType === "PJ" ? "text-[#7ab635]" : "text-gray-400"}`} />
               <div className="text-center">
@@ -372,7 +367,7 @@ export function Registro() {
           </div>
           <InputField label="Nome da Mãe" value={formData.motherName} onChange={(v) => handleChange("motherName", v)} placeholder="Nome completo da mãe" testId="input-mother" />
           <div className="grid grid-cols-2 gap-3">
-            <InputField label="Renda Mensal" value={formData.monthlyIncome} onChange={(v) => handleChange("monthlyIncome", v)} placeholder="R$ 0,00" testId="input-income" />
+            <InputField label="Renda Mensal" value={formatCurrency(formData.monthlyIncome)} onChange={(v) => handleCurrencyChange("monthlyIncome", v)} placeholder="R$ 0,00" testId="input-income" />
             <InputField label="Profissão" value={formData.occupation} onChange={(v) => handleChange("occupation", v)} placeholder="Sua profissão" testId="input-occupation" />
           </div>
           <InputField icon={<Phone className="w-4 h-4" />} label="Telefone" value={formData.phone} onChange={(v) => handleChange("phone", formatPhone(v))} placeholder="(00) 00000-0000" testId="input-phone" />
@@ -423,7 +418,7 @@ export function Registro() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <InputField label="Receita Bruta Anual" value={formData.annualRevenue} onChange={(v) => handleChange("annualRevenue", v)} placeholder="R$ 0,00" testId="input-revenue" />
+            <InputField label="Receita Bruta Anual" value={formatCurrency(formData.annualRevenue)} onChange={(v) => handleCurrencyChange("annualRevenue", v)} placeholder="R$ 0,00" testId="input-revenue" />
             <InputField label="N. de Funcionários" value={formData.employeeCount} onChange={(v) => handleChange("employeeCount", v)} placeholder="Ex: 50" testId="input-employees" />
           </div>
         </div>

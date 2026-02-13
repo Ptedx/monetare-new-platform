@@ -123,6 +123,9 @@ export const proposalDocuments = pgTable("proposal_documents", {
   category: text("category").notNull(),
   status: text("status").default("pending"),
   fileName: text("file_name"),
+  fileType: text("file_type"),
+  fileSize: integer("file_size"),
+  url: text("url"),
   errorMessage: text("error_message"),
 });
 
