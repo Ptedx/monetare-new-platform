@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
 import { Login } from "@/pages/Login";
+import { Registro } from "@/pages/Registro";
 import { Dashboard } from "@/pages/Dashboard";
 import { Pipeline } from "@/pages/Pipeline";
 import { Propostas } from "@/pages/Propostas";
@@ -16,11 +17,13 @@ import { Historico } from "@/pages/Historico";
 import { Chat } from "@/pages/Chat";
 import { CadastroProposta } from "@/pages/CadastroProposta";
 import { Carteira } from "@/pages/Carteira";
+import { Configuracoes } from "@/pages/Configuracoes";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
+      <Route path="/registro" component={Registro} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/pipeline" component={Pipeline} />
       <Route path="/propostas" component={Propostas} />
@@ -30,6 +33,7 @@ function Router() {
       <Route path="/documentacao" component={Documentacao} />
       <Route path="/historico" component={Historico} />
       <Route path="/chat" component={Chat} />
+      <Route path="/configuracoes" component={Configuracoes} />
       <Route path="/cadastro-proposta" component={CadastroProposta} />
       <Route component={NotFound} />
     </Switch>

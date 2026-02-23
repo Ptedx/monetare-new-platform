@@ -1,4 +1,6 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   LayoutDashboard,
   Columns3,
@@ -19,29 +21,30 @@ import {
 
 const menuItems = {
   analise: [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: Columns3, label: "Pipeline", path: "/pipeline" },
-    { icon: Briefcase, label: "Propostas", path: "/propostas" },
-    { icon: Briefcase, label: "Carteira", path: "/carteira" }, // Added Carteira
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: ['gerente', 'analista'] },
+    { icon: Columns3, label: "Pipeline", path: "/pipeline", roles: ['gerente', 'analista'] },
+    { icon: Briefcase, label: "Propostas", path: "/propostas", roles: ['cliente', 'projetista'] },
   ],
   ferramentas: [
-    { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta" },
-    { icon: Calculator, label: "Simulador", path: "/simulador" },
-    { icon: User, label: "Análise de Perfil", path: "/perfil" },
-    { icon: FileText, label: "Documentação", path: "/documentacao" },
-    { icon: History, label: "Histórico", path: "/historico" },
+    { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta", roles: ['cliente', 'projetista'] },
+    { icon: Calculator, label: "Simulador", path: "/simulador", roles: ['cliente', 'projetista', 'gerente', 'analista'] },
+    { icon: User, label: "Análise de Perfil", path: "/perfil", roles: ['gerente', 'analista'] },
+    { icon: FileText, label: "Documentação", path: "/documentacao", roles: ['cliente', 'projetista', 'gerente', 'analista'] },
+    { icon: History, label: "Histórico", path: "/historico", roles: ['cliente', 'projetista', 'gerente', 'analista'] },
   ]
 };
 
 export function Sidebar() {
-  const [location] = useLocation();
-  const userRole = localStorage.getItem('userRole') || 'gerente';
+  const [location, setLocation] = useLocation();
+  const { data: user, isLoading } = useQuery({ queryKey: ["/api/auth/me"] });
+  if (isLoading) return <div className="w-[72px] h-full bg-white border-r border-gray-200" />; // Loading skeleton
+  const userRole = user?.role || 'cliente';
 
-  // Role definitions for display
   const roleNames = {
     gerente: 'Gerente de Contas',
     analista: 'Analista',
-    projetista: 'Projetista'
+    projetista: 'Projetista',
+    cliente: 'Cliente'
   };
 
   // Filter logic
@@ -143,29 +146,33 @@ export function Sidebar() {
           <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
             <Megaphone className="w-4 h-4 text-gray-700" />
           </div>
-          <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
-            <Settings className="w-4 h-4 text-gray-700" />
-          </div>
+          <Link href="/configuracoes">
+            <div className={`bg-gray-200 rounded-lg p-2 cursor-pointer transition-colors ${location === '/configuracoes' ? 'bg-[#92dc49]' : 'hover:bg-gray-300'}`}>
+              <Settings className={`w-4 h-4 ${location === '/configuracoes' ? 'text-black' : 'text-gray-700'}`} />
+            </div>
+          </Link>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col justify-between py-6 px-4 bg-white w-[248px]">
         <div className="flex flex-col gap-6">
-          <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500">
+          <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500" data-testid="button-search">
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4" />
-              <span>Faça uma pesquisa...</span>
+              <span>Faca uma pesquisa...</span>
             </div>
-            <span className="bg-gray-300 rounded-full px-2 py-0.5 text-xs">⌘ + K</span>
+            <span className="bg-gray-300 rounded-full px-2 py-0.5 text-xs">Cmd + K</span>
           </button>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-gray-900">Análise</span>
+            <span className="text-sm font-semibold text-gray-900">Analise</span>
             <div className="flex flex-col gap-1">
               {filteredMenuItems.analise.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                    }`}>
+                  <div
+                    data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                      }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
                   </div>
@@ -179,8 +186,10 @@ export function Sidebar() {
             <div className="flex flex-col gap-1">
               {filteredMenuItems.ferramentas.map((item) => (
                 <Link key={item.path} href={item.path}>
-                  <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                    }`}>
+                  <div
+                    data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+                    className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                      }`}>
                     <item.icon className="w-4 h-4" />
                     <span className="text-base">{item.label}</span>
                   </div>
@@ -194,10 +203,10 @@ export function Sidebar() {
           <div className="w-7 h-7 rounded-full bg-[#c8ff93] flex items-center justify-center">
             <User className="w-4 h-4 text-gray-700" />
           </div>
-          <span className="text-[11px] font-medium flex-1">{roleNames[userRole] || 'Usuário'}</span>
-          <Link href="/">
+          <span className="text-[11px] font-medium flex-1 truncate" data-testid="text-user-name">{displayName}</span>
+          <button onClick={handleLogout} data-testid="button-logout">
             <LogOut className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" />
-          </Link>
+          </button>
         </div>
       </div>
     </div>

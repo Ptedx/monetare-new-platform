@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archimate:model xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:archimate="http://www.archimatetool.com/archimate" name="SIGA - Arquitetura DSA v1.1 (Final + Motivation)" id="id-siga-dsa-v1.4-final" version="4.9.0">
+  
+  <!-- ==================== MOTIVATION (NOVO) ==================== -->
+  <folder name="Motivation" id="folder-motivation" type="motivation">
+    <!-- Objetivos Estratégicos (Seção 1.2) -->
+    <element xsi:type="archimate:Goal" id="goal-custom-ux" name="Experiência Proprietária (Custom UX)">
+      <documentation>DSA 1.2: Substituição de telas genéricas de CRM (ex: Bitrix) por um Front-end customizado, permitindo fluxos otimizados e aderentes à identidade do Banco.</documentation>
+    </element>
+    <element xsi:type="archimate:Goal" id="goal-gatekeeper" name="Segurança Gatekeeper (Fail-Fast)">
+      <documentation>DSA 1.2: Barreiras de segurança nas etapas iniciais (Onboarding), bloqueando fraudes antes do consumo de recursos onerosos (Motores de Crédito).</documentation>
+    </element>
+    <element xsi:type="archimate:Goal" id="goal-unified-risk" name="Visão Unificada de Risco">
+      <documentation>DSA 1.2: Consolidação dos vetores de risco de fraude, crédito e garantia em um dashboard único.</documentation>
+    </element>
+    <element xsi:type="archimate:Goal" id="goal-sync-core" name="Sincronização Bidirecional (Client 360)">
+      <documentation>DSA 1.2: Garantir que a evolução do lead no Front-end reflita em tempo real no Core Bancário (Temenos).</documentation>
+    </element>
+
+    <!-- Princípios Arquiteturais (Seção 2.1) -->
+    <element xsi:type="archimate:Principle" id="princ-api-first" name="API-First Design">
+      <documentation>DSA 2.1: Funcionalidades expostas via APIs RESTful (OpenAPI 3.0), garantindo desacoplamento.</documentation>
+    </element>
+    <element xsi:type="archimate:Principle" id="princ-domain-driven" name="Microsserviços por Domínio (DDD)">
+      <documentation>DSA 2.1: Segregação em Bounded Contexts. Falhas em um módulo não impactam outros.</documentation>
+    </element>
+    <element xsi:type="archimate:Principle" id="princ-stateless" name="Stateless Orchestration">
+      <documentation>DSA 2.1: O orquestrador não retém regras complexas; atua como máquina de estados delegando para motores.</documentation>
+    </element>
+    <element xsi:type="archimate:Principle" id="princ-audit" name="Imutabilidade e Rastreabilidade">
+      <documentation>DSA 2.1: Logs de auditoria imutáveis para conformidade regulatória.</documentation>
+    </element>
+
+    <!-- Premissas (Seção 1.4) -->
+    <element xsi:type="archimate:Requirement" id="req-sso" name="Single Sign-On (SSO)">
+      <documentation>DSA 1.4: Autenticação federada para navegação fluida.</documentation>
+    </element>
+    <element xsi:type="archimate:Requirement" id="req-zero-trust" name="Zero Trust Network">
+      <documentation>DSA 1.4: Comunicação requer mTLS e tokens de serviço.</documentation>
+    </element>
+    <element xsi:type="archimate:Requirement" id="req-human-loop" name="Human-in-the-Loop">
+      <documentation>DSA 1.4: Breakpoints para análise manual em 'Gray Zones'.</documentation>
+    </element>
+  </folder>
+
+  <!-- ==================== BUSINESS ==================== -->
+  <folder name="Business" id="folder-business" type="business">
+    <element xsi:type="archimate:BusinessService" id="bs-origination" name="Originação de Crédito Digital (Imobiliário/Rural)">
+      <documentation>DSA 1.1: Ecossistema de originação proprietário. Orquestra a esteira eliminando dependências legadas.</documentation>
+    </element>
+    
+    <element xsi:type="archimate:BusinessProcess" id="proc-lead-capture" name="1. Captura e Enriquecimento"/>
+    <element xsi:type="archimate:BusinessProcess" id="proc-risk-analysis" name="2. Análise de Risco (Identity/Fraud)"/>
+    <element xsi:type="archimate:BusinessProcess" id="proc-credit-review" name="3. Análise de Crédito (XCurve)"/>
+    <element xsi:type="archimate:BusinessProcess" id="proc-manual-task" name="4. Tratamento de Pendência (Mesa)"/>
+    <element xsi:type="archimate:BusinessProcess" id="proc-formalization" name="5. Formalização e Garantia"/>
+  </folder>
+
+  <!-- ==================== APPLICATION ==================== -->
+  <folder name="Application" id="folder-application" type="application">
+    
+    <!-- Frontend -->
+    <element xsi:type="archimate:ApplicationComponent" id="app-front" name="Front SIGA (Custom UX)">
+      <documentation>DSA 1.3.1: Interface 100% Proprietária.
+Responsabilidades:
+- Gestão de Sessão Omnichannel (siga.front.session).
+- Roteamento de Jornada Dinâmico (siga.journey.router).
+- Renderização de Formulários (siga.ui.forms.dynamic) baseada em regras.</documentation>
+    </element>
+
+    <!-- Gateway -->
+    <element xsi:type="archimate:ApplicationComponent" id="api-gateway" name="API Gateway (The Front Door)">
+      <documentation>DSA 2.3: Ponto único de entrada (Edge).
+Funções:
+- Autenticação Centralizada (SSO/OAuth2).
+- Rate Limiting &amp; Throttling (Proteção de custos Neurotech/XCurve).
+- Roteamento Inteligente (Canary Deployment).</documentation>
+    </element>
+
+    <!-- Wrappers -->
+    <element xsi:type="archimate:ApplicationComponent" id="ms-identity" name="ms-identity-trust (Lexis Wrapper)">
+      <documentation>DSA 4.1.2: Gatekeeper Zero Trust.
+Função: Sanitização cadastral e Orquestração de PLD.
+Integração: LexisNexis.
+Normalização: Extrai dados para FNO e descarta ruído.</documentation>
+    </element>
+
+    <element xsi:type="archimate:ApplicationComponent" id="ms-decision" name="ms-decision-integrator (Neurotech Wrapper)">
+      <documentation>DSA 4.1.1: Único ponto de contato com Neurotech.
+Lógica: Adaptive Routing (Síncrono/Assíncrono).
+Gestão de Sessão: Renova token OAuth do Portal Riskpack automaticamente.
+Polling Manager: Monitora status de 'Deep Analysis'.</documentation>
+    </element>
+
+    <element xsi:type="archimate:ApplicationComponent" id="ms-credit" name="ms-credit-pricing (XCurve Wrapper)">
+      <documentation>DSA 3.2.3: Cérebro Financeiro.
+Funções: Orquestração de Bureaus e Execução de Políticas (XCurve).
+Cálculo de Pricing (RAROC) e Limites.</documentation>
+    </element>
+
+    <!-- Core -->
+    <element xsi:type="archimate:ApplicationComponent" id="ms-proposal" name="ms-proposal-core (Saga Orchestrator)">
+      <documentation>DSA 4.3.2: Máquina de estados central (Saga).
+Mantém o estado da TB_PROPOSTA.
+Delega execução para Wrappers (Não contém regras 'hard-coded').</documentation>
+    </element>
+
+    <element xsi:type="archimate:ApplicationComponent" id="ms-fno" name="ms-fno-eligibility">
+      <documentation>DSA 4.3.1: Motor de Elegibilidade FNO.
+Aplica regras da Matriz de Elegibilidade (Tamanho x Localização x Finalidade) usando tabelas locais do ATP.</documentation>
+    </element>
+
+    <!-- Compliance -->
+    <element xsi:type="archimate:ApplicationComponent" id="ms-audit" name="ms-audit-logger (Sidecar)">
+      <documentation>DSA 4.2.1: Firehose de Auditoria.
+Recebe eventos via gRPC.
+Calcula SHA-256 imediato.
+Persiste na TB_AUDIT_TRAIL e despacha para Object Storage (WORM).</documentation>
+    </element>
+
+    <element xsi:type="archimate:ApplicationComponent" id="wkr-evidence" name="worker-evidence-assembler">
+      <documentation>DSA 4.2.2: Worker Assíncrono (Batch/Triggered).
+Gera 'Evidence Packs' para FNO/TCU.
+Coleta logs, baixa PDF do Painel Neurotech, sela (Zip + Manifesto) e move para Archive.</documentation>
+    </element>
+
+    <!-- Parceiros -->
+    <element xsi:type="archimate:ApplicationComponent" id="ext-lexis" name="LexisNexis API">
+      <documentation>DSA 3.2.1: Serviços de Liveness Detection, Documentoscopia e Sanctions (PEP/OFAC).</documentation>
+      <property key="external" value="true"/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" id="ext-neuro" name="Neurotech Decision Runner">
+      <documentation>DSA 3.2.1: Score Antifraude (0-1000) e Device Fingerprinting. Política Fail-Fast.</documentation>
+      <property key="external" value="true"/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" id="ext-portal" name="Portal Riskpack (OAuth)">
+      <documentation>DSA 5.3.1: Provedor de Identidade da Neurotech. Emite Bearer Tokens.</documentation>
+      <property key="external" value="true"/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" id="ext-xcurve" name="XCurve Engine">
+      <documentation>DSA 3.2.3: Motor de Decisão de Crédito. Executa árvores de decisão parametrizáveis.</documentation>
+      <property key="external" value="true"/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" id="ext-prognum" name="Prognum (Collateral)">
+      <documentation>DSA 3.2.4: Gestão de Garantias (AVM, Esteira Jurídica) e Formalização (CCB).</documentation>
+      <property key="external" value="true"/>
+    </element>
+    <element xsi:type="archimate:ApplicationComponent" id="ext-temenos" name="Temenos Transact">
+      <documentation>DSA 1.3.3: Core Bancário. Sincronização Client 360 e Efetivação Financeira.</documentation>
+      <property key="external" value="true"/>
+    </element>
+  </folder>
+
+  <!-- ==================== TECHNOLOGY ==================== -->
+  <folder name="Technology" id="folder-technology" type="technology">
+    <element xsi:type="archimate:TechnologyService" id="tech-oke-api" name="OKE API Pool (Critical)">
+      <documentation>DSA 7.2.1: Shapes E4.Flex (High Availability). Autoscaling baseado em Request Rate.</documentation>
+    </element>
+    <element xsi:type="archimate:TechnologyService" id="tech-oke-wkr" name="OKE Worker Pool (Batch)">
+      <documentation>DSA 7.2.1: Shapes otimizados para Memória. Escala a Zero na entre-safra.</documentation>
+    </element>
+    <element xsi:type="archimate:TechnologyService" id="tech-atp" name="Oracle Autonomous DB (ATP)">
+      <documentation>DSA 7.2.2: Banco Transacional com OCPU Auto-Scaling.</documentation>
+    </element>
+    <element xsi:type="archimate:TechnologyService" id="tech-obj" name="OCI Object Storage (WORM)">
+      <documentation>DSA 7.3.1: Armazenamento Imutável. Retention Rule de 10 Anos para dados FNO.</documentation>
+    </element>
+    <element xsi:type="archimate:TechnologyService" id="tech-kafka" name="OCI Streaming (Kafka)">
+      <documentation>DSA 2.4: Barramento de Eventos para desacoplamento assíncrono.</documentation>
+    </element>
+    <element xsi:type="archimate:TechnologyService" id="tech-redis" name="Redis (Cache)">
+      <documentation>DSA 5.3.1: Cache distribuído para Tokens OAuth e Sessão.</documentation>
+    </element>
+    <element xsi:type="archimate:TechnologyService" id="tech-vault" name="OCI Vault (Secrets)">
+      <documentation>DSA 5.1: Gestão de chaves e segredos (Client IDs).</documentation>
+    </element>
+  </folder>
+
+  <folder name="Data" id="folder-data" type="business">
+    <element xsi:type="archimate:DataObject" id="dat-audit" name="TB_AUDIT_TRAIL">
+      <documentation>Indexador mestre de auditoria. Colunas: CorrelationID, PayloadHash.</documentation>
+    </element>
+    <element xsi:type="archimate:DataObject" id="dat-evidence" name="TB_EVIDENCE_PACK">
+      <documentation>Pacote selado de prestação de contas (Zip).</documentation>
+    </element>
+    <element xsi:type="archimate:DataObject" id="dat-neuro-tx" name="TB_NEUROTECH_TRANSACTION">
+      <documentation>Inputs e Outputs JSON detalhados da transação de risco.</documentation>
+    </element>
+  </folder>
+
+  <folder name="Relations" id="folder-relations" type="relations">
+    <!-- Relacionamentos de Motivação -->
+    <element xsi:type="archimate:AssociationRelationship" id="rel-mot-1" source="goal-custom-ux" target="app-front"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-mot-2" source="goal-gatekeeper" target="ms-identity"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-mot-3" source="princ-audit" target="ms-audit"/>
+    <element xsi:type="archimate:AssociationRelationship" id="rel-mot-4" source="goal-sync-core" target="ext-temenos"/>
+    
+    <!-- Fluxos de Aplicação (Lógicos) -->
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-1" source="app-front" target="api-gateway"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-2" source="api-gateway" target="ms-identity"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-3" source="ms-identity" target="ext-lexis"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-4" source="api-gateway" target="ms-proposal"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-5" source="ms-proposal" target="ms-decision"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-6" source="ms-decision" target="ext-neuro"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-7" source="ms-proposal" target="ms-credit"/>
+    <element xsi:type="archimate:FlowRelationship" id="rel-flow-8" source="ms-credit" target="ext-xcurve"/>
+    
+    <element xsi:type="archimate:AssignmentRelationship" id="rel-assign-1" source="ms-proposal" target="proc-lead-capture"/>
+    <element xsi:type="archimate:TriggeringRelationship" id="rel-trig-1" source="proc-lead-capture" target="proc-risk-analysis"/>
+  </folder>
+
+  <!-- ==================== VIEWS ==================== -->
+  <folder name="Views" id="folder-views" type="diagrams">
+    
+    <!-- VIEW 00: ESTRATÉGIA (NOVA) -->
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-00" name="00. Estratégia e Motivação">
+      <child xsi:type="archimate:DiagramObject" id="v0-goal1" archimateElement="goal-custom-ux"><bounds x="50" y="50" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v0-goal2" archimateElement="goal-gatekeeper"><bounds x="250" y="50" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v0-goal3" archimateElement="goal-unified-risk"><bounds x="450" y="50" width="160" height="60"/></child>
+      
+      <child xsi:type="archimate:DiagramObject" id="v0-princ1" archimateElement="princ-api-first"><bounds x="50" y="150" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v0-princ2" archimateElement="princ-audit"><bounds x="250" y="150" width="160" height="60"/></child>
+      
+      <child xsi:type="archimate:DiagramObject" id="v0-app-front" archimateElement="app-front"><bounds x="50" y="300" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v0-ms-audit" archimateElement="ms-audit"><bounds x="250" y="300" width="160" height="60"/></child>
+    </element>
+
+    <!-- VIEW 01: ARQUITETURA GERAL -->
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-01" name="01. Arquitetura de Solução (Completa)">
+      <child xsi:type="archimate:DiagramObject" id="v1-front" archimateElement="app-front"><bounds x="400" y="50" width="200" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-gw" archimateElement="api-gateway"><bounds x="400" y="150" width="200" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-ms-id" archimateElement="ms-identity"><bounds x="150" y="280" width="160" height="70"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-ms-prop" archimateElement="ms-proposal"><bounds x="400" y="280" width="200" height="70"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-ms-dec" archimateElement="ms-decision"><bounds x="700" y="280" width="160" height="70"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-ext-lexis" archimateElement="ext-lexis"><bounds x="150" y="450" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-ext-neuro" archimateElement="ext-neuro"><bounds x="700" y="450" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v1-ext-temenos" archimateElement="ext-temenos"><bounds x="900" y="280" width="160" height="70"/></child>
+    </element>
+
+    <!-- VIEW 02: INFRAESTRUTURA -->
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-02" name="02. Infraestrutura e Compliance">
+      <child xsi:type="archimate:DiagramObject" id="v2-audit" archimateElement="ms-audit"><bounds x="200" y="50" width="180" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v2-wkr" archimateElement="wkr-evidence"><bounds x="500" y="50" width="180" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v2-worm" archimateElement="tech-obj"><bounds x="200" y="250" width="480" height="80"/></child>
+    </element>
+
+    <!-- VIEW 03: BIAN -->
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-03" name="03. Mapa de Domínios BIAN">
+      <child xsi:type="archimate:Group" id="grp-risk" name="Risk &amp; Compliance Domain"><bounds x="50" y="50" width="250" height="300"/>
+        <child xsi:type="archimate:DiagramObject" id="v3-ms-id" archimateElement="ms-identity"><bounds x="20" y="50" width="200" height="60"/></child>
+        <child xsi:type="archimate:DiagramObject" id="v3-ms-dec" archimateElement="ms-decision"><bounds x="20" y="150" width="200" height="60"/></child>
+      </child>
+      <child xsi:type="archimate:Group" id="grp-sales" name="Sales &amp; Service Domain"><bounds x="350" y="50" width="250" height="300"/>
+        <child xsi:type="archimate:DiagramObject" id="v3-front" archimateElement="app-front"><bounds x="25" y="50" width="200" height="60"/></child>
+        <child xsi:type="archimate:DiagramObject" id="v3-prop" archimateElement="ms-proposal"><bounds x="25" y="150" width="200" height="60"/></child>
+      </child>
+    </element>
+
+    <!-- VIEW 04: ONBOARDING -->
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-04" name="04. Fluxo Onboarding">
+      <child xsi:type="archimate:DiagramObject" id="v4-front" archimateElement="app-front"><bounds x="50" y="100" width="140" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v4-gw" archimateElement="api-gateway"><bounds x="250" y="100" width="140" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v4-ms-id" archimateElement="ms-identity"><bounds x="450" y="50" width="160" height="60"/></child>
+      <child xsi:type="archimate:DiagramObject" id="v4-lexis" archimateElement="ext-lexis"><bounds x="700" y="50" width="140" height="60"/></child>
+    </element>
+    
+    <!-- VIEW 05: STATE MACHINE -->
+    <element xsi:type="archimate:ArchimateDiagramModel" id="view-05" name="05. Máquina de Estados (SIGA Ops)">
+      <child xsi:type="archimate:DiagramObject" id="v5-prop-core" archimateElement="ms-proposal"><bounds x="250" y="20" width="300" height="400"/>
+        <child xsi:type="archimate:DiagramObject" id="v5-p1" archimateElement="proc-lead-capture"><bounds x="50" y="40" width="200" height="40"/></child>
+        <child xsi:type="archimate:DiagramObject" id="v5-p2" archimateElement="proc-risk-analysis"><bounds x="50" y="100" width="200" height="40"/></child>
+        <child xsi:type="archimate:DiagramObject" id="v5-p3" archimateElement="proc-credit-review"><bounds x="50" y="160" width="200" height="40"/></child>
+      </child>
+    </element>
+
+  </folder>
+</archimate:model>
