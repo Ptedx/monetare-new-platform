@@ -5,6 +5,7 @@ import { ProposalDetail } from "@/components/proposals/ProposalDetail";
 
 export function Propostas() {
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const userRole = localStorage.getItem('userRole');
 
   return (
     <Layout>
@@ -16,6 +17,7 @@ export function Propostas() {
       ) : (
         <ProposalList
           onSelectProposal={setSelectedProposal}
+          userRole={userRole}
         />
       )}
     </Layout>

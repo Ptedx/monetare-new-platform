@@ -111,7 +111,7 @@ const getStatusColor = (status) => {
   return status === "ATRASO" ? "text-red-500 font-bold" : "text-green-500 font-bold";
 };
 
-export function ProposalList({ onSelectProposal, title }) {
+export function ProposalList({ onSelectProposal, title, userRole }) {
   const [proposals, setProposals] = useState([]);
   const [search, setSearch] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("all");
@@ -144,7 +144,11 @@ export function ProposalList({ onSelectProposal, title }) {
         p.value.includes(search) ||
         p.line.toLowerCase().includes(search.toLowerCase());
       const matchesSegment = segmentFilter === 'all' || p.segment === segmentFilter;
-      return matchesSearch && matchesSegment;
+
+      // Client Filter: Only show proposals where name includes "Fernando" (Mocking own proposals)
+      const matchesClient = userRole === 'cliente' ? p.name.includes('Fernando') : true;
+
+      return matchesSearch && matchesSegment && matchesClient;
     })
     .sort((a, b) => {
       const dateA = parseDate(a.date);

@@ -31,8 +31,11 @@ export function Login() {
     } else if (cleanEmail === "ambregulatorio@gmail.com") {
       localStorage.setItem('userRole', 'ambregulatorio');
       setLocation("/dashboard");
+    } else if (cleanEmail === "cliente@gmail.com") {
+      localStorage.setItem('userRole', 'cliente');
+      setLocation("/propostas");
     } else {
-      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com ou ambregulatorio@gmail.com");
+      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com ou cliente@gmail.com");
     }
   };
 

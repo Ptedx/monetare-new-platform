@@ -45,6 +45,7 @@ export function Sidebar() {
   };
 
   // Filter logic
+  // Filter logic
   const filteredMenuItems = {
     analise: menuItems.analise.filter(item => {
       // Ambregulatorio: Only Dashboard
@@ -52,13 +53,18 @@ export function Sidebar() {
         return item.label === 'Dashboard';
       }
 
+      // Cliente: Only Propostas
+      if (userRole === 'cliente') {
+        return item.label === 'Propostas';
+      }
+
       // Carteira: Only for Analista and Projetista
       if (item.label === "Carteira") {
         return userRole === 'analista' || userRole === 'projetista';
       }
-      // Propostas: Only for Gerente
+      // Propostas: Only for Gerente AND Cliente
       if (item.label === "Propostas") {
-        return userRole === 'gerente';
+        return userRole === 'gerente' || userRole === 'cliente';
       }
       // Default: show for all (Dashboard, Pipeline)
       return true;
@@ -69,13 +75,30 @@ export function Sidebar() {
         return false;
       }
 
-      // Cadastro de Proposta: Only for Projetista
-      if (item.label === "Cadastro de Proposta") {
-        return userRole === 'projetista';
+      // Cliente: Specific tools
+      if (userRole === 'cliente') {
+        // "ferramentas de cadastrar propostas, documentação e histórico., simulador"
+        return ["Cadastro de Proposta", "Documentação", "Histórico", "Simulador"].includes(item.label);
       }
+
+      // Cadastro de Proposta: Only for Projetista AND Cliente
+      if (item.label === "Cadastro de Proposta") {
+        return userRole === 'projetista' || userRole === 'cliente';
+      }
+
+      // Análise de Perfil: Not for Cliente
+      if (item.label === "Análise de Perfil" && userRole === 'cliente') {
+        return false;
+      }
+
       // Others (Simulador, Perfil, Docs, Histórico) are for everyone
       return true;
     })
+  };
+
+  const getHomeLink = () => {
+    if (userRole === 'cliente') return '/propostas';
+    return '/dashboard';
   };
 
   return (
@@ -84,10 +107,10 @@ export function Sidebar() {
         <div className="flex flex-col gap-4 items-center">
           {userRole !== 'ambregulatorio' && (
             <>
-              <Link href="/dashboard">
+              <Link href={getHomeLink()}>
                 <div className="flex flex-col items-center gap-1 cursor-pointer">
-                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
+                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'text-white' : 'text-gray-600'}`} />
                   </div>
                   <span className="text-[11px] text-gray-600">Home</span>
                 </div>
