@@ -33,30 +33,8 @@ const getStatusColor = (status) => {
   return status === "ATRASO" ? "text-red-500 font-bold" : "text-green-500 font-bold";
 };
 
-const getStatusLabel = (status) => {
-  if (!status) return "OK";
-  if (status.toLowerCase().includes("atraso")) return "ATRASO";
-  return "OK";
-};
-
-function mapProposalToRow(proposal) {
-  const rawValue = proposal.projectValue ? parseFloat(proposal.projectValue) || 0 : 0;
-  return {
-    id: proposal.id,
-    name: proposal.name,
-    score: proposal.score || "-",
-    status: getStatusLabel(proposal.status),
-    segment: proposal.segment || "Rural",
-    stage: proposal.stage || "1. Cadastro",
-    value: formatCurrency(rawValue),
-    date: formatDate(proposal.createdAt),
-    dateRaw: proposal.createdAt ? new Date(proposal.createdAt) : new Date(0),
-    line: proposal.creditLine || proposal.creditType || "-",
-  };
-}
-
-export function ProposalList({ onSelectProposal, title }) {
-  const { data: rawProposals, isLoading } = useQuery({ queryKey: ["/api/proposals"] });
+export function ProposalList({ onSelectProposal, title, userRole }) {
+  const [proposals, setProposals] = useState([]);
   const [search, setSearch] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -74,7 +52,11 @@ export function ProposalList({ onSelectProposal, title }) {
         p.value.includes(search) ||
         p.line.toLowerCase().includes(search.toLowerCase());
       const matchesSegment = segmentFilter === 'all' || p.segment === segmentFilter;
-      return matchesSearch && matchesSegment;
+
+      // Client Filter: Only show proposals where name includes "Fernando" (Mocking own proposals)
+      const matchesClient = userRole === 'cliente' ? p.name.includes('Fernando') : true;
+
+      return matchesSearch && matchesSegment && matchesClient;
     })
     .sort((a, b) => {
       return sortOrder === 'asc' ? a.dateRaw - b.dateRaw : b.dateRaw - a.dateRaw;

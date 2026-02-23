@@ -47,23 +47,62 @@ export function Sidebar() {
     cliente: 'Cliente'
   };
 
-  const handleLogout = async () => {
-    try {
-      await apiRequest("POST", "/api/auth/logout");
-      queryClient.clear();
-      setLocation("/");
-    } catch (e) {
-      setLocation("/");
-    }
-  };
-
+  // Filter logic
+  // Filter logic
   const filteredMenuItems = {
-    analise: menuItems.analise.filter(item => item.roles.includes(userRole)),
-    ferramentas: menuItems.ferramentas.filter(item => item.roles.includes(userRole))
+    analise: menuItems.analise.filter(item => {
+      // Ambregulatorio: Only Dashboard
+      if (userRole === 'ambregulatorio') {
+        return item.label === 'Dashboard';
+      }
+
+      // Cliente: Only Propostas
+      if (userRole === 'cliente') {
+        return item.label === 'Propostas';
+      }
+
+      // Carteira: Only for Analista and Projetista
+      if (item.label === "Carteira") {
+        return userRole === 'analista' || userRole === 'projetista';
+      }
+      // Propostas: Only for Gerente AND Cliente
+      if (item.label === "Propostas") {
+        return userRole === 'gerente' || userRole === 'cliente';
+      }
+      // Default: show for all (Dashboard, Pipeline)
+      return true;
+    }),
+    ferramentas: menuItems.ferramentas.filter(item => {
+      // Ambregulatorio: No tools
+      if (userRole === 'ambregulatorio') {
+        return false;
+      }
+
+      // Cliente: Specific tools
+      if (userRole === 'cliente') {
+        // "ferramentas de cadastrar propostas, documentação e histórico., simulador"
+        return ["Cadastro de Proposta", "Documentação", "Histórico", "Simulador"].includes(item.label);
+      }
+
+      // Cadastro de Proposta: Only for Projetista AND Cliente
+      if (item.label === "Cadastro de Proposta") {
+        return userRole === 'projetista' || userRole === 'cliente';
+      }
+
+      // Análise de Perfil: Not for Cliente
+      if (item.label === "Análise de Perfil" && userRole === 'cliente') {
+        return false;
+      }
+
+      // Others (Simulador, Perfil, Docs, Histórico) are for everyone
+      return true;
+    })
   };
 
-  const isClienteOrProjetista = userRole === 'cliente' || userRole === 'projetista';
-  const displayName = isClienteOrProjetista ? 'Usuário' : (user?.fullName || roleNames[userRole] || 'Usuario');
+  const getHomeLink = () => {
+    if (userRole === 'cliente') return '/propostas';
+    return '/dashboard';
+  };
 
   return (
     <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">
@@ -71,7 +110,7 @@ export function Sidebar() {
         <div className="flex flex-col gap-4 items-center">
           {userRole !== 'ambregulatorio' && (
             <>
-              <Link href={userRole === 'cliente' ? "/propostas" : "/dashboard"}>
+              <Link href={getHomeLink()}>
                 <div className="flex flex-col items-center gap-1 cursor-pointer">
                   <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
                     <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'text-white' : 'text-gray-600'}`} />

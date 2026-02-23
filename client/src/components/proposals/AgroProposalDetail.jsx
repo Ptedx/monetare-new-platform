@@ -483,7 +483,7 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                                     <text x="5" y="175" textAnchor="start" fontSize="10" className="fill-gray-500 font-bold">GARANTIA</text>
                                                     <text x="15" y="185" textAnchor="start" fontSize="10" className="fill-yellow-500 font-bold">600</text>
 
-                                                    <text x="195" y="175" textAnchor="end" fontSize="10" className="fill-gray-500 font-bold">GEOESPACIAL</text>
+                                                    <text x="195" y="175" textAnchor="end" fontSize="10" className="fill-gray-500 font-bold">Risco de Mercado</text>
                                                     <text x="195" y="185" textAnchor="end" fontSize="10" className="fill-green-500 font-bold">940</text>
                                                 </svg>
                                             </div>

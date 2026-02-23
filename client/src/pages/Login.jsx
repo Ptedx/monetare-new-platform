@@ -21,25 +21,26 @@ export function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
 
-    try {
-      const res = await apiRequest("POST", "/api/auth/login", {
-        email: email.toLowerCase().trim(),
-        password,
-      });
-      const user = await res.json();
-      queryClient.setQueryData(["/api/auth/me"], user);
+    const cleanEmail = email.toLowerCase().trim();
 
-      if (user.role === 'cliente') {
-        setLocation("/propostas");
-      } else {
-        setLocation("/dashboard");
-      }
-    } catch (err) {
-      setError(err.message?.includes("401") ? "Email ou senha incorretos." : "Erro ao fazer login. Tente novamente.");
-    } finally {
-      setIsLoading(false);
+    if (cleanEmail === "gerente@gmail.com") {
+      localStorage.setItem('userRole', 'gerente');
+      setLocation("/dashboard");
+    } else if (cleanEmail === "analista@gmail.com") {
+      localStorage.setItem('userRole', 'analista');
+      setLocation("/dashboard");
+    } else if (cleanEmail === "projetista@gmail.com") {
+      localStorage.setItem('userRole', 'projetista');
+      setLocation("/dashboard");
+    } else if (cleanEmail === "ambregulatorio@gmail.com") {
+      localStorage.setItem('userRole', 'ambregulatorio');
+      setLocation("/dashboard");
+    } else if (cleanEmail === "cliente@gmail.com") {
+      localStorage.setItem('userRole', 'cliente');
+      setLocation("/propostas");
+    } else {
+      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com ou cliente@gmail.com");
     }
   };
 
