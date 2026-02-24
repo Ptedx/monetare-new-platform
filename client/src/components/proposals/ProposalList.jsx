@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Filter, Search, ArrowUpDown } from "lucide-react";
+import { ChevronRight, Filter, Search, ArrowUpDown, ArrowUpRight, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLocation } from "wouter";
 
 const initialMockProposals = [
   {
@@ -97,6 +98,39 @@ const initialMockProposals = [
   },
 ];
 
+const clientMockProposals = [
+  {
+    id: 101,
+    name: "Custeio Agro",
+    hash: "id78f094vf",
+    statusBadge: "⚠ 1 pendência",
+    statusType: "error",
+    value: "R$ 25.000",
+    date: "15/11/2025",
+    tab: "Em aberto"
+  },
+  {
+    id: 102,
+    name: "Investimento Agro",
+    hash: "52fsddsE395",
+    statusBadge: "Em análise de crédito",
+    statusType: "neutral",
+    value: "R$ 70.000",
+    date: "15/11/2025",
+    tab: "Em aberto"
+  },
+  {
+    id: 103,
+    name: "Investimento Agro",
+    hash: "a8876h09ffersp",
+    statusBadge: "Contratado",
+    statusType: "success",
+    value: "R$ 70.000",
+    date: "13/02/2025",
+    tab: "Contratados"
+  }
+];
+
 const getScoreColor = (score) => {
   switch (score) {
     case "AA": return "bg-green-500 hover:bg-green-600";
@@ -117,15 +151,29 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
   const [segmentFilter, setSegmentFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc"); // desc = newest first
 
+  const [clientTab, setClientTab] = useState("Todos");
+  const [clientProposals, setClientProposals] = useState([]);
+  const [, setLocation] = useLocation();
+
   useEffect(() => {
-    const stored = localStorage.getItem("proposals");
-    if (stored) {
-      setProposals(JSON.parse(stored));
+    if (userRole === 'cliente') {
+      const storedClient = localStorage.getItem("clientProposals");
+      if (storedClient) {
+        setClientProposals(JSON.parse(storedClient));
+      } else {
+        setClientProposals(clientMockProposals);
+        localStorage.setItem("clientProposals", JSON.stringify(clientMockProposals));
+      }
     } else {
-      setProposals(initialMockProposals);
-      localStorage.setItem("proposals", JSON.stringify(initialMockProposals));
+      const stored = localStorage.getItem("proposals");
+      if (stored) {
+        setProposals(JSON.parse(stored));
+      } else {
+        setProposals(initialMockProposals);
+        localStorage.setItem("proposals", JSON.stringify(initialMockProposals));
+      }
     }
-  }, []);
+  }, [userRole]);
 
   const handleSort = () => {
     const newOrder = sortOrder === "asc" ? "desc" : "asc";
@@ -138,17 +186,85 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
     return new Date(parts[2], parts[1] - 1, parts[0]);
   };
 
+  // ----- CLIENT VIEW -----
+  if (userRole === 'cliente') {
+    const filteredClientProposals = clientProposals.filter(p => clientTab === "Todos" || p.tab === clientTab);
+
+    return (
+      <div className="w-full">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl lg:text-4xl text-gray-900">Suas propostas</h1>
+          <Button
+            className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full px-4 h-10 gap-2 font-medium"
+            onClick={() => setLocation('/cadastro-proposta')}
+          >
+            <Plus className="w-4 h-4" /> Nova proposta
+          </Button>
+        </div>
+
+        <div className="flex gap-2 mb-6 bg-white/50 p-1.5 rounded-xl border border-gray-100/50 w-fit">
+          {["Todos", "Em aberto", "Contratados", "Finalizados"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setClientTab(tab)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${clientTab === tab
+                ? "bg-[#cceebd] text-gray-900 shadow-sm"
+                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {filteredClientProposals.map((proposal) => (
+            <div
+              key={proposal.id}
+              onClick={() => onSelectProposal(proposal)}
+              className="bg-white border border-gray-200 rounded-xl p-5 flex items-center justify-between cursor-pointer hover:border-[#92dc49] hover:shadow-md transition-all group"
+            >
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-gray-900">{proposal.name}</span>
+                  <span className="text-xs text-gray-400 font-mono">{proposal.hash}</span>
+                </div>
+                <div>
+                  <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-semibold ${proposal.statusType === 'error' ? 'bg-red-100 text-red-600' :
+                    proposal.statusType === 'success' ? 'bg-green-100 text-green-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                    {proposal.statusBadge}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-lg font-bold text-gray-900">{proposal.value}</span>
+                  <span className="text-xs text-gray-400">{proposal.date}</span>
+                </div>
+                <ArrowUpRight className="w-6 h-6 text-gray-400 group-hover:text-[#92dc49] transition-colors" />
+              </div>
+            </div>
+          ))}
+          {filteredClientProposals.length === 0 && (
+            <div className="text-center py-10 text-gray-500 bg-white border border-gray-100 rounded-xl">
+              Nenhuma proposta encontrada nesta categoria.
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ----- DEFAULT VIEW -----
   const filteredProposals = proposals
     .filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
         p.value.includes(search) ||
         p.line.toLowerCase().includes(search.toLowerCase());
       const matchesSegment = segmentFilter === 'all' || p.segment === segmentFilter;
-
-      // Client Filter: Only show proposals where name includes "Fernando" (Mocking own proposals)
-      const matchesClient = userRole === 'cliente' ? p.name.includes('Fernando') : true;
-
-      return matchesSearch && matchesSegment && matchesClient;
+      return matchesSearch && matchesSegment;
     })
     .sort((a, b) => {
       const dateA = parseDate(a.date);
@@ -173,7 +289,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
           </div>
 
           <div className="w-48">
-            <Select onValueChange={(val) => setSearch(val === 'all' ? '' : val)}>
+            <Select onValueChange={(val) => setSegmentFilter(val)}>
               <SelectTrigger className="h-10 bg-transparent border-0 ring-0 focus:ring-0 text-gray-500 hover:text-gray-900 shadow-none px-0 gap-2 w-auto">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4" />
@@ -268,3 +384,4 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
     </div>
   );
 }
+

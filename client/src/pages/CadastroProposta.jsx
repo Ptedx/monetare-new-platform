@@ -106,20 +106,35 @@ export function CadastroProposta() {
     const handleSubmit = () => {
         setIsSubmitting(true);
         setTimeout(() => {
-            const newProposal = {
-                id: Date.now(), // simple unique ID
-                name: formData.companyName,
-                score: "B", // Initial score default
-                status: "OK",
-                segment: (formData.industry === "Agronegócio" || formData.sector === "Agronomia") ? "Rural" : "Corporate",
-                stage: "1. Cadastro",
-                value: formData.projectValue,
-                date: new Date().toLocaleDateString('pt-BR'),
-                line: formData.creditType === "Fno" ? "FNO - Agro" : "Outro"
-            };
+            if (userRole === 'cliente') {
+                const newClientProposal = {
+                    id: Date.now(),
+                    name: formData.companyName,
+                    hash: Math.random().toString(36).substring(2, 10),
+                    statusBadge: "Em análise",
+                    statusType: "neutral",
+                    value: formData.projectValue,
+                    date: new Date().toLocaleDateString('pt-BR'),
+                    tab: "Em aberto"
+                };
+                const existingClientProposals = JSON.parse(localStorage.getItem("clientProposals") || "[]");
+                localStorage.setItem("clientProposals", JSON.stringify([newClientProposal, ...existingClientProposals]));
+            } else {
+                const newProposal = {
+                    id: Date.now(), // simple unique ID
+                    name: formData.companyName,
+                    score: "B", // Initial score default
+                    status: "OK",
+                    segment: (formData.industry === "Agronegócio" || formData.sector === "Agronomia") ? "Rural" : "Corporate",
+                    stage: "1. Cadastro",
+                    value: formData.projectValue,
+                    date: new Date().toLocaleDateString('pt-BR'),
+                    line: formData.creditType === "Fno" ? "FNO - Agro" : "Outro"
+                };
 
-            const existingProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
-            localStorage.setItem("proposals", JSON.stringify([newProposal, ...existingProposals]));
+                const existingProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
+                localStorage.setItem("proposals", JSON.stringify([newProposal, ...existingProposals]));
+            }
 
             setIsSubmitting(false);
             setIsSuccess(true);
@@ -156,15 +171,15 @@ export function CadastroProposta() {
                                 <Button
                                     variant="outline"
                                     className="rounded-full px-8 py-6"
-                                    onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                    onClick={() => setLocation(userRole === 'cliente' ? '/propostas' : (userRole === 'gerente' ? '/propostas' : '/carteira'))}
                                 >
                                     Visualizar
                                 </Button>
                                 <Button
                                     className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white px-8 py-6 shadow-lg shadow-green-100"
-                                    onClick={() => setLocation(userRole === 'gerente' ? '/propostas' : '/carteira')}
+                                    onClick={() => setLocation(userRole === 'cliente' ? '/propostas' : (userRole === 'gerente' ? '/propostas' : '/carteira'))}
                                 >
-                                    Ir para {userRole === 'gerente' ? 'Propostas' : 'Carteira'}
+                                    {userRole === 'cliente' ? 'Ir para Propostas' : `Ir para ${userRole === 'gerente' ? 'Propostas' : 'Carteira'}`}
                                 </Button>
                             </div>
                         </div>
