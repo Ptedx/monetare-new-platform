@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { RegulatoryDashboard } from "@/components/dashboard/RegulatoryDashboard";
 import { AnalystDashboard } from "@/components/dashboard/AnalystDashboard";
 import { ManagerDashboard } from "@/components/dashboard/ManagerDashboard";
+import { PresidentDashboard } from "@/components/dashboard/PresidentDashboard";
 
 export function Dashboard() {
   const userRole = localStorage.getItem('userRole') || 'gerente';
@@ -12,6 +13,8 @@ export function Dashboard() {
     <Layout>
       {userRole === 'ambregulatorio' ? (
         <RegulatoryDashboard />
+      ) : userRole === 'gerencial' ? (
+        <PresidentDashboard />
       ) : (
         <div className="p-8 bg-gray-50 min-h-screen">
           {/* Header */}

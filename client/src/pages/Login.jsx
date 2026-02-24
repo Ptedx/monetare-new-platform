@@ -37,8 +37,11 @@ export function Login() {
     } else if (cleanEmail === "posvenda@gmail.com") {
       localStorage.setItem('userRole', 'posvenda');
       setLocation("/cobranca");
+    } else if (cleanEmail === "gerencial@gmail.com") {
+      localStorage.setItem('userRole', 'gerencial');
+      setLocation("/dashboard");
     } else {
-      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com, cliente@gmail.com ou posvenda@gmail.com");
+      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com, cliente@gmail.com, posvenda@gmail.com ou gerencial@gmail.com");
     }
   };
 
