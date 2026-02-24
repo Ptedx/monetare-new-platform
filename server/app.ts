@@ -1,5 +1,6 @@
 import express from "express";
 import { registerRoutes } from "./routes";
+import { setupAuth } from "./auth";
 
 export async function buildApp() {
     const app = express();
@@ -36,6 +37,8 @@ export async function buildApp() {
 
         next();
     });
+
+    setupAuth(app);
 
     await registerRoutes(app);
 

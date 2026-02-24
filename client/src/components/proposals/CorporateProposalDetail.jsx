@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,18 +12,48 @@ import {
     ChevronDown, Filter, FileBox, Plus
 } from "lucide-react";
 import { DetailItem, StatCard, StatusBadge, ScoreCircle, TimelineStep } from "./ProposalHelpers";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { DocumentViewer } from "@/components/DocumentViewer";
 
 const proposalTabs = [
     "Resumo", "Assinaturas", "Documentação", "Garantias", "Perfil", "Projeto", "Pendências", "Auditoria"
 ];
 
-export function CorporateProposalDetail({ proposal, onBack }) {
+// Helper to calculate progress based on stage
+const getProgress = (stage) => {
+    const stages = ["1. Cadastro", "2. Técnica", "3. Crédito", "4. Jurídico", "5. Aprovação"];
+    const index = stages.findIndex(s => stage?.includes(s.split(". ")[1])); // Simple matching
+    if (index === -1) return 10; // Default start
+    return Math.round(((index + 1) / stages.length) * 100);
+}
+
+export function CorporateProposalDetail({ proposal: initialProposal, onBack }) {
     const [activeTab, setActiveTab] = useState("Resumo");
     const [showReport, setShowReport] = useState(false);
+
+    const { data: fullProposal, isLoading } = useQuery({
+        queryKey: [`/api/proposals/${initialProposal?.id}`],
+        enabled: !!initialProposal?.id,
+    });
+
+    // Use fetched data or fallback to initial prop (which might be incomplete)
+    const proposal = fullProposal || initialProposal;
+    const client = fullProposal?.client;
+    const clientDetails = client?.details;
+    const analyst = fullProposal?.analyst;
+    const manager = fullProposal?.manager;
+    const timeline = fullProposal?.timeline || [];
 
     const handleDownload = () => {
         alert("Download iniciado (simulação).");
     };
+
+    // Formatter helpers
+    const formatCurrency = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val) || 0);
+    const formatDate = (date) => date ? format(new Date(date), "dd/MM/yy HH:mm", { locale: ptBR }) : "-";
+
+    const progress = getProgress(proposal?.stage);
 
     // Mock Data (Corporate Specific)
     const signaturesData = [
@@ -96,28 +127,123 @@ export function CorporateProposalDetail({ proposal, onBack }) {
 
                 <TabsContent value="Resumo" className="mt-0">
                     <div className="grid grid-cols-12 gap-6">
-                        {/* Main Content Column */}
-                        <div className="col-span-12 lg:col-span-8 space-y-6">
-                            {/* KPI Cards */}
-                            <div className="grid grid-cols-4 gap-4">
-                                <StatCard label="Valor da proposta" value={proposal?.value || "R$ 270.000.000,00"} />
-                                <StatCard label="Etapa" value="Crédito + Jurídico" />
-                                <StatCard label="Linha de crédito" value="Não rural" />
-                                <div className="grid grid-cols-2 gap-2">
-                                    <StatCard label="Andamento" value="58%" sub={
-                                        /* Static Circle for Progress */
-                                        <div className="relative w-5 h-5">
-                                            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                                                <path className="text-gray-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                                                <path className="text-green-500" strokeDasharray="58, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" strokeWidth="4" />
-                                            </svg>
-                                        </div>
-                                    } />
-                                    <StatCard label="Status" value="" sub={<Badge className="bg-[#92dc49] hover:bg-[#7ab635]">Ok</Badge>} />
-                                </div>
-                            </div>
+                        {/* Main Content (Dados Cadastrais) - Full width for this layout */}
+                        <div className="col-span-12 space-y-8">
 
-                            {/* Timeline Feed */}
+                            <Card className="p-8 border-gray-100 shadow-sm bg-white">
+                                <h3 className="text-xl font-bold mb-8 text-gray-900">Dados Cadastrais</h3>
+
+                                <div className="grid grid-cols-4 gap-8">
+                                    {/* Row 1 */}
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Building2 className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Empresa</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{clientDetails?.companyName || client?.fullName || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Users className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Tamanho</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{clientDetails?.companySize || clientDetails?.employeeCount || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <User className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Cliente</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{client?.fullName || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Mail className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">E-mail</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900 truncate" title={client?.email}>{client?.email || "-"}</p>
+                                    </div>
+
+                                    {/* Row 2 */}
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Building2 className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Indústria</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{clientDetails?.industry || "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Hash className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Faturamento</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{clientDetails?.annualRevenue ? formatCurrency(clientDetails.annualRevenue) + " / ano" : "-"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Hash className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">CPF/CNPJ</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{clientDetails?.cnpj || clientDetails?.cpf || client?.document || "000.000.000-00"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <Phone className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Telefone</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{client?.phone || "(00) 00000-0000"}</p>
+                                    </div>
+
+                                    {/* Row 3 */}
+                                    <div className="space-y-1 col-span-2">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <MapPin className="w-4 h-4" />
+                                            <span className="text-xs font-semibold uppercase">Endereço</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">
+                                            {clientDetails?.address
+                                                ? `${clientDetails.address}${clientDetails.city ? `, ${clientDetails.city}` : ''}${clientDetails.state ? ` - ${clientDetails.state}` : ''}`
+                                                : "Endereço não cadastrado"}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <span className="text-xs font-semibold uppercase">Limite atual</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{proposal?.creditAnalysis?.approvedLimit ? formatCurrency(proposal.creditAnalysis.approvedLimit) : "R$ 0,00"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2 text-gray-400 mb-1">
+                                            <span className="text-xs font-semibold uppercase">Rating Interno</span>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{proposal?.score || "0.0"}%</p>
+                                    </div>
+                                </div>
+                            </Card>
+
+                            {/* Additional Mock Tabs for Plantio / Pecuária */}
+                            <Tabs defaultValue="plantio" className="w-full">
+                                <TabsList className="bg-transparent border-b border-gray-200 w-full justify-start rounded-none h-auto p-0 mb-6">
+                                    <TabsTrigger value="plantio" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#92dc49] data-[state=active]:text-[#92dc49] pb-2 px-0 mr-6">
+                                        <span className="flex items-center gap-2"><span className="text-lg">🌱</span> Plantio</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="pecuaria" className="rounded-none border-b-2 border-transparent data-[state=active]:border-[#92dc49] data-[state=active]:text-[#92dc49] pb-2 px-0">
+                                        <span className="flex items-center gap-2"><span className="text-lg">🐄</span> Pecuária</span>
+                                    </TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="plantio" className="mt-0">
+                                    <Card className="p-8 border-dashed border-2 border-gray-200 bg-gray-50 flex flex-col items-center justify-center h-48">
+                                        <p className="text-gray-400 font-medium">Dados de Plantio (Integração Futura)</p>
+                                    </Card>
+                                </TabsContent>
+                                <TabsContent value="pecuaria" className="mt-0">
+                                    <Card className="p-8 border-dashed border-2 border-gray-200 bg-gray-50 flex flex-col items-center justify-center h-48">
+                                        <p className="text-gray-400 font-medium">Dados de Pecuária (Integração Futura)</p>
+                                    </Card>
+                                </TabsContent>
+                            </Tabs>
+
+                            {/* Timeline Feed (Kept at bottom or separate? User said it exists in Corporate Summary) */}
                             <div>
                                 <h3 className="font-bold text-lg mb-4">Linha do tempo</h3>
                                 <Card className="p-4 mb-6">
@@ -131,100 +257,26 @@ export function CorporateProposalDetail({ proposal, onBack }) {
                                 </Card>
 
                                 <div className="space-y-6 pl-2">
-                                    <div className="flex gap-4 relative">
-                                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm"><span className="font-bold">Daniel Alves</span> (Analista) criou uma pendência na proposta:</p>
-                                                <span className="text-xs text-gray-400">10/11/25 15:33</span>
+                                    {timeline && timeline.length > 0 ? (
+                                        timeline.map((event) => (
+                                            <div className="flex gap-4 relative" key={event.id}>
+                                                <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-start">
+                                                        <p className="text-sm">
+                                                            <span className="font-bold">Sistema</span>: {event.action}
+                                                        </p>
+                                                        <span className="text-xs text-gray-400">{formatDate(event.createdAt)}</span>
+                                                    </div>
+                                                    <p className="text-xs text-gray-400 mt-1">{event.details}</p>
+                                                </div>
                                             </div>
-                                            <div className="mt-3 bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
-                                                <Table>
-                                                    <TableHeader className="bg-gray-100">
-                                                        <TableRow className="h-8">
-                                                            <TableHead className="h-8 text-xs font-semibold">Data</TableHead>
-                                                            <TableHead className="h-8 text-xs font-semibold">Descrição</TableHead>
-                                                            <TableHead className="h-8 text-xs font-semibold">Responsável</TableHead>
-                                                            <TableHead className="h-8 text-xs font-semibold">Prazo</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        <TableRow className="border-0">
-                                                            <TableCell className="py-2 text-xs">16/11/25</TableCell>
-                                                            <TableCell className="py-2 text-xs font-medium">Enviar CAR atualizado</TableCell>
-                                                            <TableCell className="py-2 text-xs">Projetista</TableCell>
-                                                            <TableCell className="py-2 text-xs">20/11</TableCell>
-                                                        </TableRow>
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-4 relative">
-                                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm"><span className="font-bold">Daniel Alves</span> (Analista) evoluiu esta proposta para a etapa <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-gray-100 text-gray-600">Crédito</Badge></p>
-                                                <span className="text-xs text-gray-400">10/11/25 15:30</span>
-                                            </div>
-                                            <p className="text-xs text-gray-400 mt-1">após 5 dias na etapa anterior.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-4 relative">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm"><span className="font-bold">Ronaldo Portobello</span> (Projetista) evoluiu esta proposta para a etapa <Badge variant="secondary" className="px-1.5 py-0 text-[10px] bg-gray-100 text-gray-600">Técnica</Badge></p>
-                                                <span className="text-xs text-gray-400">10/11/25 15:00</span>
-                                            </div>
-                                            <p className="text-xs text-gray-400 mt-1">após 3 dias na etapa anterior.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-4 relative">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-2 flex-shrink-0"></div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm"><span className="font-bold">Ronaldo Portobello</span> (Projetista) adicionou um comentário na proposta:</p>
-                                                <span className="text-xs text-gray-400">10/11/25 15:00</span>
-                                            </div>
-                                            {/* Could add comment content here if needed */}
-                                        </div>
-                                    </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-4 text-gray-400 text-sm">Nenhuma atividade recente.</div>
+                                    )}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Right Sidebar Column */}
-                        <div className="col-span-12 lg:col-span-4">
-                            <Card className="p-6 h-full border-gray-100 shadow-md">
-                                <h3 className="text-xl font-bold mb-6 text-gray-900">Resumo</h3>
-                                <div className="space-y-1">
-                                    <div className="flex items-start gap-4 mb-4">
-                                        <div className="w-5 h-5 mt-0.5 flex-shrink-0 text-gray-300"><Building2 className="w-full h-full" /></div>
-                                        <div className="flex-1">
-                                            <p className="text-xs text-gray-400 font-medium">Empresa</p>
-                                            <p className="text-sm font-medium text-gray-800">FFFagundes LTDA</p>
-                                        </div>
-                                    </div>
-                                    <DetailItem icon={Building2} label="Indústria" value="Agronomia" />
-                                    <DetailItem icon={Users} label="Tamanho" value="500-1000 funcionários" />
-                                    <div className="my-6 border-t border-gray-100" />
-                                    <DetailItem icon={User} label="Analista" value="Rodrigo" />
-                                    <DetailItem icon={User} label="Projetista" value="Ronaldo Portobello" />
-                                    <div className="my-6 border-t border-gray-100" />
-                                    <DetailItem icon={Mail} label="E-mail" value="francisco@fffagundes.com.br" />
-                                    <DetailItem icon={Phone} label="Telefone" value="(00) 000000-0000" />
-                                    <DetailItem icon={MapPin} label="Endereço" value="Residencial Cláudio Marchetti, Rua Três – Cuiabá, MT 78076-308" />
-
-                                    <div className="flex gap-2 mt-6">
-                                        <Button variant="outline" size="icon" className="rounded-full w-10 h-10 border-gray-200"><Phone className="w-4 h-4 text-gray-600" /></Button>
-                                        <Button variant="outline" size="icon" className="rounded-full w-10 h-10 border-gray-200"><Mail className="w-4 h-4 text-gray-600" /></Button>
-                                    </div>
-                                </div>
-                            </Card>
                         </div>
                     </div>
                 </TabsContent>
@@ -246,7 +298,19 @@ export function CorporateProposalDetail({ proposal, onBack }) {
                             <Button className="rounded-full bg-purple-500 hover:bg-purple-600 text-white font-medium border-0">Analisar Documentos</Button>
                         </div>
                         <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-6 space-y-2"><div className="flex items-center gap-2 text-red-600"><AlertTriangle className="w-4 h-4" /><span className="text-sm font-medium">Matrícula do imóvel prestes a vencer. (Faltam 3 dias)</span></div><div className="flex items-center gap-2 text-red-600"><AlertTriangle className="w-4 h-4" /><span className="text-sm font-medium">Projeto vencido.</span></div></div>
-                        <Table><TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-[300px]">Nome</TableHead><TableHead>Data de emissão</TableHead><TableHead>Data de validade</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader><TableBody>{documentsData.map((doc, index) => (<TableRow key={index} className="h-14"><TableCell className="font-medium">{doc.name}</TableCell><TableCell>{doc.emission}</TableCell><TableCell>{doc.valid}</TableCell><TableCell><StatusBadge status={doc.status} /></TableCell><TableCell className="text-right"><div className="flex justify-end gap-2"><Button variant="ghost" size="icon" className="h-8 w-8 bg-gray-100"><MoreHorizontal className="w-4 h-4" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 bg-gray-100"><ArrowLeft className="w-4 h-4 rotate-180" /></Button></div></TableCell></TableRow>))}</TableBody></Table>
+
+                        {/* New Document Viewer Integration */}
+                        <DocumentViewer
+                            documents={(proposal?.documents || []).map(doc => ({
+                                ...doc,
+                                id: doc.id,
+                                title: doc.title || doc.fileName || "Sem Título",
+                                type: doc.fileType || 'pdf',
+                                url: doc.url || null,
+                                date: doc.createdAt,
+                                status: doc.status
+                            }))}
+                        />
 
                         <div className="mt-8 border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-gray-400">
                             <FileBox className="w-12 h-12 mb-4 text-gray-300" />
