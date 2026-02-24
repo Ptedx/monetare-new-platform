@@ -14,7 +14,9 @@ import {
   Settings,
   LogOut,
   Search,
-  FilePlus
+  FilePlus,
+  DollarSign,
+  ShieldCheck
 } from "lucide-react";
 
 const menuItems = {
@@ -22,7 +24,9 @@ const menuItems = {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Columns3, label: "Pipeline", path: "/pipeline" },
     { icon: Briefcase, label: "Propostas", path: "/propostas" },
-    { icon: Briefcase, label: "Carteira", path: "/carteira" }, // Added Carteira
+    { icon: Briefcase, label: "Carteira", path: "/carteira" },
+    { icon: DollarSign, label: "Cobrança", path: "/cobranca" },
+    { icon: ShieldCheck, label: "Seguros", path: "/seguros" },
   ],
   ferramentas: [
     { icon: FilePlus, label: "Cadastro de Proposta", path: "/cadastro-proposta" },
@@ -41,7 +45,8 @@ export function Sidebar() {
   const roleNames = {
     gerente: 'Gerente de Contas',
     analista: 'Analista',
-    projetista: 'Projetista'
+    projetista: 'Projetista',
+    posvenda: 'Pós Venda'
   };
 
   // Filter logic
@@ -58,6 +63,11 @@ export function Sidebar() {
         return item.label === 'Propostas';
       }
 
+      // Posvenda: Only Cobrança and Seguros
+      if (userRole === 'posvenda') {
+        return item.label === 'Cobrança' || item.label === 'Seguros';
+      }
+
       // Carteira: Only for Analista and Projetista
       if (item.label === "Carteira") {
         return userRole === 'analista' || userRole === 'projetista';
@@ -66,12 +76,18 @@ export function Sidebar() {
       if (item.label === "Propostas") {
         return userRole === 'gerente' || userRole === 'cliente';
       }
+
+      // Cobrança and Seguros: Only for Posvenda and maybe someone else? Hide for others for now.
+      if (item.label === "Cobrança" || item.label === "Seguros") {
+        return userRole === 'posvenda';
+      }
+
       // Default: show for all (Dashboard, Pipeline)
       return true;
     }),
     ferramentas: menuItems.ferramentas.filter(item => {
-      // Ambregulatorio: No tools
-      if (userRole === 'ambregulatorio') {
+      // Ambregulatorio and Posvenda: No tools
+      if (userRole === 'ambregulatorio' || userRole === 'posvenda') {
         return false;
       }
 
@@ -98,6 +114,7 @@ export function Sidebar() {
 
   const getHomeLink = () => {
     if (userRole === 'cliente') return '/propostas';
+    if (userRole === 'posvenda') return '/cobranca';
     return '/dashboard';
   };
 
@@ -109,8 +126,8 @@ export function Sidebar() {
             <>
               <Link href={getHomeLink()}>
                 <div className="flex flex-col items-center gap-1 cursor-pointer">
-                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') ? 'text-white' : 'text-gray-600'}`} />
+                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'text-white' : 'text-gray-600'}`} />
                   </div>
                   <span className="text-[11px] text-gray-600">Home</span>
                 </div>

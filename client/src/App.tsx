@@ -17,6 +17,11 @@ import { Chat } from "@/pages/Chat";
 import { CadastroProposta } from "@/pages/CadastroProposta";
 import { Carteira } from "@/pages/Carteira";
 import { Pagamentos } from "@/pages/Pagamentos";
+import { Cobranca } from "@/pages/Cobranca";
+import { CobrancaDetail } from "@/pages/CobrancaDetail";
+import { Seguros } from "@/pages/Seguros";
+import { CotacaoSeguro } from "@/pages/CotacaoSeguro";
+import { SeguroDetail } from "@/pages/SeguroDetail";
 
 function Router() {
   return (
@@ -33,6 +38,11 @@ function Router() {
       <Route path="/chat" component={Chat} />
       <Route path="/cadastro-proposta" component={CadastroProposta} />
       <Route path="/pagamentos" component={Pagamentos} />
+      <Route path="/cobranca" component={Cobranca} />
+      <Route path="/cobranca/:id" component={CobrancaDetail} />
+      <Route path="/seguros" component={Seguros} />
+      <Route path="/cotacao-seguro" component={CotacaoSeguro} />
+      <Route path="/seguros/:id" component={SeguroDetail} />
       <Route component={NotFound} />
     </Switch>
   );
