@@ -16,7 +16,8 @@ import {
   Search,
   FilePlus,
   DollarSign,
-  ShieldCheck
+  ShieldCheck,
+  MapPin
 } from "lucide-react";
 
 const menuItems = {
@@ -25,6 +26,8 @@ const menuItems = {
     { icon: Columns3, label: "Pipeline", path: "/pipeline" },
     { icon: Briefcase, label: "Propostas", path: "/propostas" },
     { icon: Briefcase, label: "Carteira", path: "/carteira" },
+    { icon: Megaphone, label: "Canais", path: "/canais" },
+    { icon: MapPin, label: "Visitas", path: "/visitas" },
     { icon: DollarSign, label: "Cobrança", path: "/cobranca" },
     { icon: ShieldCheck, label: "Seguros", path: "/seguros" },
   ],
