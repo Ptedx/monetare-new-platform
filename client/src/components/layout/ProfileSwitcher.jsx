@@ -12,6 +12,8 @@ export function ProfileSwitcher() {
             redirectPath = "/propostas";
         } else if (newRole === 'posvenda') {
             redirectPath = "/cobranca";
+        } else if (newRole === 'juridico') {
+            redirectPath = "/propostas";
         }
 
         // Attempt to redirect if we aren't already on the designated landing page
@@ -39,6 +41,7 @@ export function ProfileSwitcher() {
                     <SelectItem value="cliente">Cliente</SelectItem>
                     <SelectItem value="posvenda">Pós Venda</SelectItem>
                     <SelectItem value="gerencial">Gerencial</SelectItem>
+                    <SelectItem value="juridico">Jurídico</SelectItem>
                 </SelectContent>
             </Select>
         </div>

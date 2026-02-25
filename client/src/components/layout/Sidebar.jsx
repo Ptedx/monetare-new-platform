@@ -50,7 +50,8 @@ export function Sidebar() {
     analista: 'Analista',
     projetista: 'Projetista',
     posvenda: 'Pós Venda',
-    gerencial: 'Gerencial'
+    gerencial: 'Gerencial',
+    juridico: 'Jurídico'
   };
 
   // Filter logic
@@ -126,7 +127,7 @@ export function Sidebar() {
   };
 
   const getHomeLink = () => {
-    if (userRole === 'cliente') return '/propostas';
+    if (userRole === 'cliente' || userRole === 'juridico') return '/propostas';
     if (userRole === 'posvenda') return '/cobranca';
     return '/dashboard';
   };
@@ -139,8 +140,8 @@ export function Sidebar() {
             <>
               <Link href={getHomeLink()}>
                 <div className="flex flex-col items-center gap-1 cursor-pointer">
-                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || (userRole === 'cliente' && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'text-white' : 'text-gray-600'}`} />
+                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || ((userRole === 'cliente' || userRole === 'juridico') && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || ((userRole === 'cliente' || userRole === 'juridico') && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'text-white' : 'text-gray-600'}`} />
                   </div>
                   <span className="text-[11px] text-gray-600">Home</span>
                 </div>
@@ -155,7 +156,7 @@ export function Sidebar() {
                   </div>
                 </Link>
               )}
-              {userRole !== 'gerencial' && (
+              {userRole !== 'gerencial' && userRole !== 'juridico' && (
                 <Link href="/chat">
                   <div className="flex flex-col items-center gap-1 cursor-pointer">
                     <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/chat' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
@@ -179,7 +180,7 @@ export function Sidebar() {
           )}
         </div>
         <div className="flex flex-col gap-2">
-          {userRole !== 'gerencial' ? (
+          {userRole !== 'gerencial' && userRole !== 'juridico' ? (
             <>
               <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
                 <Headphones className="w-4 h-4 text-gray-700" />
@@ -206,7 +207,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {userRole !== 'gerencial' && !location.startsWith('/aprender') && (
+      {userRole !== 'gerencial' && userRole !== 'juridico' && !location.startsWith('/aprender') && (
         <div className="flex-1 flex flex-col justify-between py-6 px-4 bg-white w-[248px]">
           <div className="flex flex-col gap-6">
             <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500">

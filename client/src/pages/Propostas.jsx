@@ -4,6 +4,7 @@ import { Layout } from "@/components/layout/Layout";
 import { ProposalList } from "@/components/proposals/ProposalList";
 import { ProposalDetail } from "@/components/proposals/ProposalDetail";
 import { ClientProposalDetail } from "@/components/proposals/ClientProposalDetail";
+import { JuridicoProposalDetail } from "@/components/proposals/JuridicoProposalDetail";
 
 export function Propostas() {
   const [selectedProposal, setSelectedProposal] = useState(null);
@@ -22,6 +23,11 @@ export function Propostas() {
       {selectedProposal ? (
         userRole === 'cliente' ? (
           <ClientProposalDetail
+            proposal={selectedProposal}
+            onBack={() => setSelectedProposal(null)}
+          />
+        ) : userRole === 'juridico' ? (
+          <JuridicoProposalDetail
             proposal={selectedProposal}
             onBack={() => setSelectedProposal(null)}
           />

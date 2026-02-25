@@ -54,8 +54,11 @@ export function Login() {
     } else if (cleanEmail === "gerencial@gmail.com") {
       localStorage.setItem('userRole', 'gerencial');
       setLocation("/dashboard");
+    } else if (cleanEmail === "juridico@gmail.com") {
+      localStorage.setItem('userRole', 'juridico');
+      setLocation("/propostas");
     } else {
-      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com, cliente@gmail.com, posvenda@gmail.com ou gerencial@gmail.com");
+      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com, cliente@gmail.com, posvenda@gmail.com, gerencial@gmail.com ou juridico@gmail.com");
     }
   };
 
@@ -130,6 +133,7 @@ export function Login() {
                           <SelectItem value="cliente@gmail.com">Cliente</SelectItem>
                           <SelectItem value="posvenda@gmail.com">Pós Venda</SelectItem>
                           <SelectItem value="gerencial@gmail.com">Gerencial</SelectItem>
+                          <SelectItem value="juridico@gmail.com">Jurídico</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -131,6 +131,33 @@ const clientMockProposals = [
   }
 ];
 
+const juridicoMockProposals = [
+  {
+    id: 201,
+    name: "Victor Oliveira de Sá",
+    hash: "lM3312f324",
+    value: "50.250,34",
+    statusBadge: "A ANALISAR",
+    statusType: "neutral" // gray
+  },
+  {
+    id: 202,
+    name: "Sebastião de Souza",
+    hash: "287posSrQ42",
+    value: "50.250,34",
+    statusBadge: "EM ASSINATURA",
+    statusType: "warning" // yellow
+  },
+  {
+    id: 203,
+    name: "Paula Diniz",
+    hash: "a8876h09ffersp",
+    value: "75.000,00",
+    statusBadge: "ASSINADO",
+    statusType: "success" // green
+  }
+];
+
 const getScoreColor = (score) => {
   switch (score) {
     case "AA": return "bg-green-500 hover:bg-green-600";
@@ -153,6 +180,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
 
   const [clientTab, setClientTab] = useState("Todos");
   const [clientProposals, setClientProposals] = useState([]);
+  const [juridicoProposals, setJuridicoProposals] = useState([]);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -163,6 +191,14 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
       } else {
         setClientProposals(clientMockProposals);
         localStorage.setItem("clientProposals", JSON.stringify(clientMockProposals));
+      }
+    } else if (userRole === 'juridico') {
+      const storedJuridico = localStorage.getItem("juridicoProposals");
+      if (storedJuridico) {
+        setJuridicoProposals(JSON.parse(storedJuridico));
+      } else {
+        setJuridicoProposals(juridicoMockProposals);
+        localStorage.setItem("juridicoProposals", JSON.stringify(juridicoMockProposals));
       }
     } else {
       const stored = localStorage.getItem("proposals");
@@ -252,6 +288,86 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
               Nenhuma proposta encontrada nesta categoria.
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // ----- JURIDICO VIEW -----
+  if (userRole === 'juridico') {
+    const filteredJuridico = juridicoProposals.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.hash.toLowerCase().includes(search.toLowerCase()));
+
+    return (
+      <div className="p-8 w-full max-w-6xl mx-auto space-y-6">
+        <div>
+          <h1 className="text-3xl lg:text-4xl text-gray-900 mb-8">Caixa de Entrada</h1>
+
+          <div className="flex items-center gap-2 mb-6">
+            <div className="relative w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50">
+              <Search className="w-4 h-4 text-gray-600" />
+            </div>
+            <div className="relative w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50">
+              <Filter className="w-4 h-4 text-gray-600" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden shadow-sm">
+            <Table>
+              <TableHeader className="bg-gray-50/50">
+                <TableRow className="hover:bg-transparent border-b-gray-100">
+                  <TableHead className="w-[30%] text-gray-500 font-medium">Cliente</TableHead>
+                  <TableHead className="text-gray-500 font-medium">Proposta</TableHead>
+                  <TableHead className="text-gray-500 font-medium">Valor (R$)</TableHead>
+                  <TableHead className="text-gray-500 font-medium">Status</TableHead>
+                  <TableHead className="text-right text-gray-500 font-medium">Abrir</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredJuridico.map((proposal) => (
+                  <TableRow
+                    key={proposal.id}
+                    className="cursor-pointer hover:bg-gray-50/80 border-b-gray-50"
+                    onClick={() => onSelectProposal(proposal)}
+                  >
+                    <TableCell className="font-medium text-gray-900">{proposal.name}</TableCell>
+                    <TableCell className="text-gray-600">{proposal.hash}</TableCell>
+                    <TableCell className="text-gray-900 font-medium">{proposal.value}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${proposal.statusType === 'neutral' ? 'bg-gray-200 text-gray-700' :
+                          proposal.statusType === 'warning' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                            'bg-green-100 text-green-700 border border-green-200'
+                        }`}>
+                        {proposal.statusBadge}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex w-8 h-8 rounded-lg bg-gray-100 items-center justify-center group-hover:bg-[#cceebd] transition-colors">
+                        <ArrowUpRight className="w-4 h-4 text-gray-600" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredJuridico.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-gray-500 bg-white">
+                      Nenhuma proposta encontrada.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6 text-sm text-gray-500 items-center">
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&lt;&lt;</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&lt;</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#92dc49] bg-[#f0f4f1] text-gray-900 font-bold">1</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">2</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">3</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">...</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&gt;</span>
+            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&gt;&gt;</span>
+          </div>
         </div>
       </div>
     );
