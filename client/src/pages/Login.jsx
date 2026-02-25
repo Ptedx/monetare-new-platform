@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Lock, Mail, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function Login() {
   const [, setLocation] = useLocation();
@@ -12,10 +13,23 @@ export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/fundo-siga.png';
+    img.onload = () => setImageLoaded(true);
+    img.onerror = () => setImageLoaded(true); // Fallback to avoid infinite loading
+  }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
     setError("");
+
+    if (!email) {
+      setError("Por favor, selecione um perfil de acesso.");
+      return;
+    }
 
     const cleanEmail = email.toLowerCase().trim();
 
@@ -45,13 +59,22 @@ export function Login() {
     }
   };
 
+  if (!imageLoaded) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 bg-opacity-90">
+        <div className="w-12 h-12 border-4 border-[#92dc49] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-gray-500 font-medium">Carregando S.I.G.A...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1628160424522-8692793b890a?q=80&w=2574&auto=format&fit=crop')`,
+          backgroundImage: `url('/fundo-siga.png')`,
         }}
       >
         {/* Gradient Overlay matching the reference (Green/Yellow tint) */}
@@ -90,20 +113,25 @@ export function Login() {
               <form onSubmit={handleLogin} className="space-y-5 md:space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-gray-700 font-medium">E-mail</Label>
+                    <Label htmlFor="email" className="text-gray-700 font-medium">Conta de Acesso</Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded bg-gray-100 text-gray-500 group-focus-within:bg-[#92dc49]/10 group-focus-within:text-[#92dc49] transition-colors">
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 rounded bg-gray-100 text-gray-500 z-10 group-focus-within:text-[#92dc49]">
                         <Mail className="w-4 h-4" />
                       </div>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="nome@empresa.com.br"
-                        className="pl-12 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#92dc49] focus:ring-[#92dc49]/20 transition-all rounded-xl"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
+                      <Select value={email} onValueChange={setEmail}>
+                        <SelectTrigger className="pl-12 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#92dc49] focus:ring-[#92dc49]/20 transition-all rounded-xl w-full">
+                          <SelectValue placeholder="Selecione um perfil de acesso" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border-gray-100 rounded-xl shadow-lg">
+                          <SelectItem value="gerente@gmail.com">Gerente de Contas</SelectItem>
+                          <SelectItem value="analista@gmail.com">Analista</SelectItem>
+                          <SelectItem value="projetista@gmail.com">Projetista</SelectItem>
+                          <SelectItem value="ambregulatorio@gmail.com">Ambiente Regulatório</SelectItem>
+                          <SelectItem value="cliente@gmail.com">Cliente</SelectItem>
+                          <SelectItem value="posvenda@gmail.com">Pós Venda</SelectItem>
+                          <SelectItem value="gerencial@gmail.com">Gerencial</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
@@ -122,7 +150,6 @@ export function Login() {
                         className="pl-12 pr-10 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#92dc49] focus:ring-[#92dc49]/20 transition-all rounded-xl"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        required
                       />
                       <button
                         type="button"
