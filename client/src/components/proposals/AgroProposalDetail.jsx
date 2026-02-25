@@ -4,6 +4,7 @@ import {
 } from "recharts";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,7 +13,8 @@ import {
     User, Mail, Phone, MapPin, ArrowLeft, Building2, Users, Hash, MoreHorizontal,
     Send, AlertTriangle, AlertCircle, XCircle, CheckCircle2, Download, Eye, FileText, Search,
     ChevronDown, Filter, FileBox, Sprout, Tractor, Timer, TrendingUp, Droplets,
-    Thermometer, Ruler, Gavel, Scale, Check, ChevronLeft
+    Thermometer, Ruler, Gavel, Scale, Check, ChevronLeft,
+    Headphones, FileEdit, ArrowRight, RefreshCw, X as XIcon
 } from "lucide-react";
 import { RatingCard, DetailItem, StatCard, StatusBadge, ScoreCircle, TimelineStep } from "./ProposalHelpers";
 import { ProfileResult } from "../profile/ProfileResult";
@@ -82,10 +84,66 @@ export function AgroProposalDetail({ proposal, onBack }) {
                     <h1 className="text-3xl font-bold text-gray-900">{proposal?.name || "Fernando Fagundes"}</h1>
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="rounded-full px-6 border-gray-300 text-gray-600 hover:bg-gray-50">
-                        Ações
-                        <ChevronDown className="w-4 h-4 ml-2" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-full px-6 border-gray-300 text-gray-600 hover:bg-gray-50">
+                                Ações
+                                <ChevronDown className="w-4 h-4 ml-2" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-64 p-2 rounded-xl shadow-xl mt-2 border-gray-100">
+
+                            <DropdownMenuItem asChild className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium">
+                                <a href="/pdf_acoes.pdf" download="pdf_acoes.pdf" className="flex items-center w-full">
+                                    <Download className="w-4 h-4 text-purple-600" />
+                                    <span className="text-purple-600 underline decoration-purple-600/30 underline-offset-4">Gerar FIP-03</span>
+                                </a>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <Headphones className="w-5 h-5 text-gray-600" />
+                                Acionar BPO
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <FileEdit className="w-4 h-4 text-gray-600 ml-0.5" />
+                                Registrar observação
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <FileEdit className="w-4 h-4 text-gray-600 ml-0.5" />
+                                Solicitar complemento
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <ArrowRight className="w-5 h-5 text-gray-600" />
+                                Mover para An. de Risco
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <Send className="w-5 h-5 text-gray-600" />
+                                Enviar para comitê
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <Send className="w-5 h-5 text-gray-600" />
+                                Encaminhar para aprovação
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
+                                <RefreshCw className="w-5 h-5 text-gray-600" />
+                                Solicitar Open Finance
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator className="my-2 bg-gray-100" />
+
+                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-red-50 text-red-700 font-medium">
+                                <XIcon className="w-5 h-5" />
+                                Reprovar proposta
+                            </DropdownMenuItem>
+
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100">
                         <Send className="w-4 h-4 mr-2" />
                         Enviar para comitê

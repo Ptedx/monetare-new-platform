@@ -84,6 +84,11 @@ export function Sidebar() {
         return userRole === 'posvenda';
       }
 
+      // Canais and Visitas: Only for Gerente
+      if (item.label === "Canais" || item.label === "Visitas") {
+        return userRole === 'gerente';
+      }
+
       // Default: show for all (Dashboard, Pipeline)
       return true;
     }),
