@@ -17,7 +17,8 @@ import {
   FilePlus,
   DollarSign,
   ShieldCheck,
-  MapPin
+  MapPin,
+  GraduationCap
 } from "lucide-react";
 
 const menuItems = {
@@ -144,6 +145,16 @@ export function Sidebar() {
                   <span className="text-[11px] text-gray-600">Home</span>
                 </div>
               </Link>
+              {userRole === 'projetista' && (
+                <Link href="/aprender">
+                  <div className="flex flex-col items-center gap-1 cursor-pointer">
+                    <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location.startsWith('/aprender') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
+                      <GraduationCap className={`w-8 h-8 ${location.startsWith('/aprender') ? 'text-white' : 'text-gray-600'}`} />
+                    </div>
+                    <span className="text-[11px] text-gray-600 font-medium">Aprender</span>
+                  </div>
+                </Link>
+              )}
               {userRole !== 'gerencial' && (
                 <Link href="/chat">
                   <div className="flex flex-col items-center gap-1 cursor-pointer">
@@ -195,7 +206,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {userRole !== 'gerencial' && (
+      {userRole !== 'gerencial' && !location.startsWith('/aprender') && (
         <div className="flex-1 flex flex-col justify-between py-6 px-4 bg-white w-[248px]">
           <div className="flex flex-col gap-6">
             <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500">

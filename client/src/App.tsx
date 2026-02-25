@@ -29,6 +29,8 @@ import { CotacaoSeguro } from "@/pages/CotacaoSeguro";
 import { SeguroDetail } from "@/pages/SeguroDetail";
 import { Canais } from "@/pages/Canais";
 import { Visitas } from "@/pages/Visitas";
+import { Aprender } from "@/pages/Aprender";
+import { AprenderArticle } from "@/pages/AprenderArticle";
 
 function Router() {
   return (
@@ -52,6 +54,8 @@ function Router() {
       <Route path="/seguros" component={Seguros} />
       <Route path="/cotacao-seguro" component={CotacaoSeguro} />
       <Route path="/seguros/:id" component={SeguroDetail} />
+      <Route path="/aprender" component={Aprender} />
+      <Route path="/aprender/:id" component={AprenderArticle} />
       <Route component={NotFound} />
     </Switch>
   );
