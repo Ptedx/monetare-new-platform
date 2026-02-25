@@ -192,8 +192,8 @@ export function RelacionamentoTab() {
                             <button className="px-3 py-1 text-white hover:text-white text-sm font-semibold">+</button>
                         </div>
                         <MapContainer
-                            center={[-9.5, -48.0]}
-                            zoom={6}
+                            center={[-1.4, -48.4]}
+                            zoom={10}
                             style={{ height: '100%', width: '100%' }}
                             zoomControl={false}
                         >
@@ -206,7 +206,7 @@ export function RelacionamentoTab() {
                                     key={`marker-${index}`}
                                     center={[project.lat, project.lng]}
                                     pathOptions={{ color: project.color, fillColor: project.color, fillOpacity: 0.7, weight: 0 }}
-                                    radius={project.z / 3.5}
+                                    radius={project.z / 15}
                                 >
                                     <LeafletPopup>
                                         <strong>{project.name}</strong><br />

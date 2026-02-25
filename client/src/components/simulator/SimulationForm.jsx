@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calculator, Sprout, Tractor } from "lucide-react";
+import { Calculator, Leaf, Building2, Layers, Wallet } from "lucide-react";
 
 export function SimulationForm({ onSubmit, initialData }) {
     const [formData, setFormData] = useState(initialData || {
-        type: "investimento",
+        type: "agro",
         name: "",
         cpf: "",
         companyName: "",
@@ -92,34 +92,64 @@ export function SimulationForm({ onSubmit, initialData }) {
 
     return (
         <div className="max-w-5xl mx-auto">
-            <h1 className="text-4xl font-bold mb-2">Simulador</h1>
+            <h1 className="text-[32px] font-medium text-gray-900 mb-6">Simulador</h1>
             <p className="text-gray-500 mb-8">Qual é o produto que melhor atende seu cliente?</p>
 
-            <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                {/* Agro */}
                 <div
-                    onClick={() => handleChange("type", "investimento")}
-                    className={`cursor-pointer p-6 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-4 h-32 ${formData.type === "investimento"
-                            ? "border-[#92dc49] bg-white shadow-lg"
-                            : "border-gray-200 bg-gray-50 hover:bg-white"
+                    onClick={() => handleChange("type", "agro")}
+                    className={`cursor-pointer p-6 rounded-2xl border transition-all flex flex-col h-[120px] ${formData.type === "agro"
+                        ? "border-[#8cc63f] bg-white ring-1 ring-[#8cc63f] shadow-sm"
+                        : "border-gray-100 bg-white hover:border-[#8cc63f]/50 shadow-sm"
                         }`}
                 >
-                    <div className={`p-3 rounded-full ${formData.type === "investimento" ? "bg-[#92dc49]/20 text-[#7ab635]" : "bg-gray-200 text-gray-500"}`}>
-                        <Tractor className="w-6 h-6" />
+                    <div className="w-full flex justify-end">
+                        <Leaf className="w-6 h-6 text-[#8cc63f]" strokeWidth={1.5} />
                     </div>
-                    <span className={`font-semibold ${formData.type === "investimento" ? "text-gray-900" : "text-gray-500"}`}>Investimentos</span>
+                    <span className="font-medium text-gray-900 mt-auto text-[16px]">Agro</span>
                 </div>
 
+                {/* Corporate */}
                 <div
-                    onClick={() => handleChange("type", "custeio")}
-                    className={`cursor-pointer p-6 rounded-xl border-2 transition-all flex flex-col items-center justify-center gap-4 h-32 ${formData.type === "custeio"
-                            ? "border-[#92dc49] bg-[#92dc49] text-white shadow-lg"
-                            : "border-gray-200 bg-gray-50 hover:bg-white"
+                    onClick={() => handleChange("type", "corporate")}
+                    className={`cursor-pointer p-6 rounded-2xl border transition-all flex flex-col h-[120px] ${formData.type === "corporate"
+                        ? "border-[#8cc63f] bg-white ring-1 ring-[#8cc63f] shadow-sm"
+                        : "border-gray-100 bg-white hover:border-[#8cc63f]/50 shadow-sm"
                         }`}
                 >
-                    <div className={`p-3 rounded-full ${formData.type === "custeio" ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"}`}>
-                        <Sprout className="w-6 h-6" />
+                    <div className="w-full flex justify-end">
+                        <Building2 className="w-6 h-6 text-[#8cc63f]" strokeWidth={1.5} />
                     </div>
-                    <span className={`font-semibold ${formData.type === "custeio" ? "text-white" : "text-gray-500"}`}>Custeio</span>
+                    <span className="font-medium text-gray-900 mt-auto text-[16px]">Corporate</span>
+                </div>
+
+                {/* Middle market */}
+                <div
+                    onClick={() => handleChange("type", "middle_market")}
+                    className={`cursor-pointer p-6 rounded-2xl border transition-all flex flex-col h-[120px] ${formData.type === "middle_market"
+                        ? "border-[#8cc63f] bg-white ring-1 ring-[#8cc63f] shadow-sm"
+                        : "border-gray-100 bg-white hover:border-[#8cc63f]/50 shadow-sm"
+                        }`}
+                >
+                    <div className="w-full flex justify-end">
+                        <Layers className="w-6 h-6 text-[#8cc63f]" strokeWidth={1.5} />
+                    </div>
+                    <span className="font-medium text-gray-900 mt-auto text-[16px]">Middle market</span>
+                </div>
+
+                {/* Varejo */}
+                <div
+                    onClick={() => handleChange("type", "varejo")}
+                    className={`cursor-pointer p-6 rounded-2xl border transition-all flex flex-col h-[120px] ${formData.type === "varejo"
+                        ? "border-[#8cc63f] bg-white ring-1 ring-[#8cc63f] shadow-sm"
+                        : "border-gray-100 bg-white hover:border-[#8cc63f]/50 shadow-sm"
+                        }`}
+                >
+                    <div className="w-full flex justify-end">
+                        <Wallet className="w-6 h-6 text-[#8cc63f]" strokeWidth={1.5} />
+                    </div>
+                    <span className="font-medium text-gray-900 mt-auto text-[16px]">Varejo</span>
                 </div>
             </div>
 
@@ -217,7 +247,7 @@ export function SimulationForm({ onSubmit, initialData }) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-6 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-6 pt-4 border-t">
                     <div className="space-y-2">
                         <Label>Valor do projeto</Label>
                         <Input
@@ -228,22 +258,11 @@ export function SimulationForm({ onSubmit, initialData }) {
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label>Sistema de Amortização</Label>
-                        <Select value={formData.amortizationSystem} onValueChange={(v) => handleChange("amortizationSystem", v)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="sac">SAC (Amortização Constante)</SelectItem>
-                                <SelectItem value="price">PRICE (Parcelas Fixas)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
                         <Label>Valor financiado</Label>
                         <Input
                             type="text"
                             placeholder="R$ 0,00"
+                            className="bg-gray-100/50"
                             value={formatCurrency(formData.financeValue)}
                             onChange={(e) => handleCurrencyChange("financeValue", e.target.value)}
                         />

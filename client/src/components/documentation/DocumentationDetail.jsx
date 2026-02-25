@@ -5,10 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Eye, Send, MoreHorizontal, ArrowUpRight, Search, Filter, AlertTriangle, Building, User, Mail, Phone, MapPin, FileText, CheckCircle, Clock, ChevronRight } from "lucide-react";
+import { ArrowLeft, Eye, Send, MoreHorizontal, ArrowUpRight, Search, Filter, AlertTriangle, Building, User, Mail, Phone, MapPin, FileText, CheckCircle, Clock, ChevronRight, CheckCircle2, XCircle, ChevronLeft } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export function DocumentationDetail({ client, onBack }) {
     const [activeTab, setActiveTab] = useState("Documentação");
+    const [showDocAnalysis, setShowDocAnalysis] = useState(false);
+    const [selectedDoc, setSelectedDoc] = useState('Matrícula');
 
     // Mock data specifically for the detail view
     const documents = [
@@ -47,7 +50,7 @@ export function DocumentationDetail({ client, onBack }) {
                     <h1 className="text-3xl font-bold">{client?.name || "Fernando Fagundes"}</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Button className="bg-purple-500 hover:bg-purple-600 text-white rounded-full">
+                    <Button className="bg-purple-500 hover:bg-purple-600 text-white rounded-full" onClick={() => setShowDocAnalysis(true)}>
                         <Eye className="w-4 h-4 mr-2" />
                         Analisar Documentos
                     </Button>
@@ -127,7 +130,7 @@ export function DocumentationDetail({ client, onBack }) {
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-gray-100">
                                                     <MoreHorizontal className="w-4 h-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-gray-100">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-gray-100" onClick={() => setShowDocAnalysis(true)}>
                                                     <ArrowUpRight className="w-4 h-4" />
                                                 </Button>
                                             </div>
@@ -396,6 +399,146 @@ export function DocumentationDetail({ client, onBack }) {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* Document Analysis Modal */}
+            <Dialog open={showDocAnalysis} onOpenChange={setShowDocAnalysis}>
+                <DialogContent className="max-w-[100vw] w-screen h-screen bg-[#333333] border-none rounded-none p-4 flex gap-4 overflow-hidden">
+                    {/* Left Sidebar - Documents List (Floating Card) */}
+                    <div className="w-56 bg-[#f8f9fa] rounded-2xl flex flex-col p-4 shadow-2xl" style={{ height: '50%' }}>
+                        <div className="flex items-center gap-2 mb-6">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 -ml-2" onClick={() => setShowDocAnalysis(false)}>
+                                <ArrowLeft className="w-4 h-4" />
+                            </Button>
+                            <span className="font-semibold text-xs truncate">{client?.name || "Fernando Fagundes"}</span>
+                        </div>
+
+                        <div className="space-y-2">
+                            <p className="text-[10px] uppercase font-bold text-gray-400 mb-2 px-2">Documentos</p>
+
+                            {/* Matrícula Item */}
+                            <div
+                                onClick={() => setSelectedDoc('Matrícula')}
+                                className={`p-3 rounded-xl text-xs font-bold flex items-center gap-3 cursor-pointer transition-all border ${selectedDoc === 'Matrícula' ? 'bg-[#efffdb] text-[#558b2f] border-[#dcebc0] shadow-sm' : 'hover:bg-white text-gray-500 border-transparent hover:border-gray-100 hover:shadow-sm'}`}
+                            >
+                                <FileText className={`w-4 h-4 ${selectedDoc === 'Matrícula' ? 'fill-[#558b2f] text-transparent' : 'text-gray-400'}`} />
+                                Matrícula
+                            </div>
+
+                            {/* CPF Item */}
+                            <div
+                                onClick={() => setSelectedDoc('CNPJ')}
+                                className={`p-3 rounded-xl text-xs font-bold flex items-center gap-3 cursor-pointer transition-all border ${selectedDoc === 'CNPJ' ? 'bg-purple-50 text-purple-700 border-purple-100 shadow-sm' : 'hover:bg-white text-gray-500 border-transparent hover:border-gray-100 hover:shadow-sm'}`}
+                            >
+                                <FileText className={`w-4 h-4 ${selectedDoc === 'CNPJ' ? 'text-purple-500' : 'text-gray-400'}`} />
+                                CNPJ
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Center - Image Viewer */}
+                    <div className="flex-1 flex items-center justify-center relative rounded-2xl overflow-hidden bg-[#222]">
+                        <div className="w-full h-full overflow-auto flex items-center justify-center p-8 custom-scrollbar-dark">
+                            {selectedDoc === 'Matrícula' ? (
+                                <div className="relative shadow-2xl origin-center">
+                                    <div className="w-[500px] h-[700px] bg-[#fdfbf7] relative text-[9px] font-serif leading-relaxed p-10 select-none shadow-black/50 shadow-2xl">
+                                        <div className="absolute top-0 right-0 p-4 text-right text-[10px]">São Paulo, <span className="text-blue-700 bg-blue-100/50 px-1 border border-blue-400">05</span> de <span className="text-blue-700 bg-blue-100/50 px-1 border border-blue-400">novembro</span> de <span className="text-blue-700 bg-blue-100/50 px-1 border border-blue-400">1998.</span></div>
+
+                                        <div className="mt-8 text-justify">
+                                            <span className="font-bold border border-blue-600 text-blue-800 bg-blue-50/30 px-1">IMÓVEL:-</span> Terreno situado na Rua <span className="bg-gray-200 text-transparent rounded px-2">XXXXXX</span>, constituído pelo <span className="border border-blue-600 text-blue-800 bg-blue-50/30 px-1">lote nº 17 da quadra 8</span>, do <span className="bg-gray-200 text-transparent rounded px-2">XXXXXX</span> 29º Subdistrito - Santo Amaro, de forma irregular, medindo 19,20m de frente; 33,10m do lado direito de quem da rua olha o imóvel, confrontando com o lote nº 16; 27,90m do lado esquerdo confrontando com o lote nº 1, e 25,50m nos fundos confrontando com os lotes 2 e 3, encerrando a área de 670,00m2.
+                                        </div>
+
+                                        <div className="mt-6 text-justify">
+                                            <span className="font-bold border border-blue-600 text-blue-800 bg-blue-50/30 px-1">PROPRIETÁRIO:-</span> <span className="bg-blue-100/50 border border-blue-400 px-1 text-blue-800">EMPRESA X LTDA</span>, com sede nesta Capital.
+                                        </div>
+
+                                        <div className="mt-10 flex justify-center opacity-70">
+                                            <div className="text-center">
+                                                <div className="border-b border-black w-32 mb-1"></div>
+                                                <span>Oficial Substituto</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Zoom Controls Overlay */}
+                                    <div className="absolute bottom-6 right-6 bg-[#444] text-white rounded-full px-3 py-1 text-[10px] flex items-center gap-2 shadow-lg backdrop-blur-md bg-opacity-80">
+                                        <button className="hover:text-gray-300">-</button>
+                                        <span className="font-mono">350%</span>
+                                        <button className="hover:text-gray-300">+</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="relative shadow-2xl origin-center text-white">
+                                    <div className="text-center p-8 border border-dashed border-gray-600 rounded-xl">
+                                        <p>Documento {selectedDoc} não disponível para visualização.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right Sidebar - Checklist (Floating Card) */}
+                    <div className="w-72 bg-white rounded-2xl flex flex-col shadow-2xl overflow-hidden" style={{ height: '50%' }}>
+                        <div className="p-6 border-b border-gray-100">
+                            <h3 className="font-bold text-gray-900 text-sm">Checklist do Documento</h3>
+                        </div>
+
+                        <div className="flex-1 p-6 space-y-6 overflow-y-auto">
+                            {selectedDoc === 'Matrícula' ? (
+                                <>
+                                    <div className="space-y-1">
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-[#92dc49] rounded-full text-white p-0.5 mt-0.5 shadow-sm"><CheckCircle2 className="w-3 h-3" /></div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900">Endereço</p>
+                                                <p className="text-xs text-gray-400 mt-1">Lote 17 Quadra 8 Santo Amaro</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-purple-500 rounded-full text-white p-0.5 mt-0.5 shadow-sm"><FileText className="w-3 h-3" /></div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900">Data do documento</p>
+                                                <p className="text-xs text-gray-400 mt-1">05/11/1998</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-[#92dc49] rounded-full text-white p-0.5 mt-0.5 shadow-sm"><CheckCircle2 className="w-3 h-3" /></div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900">Proprietário</p>
+                                                <p className="text-xs text-green-600 font-bold mt-1">Compatível com a proposta.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="space-y-1">
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-[#92dc49] rounded-full text-white p-0.5 mt-0.5 shadow-sm"><CheckCircle2 className="w-3 h-3" /></div>
+                                            <div>
+                                                <p className="text-sm font-bold text-gray-900">CNPJ</p>
+                                                <p className="text-xs text-gray-400 mt-1">Regular na Receita Federal</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                            <Button className="w-full bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full font-bold shadow-lg shadow-green-100 transition-all h-12" onClick={() => setShowDocAnalysis(false)}>
+                                Avançar
+                                <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -17,10 +17,15 @@ import { Chat } from "@/pages/Chat";
 import { CadastroProposta } from "@/pages/CadastroProposta";
 import { Carteira } from "@/pages/Carteira";
 import { Pagamentos } from "@/pages/Pagamentos";
+// @ts-ignore
 import { Cobranca } from "@/pages/Cobranca";
+// @ts-ignore
 import { CobrancaDetail } from "@/pages/CobrancaDetail";
+// @ts-ignore
 import { Seguros } from "@/pages/Seguros";
+// @ts-ignore
 import { CotacaoSeguro } from "@/pages/CotacaoSeguro";
+// @ts-ignore
 import { SeguroDetail } from "@/pages/SeguroDetail";
 import { Canais } from "@/pages/Canais";
 import { Visitas } from "@/pages/Visitas";

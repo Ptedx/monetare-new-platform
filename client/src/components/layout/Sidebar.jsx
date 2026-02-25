@@ -99,13 +99,18 @@ export function Sidebar() {
         return ["Cadastro de Proposta", "Documentação", "Histórico", "Simulador"].includes(item.label);
       }
 
-      // Cadastro de Proposta: Only for Projetista AND Cliente
+      // Cadastro de Proposta: Only for Projetista, Cliente and Gerente
       if (item.label === "Cadastro de Proposta") {
-        return userRole === 'projetista' || userRole === 'cliente';
+        return userRole === 'projetista' || userRole === 'cliente' || userRole === 'gerente';
       }
 
       // Análise de Perfil: Not for Cliente
       if (item.label === "Análise de Perfil" && userRole === 'cliente') {
+        return false;
+      }
+
+      // Simulador: Hide for analista
+      if (item.label === "Simulador" && userRole === 'analista') {
         return false;
       }
 

@@ -178,8 +178,8 @@ export function DesempenhoTab() {
                     </div>
 
                     <MapContainer
-                        center={[-9.5, -48.0]}
-                        zoom={6}
+                        center={[-1.4, -48.4]}
+                        zoom={10}
                         style={{ height: '100%', width: '100%' }}
                         zoomControl={false}
                     >
