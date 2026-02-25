@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useLocation } from "wouter";
 import { ChevronLeft, ChevronDown, Paperclip, MoreHorizontal, ArrowUpRight, Search, Filter, PenTool, CheckCircle, Clock, Download, Check, FileText, CheckCircle2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export function JuridicoProposalDetail({ proposal, onBack }) {
+    const [, setLocation] = useLocation();
     const [activeTab, setActiveTab] = useState("Dossiê");
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [signed, setSigned] = useState(false);
@@ -287,7 +289,7 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                         <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                                 <div className="flex rounded-md border border-yellow-200 overflow-hidden text-xs cursor-pointer hover:opacity-80 transition-colors" onClick={() => setShowSignatureModal(true)}>
-                                    <button className={`flex items-center gap-1 px-3 py-1.5 font-medium transition-colors pointer-events-none ${signed ? 'bg-gray-200 text-gray-600' : 'bg-[#fceea5] text-yellow-800'}`}>
+                                    <button className={`flex items - center gap - 1 px - 3 py - 1.5 font - medium transition - colors pointer - events - none ${signed ? 'bg-gray-200 text-gray-600' : 'bg-[#fceea5] text-yellow-800'} `}>
                                         <PenTool className="w-3.5 h-3.5" /> {signed ? "Assinado" : "Assinar"}
                                     </button>
                                     <span className="px-2 py-1.5 bg-gray-50 text-gray-500 border-l border-yellow-200 font-medium">{signed ? '3/3' : '2/3'}</span>
@@ -371,9 +373,23 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                         <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 text-gray-700 bg-white shadow-sm">
                             <ChevronDown className="w-4 h-4" /> Ações
                         </button>
-                        <button className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors">
-                            {primaryButtonText}
-                        </button>
+                        {signed ? (
+                            <button
+                                className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors"
+                                onClick={() => {
+                                    localStorage.setItem('userRole', 'posvenda');
+                                    window.dispatchEvent(new Event('storage'));
+                                    setLocation(`/seguros/${proposal.id}`);
+                                    setTimeout(() => window.location.reload(), 100);
+                                }}
+                            >
+                                Enviar para Cotação e Seguro
+                            </button>
+                        ) : (
+                            <button className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors">
+                                {primaryButtonText}
+                            </button>
+                        )}
                     </div>
                 </div>
                 <div className="ml-12 text-sm text-gray-500">
@@ -388,10 +404,10 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                         <li className="me-2" key={tab}>
                             <button
                                 href="#"
-                                className={`inline-block pb-3 whitespace-nowrap ${activeTab === tab
+                                className={`inline - block pb - 3 whitespace - nowrap ${activeTab === tab
                                     ? "text-gray-900 border-b-2 border-[#92dc49]"
                                     : "text-gray-400 hover:text-gray-600 hover:border-b-2 hover:border-gray-300"
-                                    }`}
+                                    } `}
                                 onClick={(e) => {
                                     e.preventDefault();
                                     setActiveTab(tab);
@@ -428,17 +444,17 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
 
                             <div
                                 onClick={() => setSelectedDoc('Matrícula')}
-                                className={`p-3 rounded-xl text-xs font-bold flex items-center gap-3 cursor-pointer transition-all border ${selectedDoc === 'Matrícula' ? 'bg-[#efffdb] text-[#558b2f] border-[#dcebc0] shadow-sm' : 'hover:bg-white text-gray-500 border-transparent hover:border-gray-100 hover:shadow-sm'}`}
+                                className={`p - 3 rounded - xl text - xs font - bold flex items - center gap - 3 cursor - pointer transition - all border ${selectedDoc === 'Matrícula' ? 'bg-[#efffdb] text-[#558b2f] border-[#dcebc0] shadow-sm' : 'hover:bg-white text-gray-500 border-transparent hover:border-gray-100 hover:shadow-sm'} `}
                             >
-                                <FileText className={`w-4 h-4 ${selectedDoc === 'Matrícula' ? 'fill-[#558b2f] text-transparent' : 'text-gray-400'}`} />
+                                <FileText className={`w - 4 h - 4 ${selectedDoc === 'Matrícula' ? 'fill-[#558b2f] text-transparent' : 'text-gray-400'} `} />
                                 Matrícula
                             </div>
 
                             <div
                                 onClick={() => setSelectedDoc('Projeto')}
-                                className={`p-3 rounded-xl text-xs font-bold flex items-center gap-3 cursor-pointer transition-all border ${selectedDoc === 'Projeto' ? 'bg-[#efffdb] text-[#558b2f] border-[#dcebc0] shadow-sm' : 'hover:bg-white text-gray-500 border-transparent hover:border-gray-100 hover:shadow-sm'}`}
+                                className={`p - 3 rounded - xl text - xs font - bold flex items - center gap - 3 cursor - pointer transition - all border ${selectedDoc === 'Projeto' ? 'bg-[#efffdb] text-[#558b2f] border-[#dcebc0] shadow-sm' : 'hover:bg-white text-gray-500 border-transparent hover:border-gray-100 hover:shadow-sm'} `}
                             >
-                                <FileText className={`w-4 h-4 ${selectedDoc === 'Projeto' ? 'fill-[#558b2f] text-transparent' : 'text-gray-400'}`} />
+                                <FileText className={`w - 4 h - 4 ${selectedDoc === 'Projeto' ? 'fill-[#558b2f] text-transparent' : 'text-gray-400'} `} />
                                 Projeto
                             </div>
                         </div>
@@ -567,7 +583,7 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                                     <div>
                                         <h4 className="text-[13px] font-bold text-gray-900">Jurídico (Você)</h4>
                                         <p className="text-[11px] text-gray-500">juridico@gmail.com</p>
-                                        <p className={`text-[10px] text-gray-400 mt-1`}>{signed ? 'Hoje 10h00' : 'Aguardando...'}</p>
+                                        <p className={`text - [10px] text - gray - 400 mt - 1`}>{signed ? 'Hoje 10h00' : 'Aguardando...'}</p>
                                     </div>
                                 </div>
                             </div>

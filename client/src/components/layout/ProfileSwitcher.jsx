@@ -1,15 +1,25 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { User, Repeat, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function ProfileSwitcher() {
     const [, setLocation] = useLocation();
-    const currentRole = localStorage.getItem('userRole') || 'gerente';
+    const [currentRole, setCurrentRole] = useState(localStorage.getItem('userRole') || 'gerente');
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const handleStorageChange = () => {
+            setCurrentRole(localStorage.getItem('userRole') || 'gerente');
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
 
     const handleRoleChange = (newRole) => {
         setIsLoading(true);
+        setCurrentRole(newRole);
         localStorage.setItem('userRole', newRole);
         // Dispatch an event so other components (like Sidebar) can detect the change
         window.dispatchEvent(new Event('storage'));

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,8 @@ const proposalTabs = [
 ];
 
 export function CorporateProposalDetail({ proposal, onBack }) {
+    const [, setLocation] = useLocation();
+    const userRole = localStorage.getItem('userRole') || 'gerente';
     const [activeTab, setActiveTab] = useState("Resumo");
     const [showReport, setShowReport] = useState(false);
     const [showSignatureModal, setShowSignatureModal] = useState(false);
@@ -103,6 +106,23 @@ export function CorporateProposalDetail({ proposal, onBack }) {
                                 <FileEdit className="w-4 h-4 text-gray-600 ml-0.5" />
                                 Solicitar complemento
                             </DropdownMenuItem>
+
+                            {userRole === 'gerente' && (
+                                <DropdownMenuItem
+                                    className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
+                                    onClick={() => {
+                                        localStorage.setItem('userRole', 'juridico');
+                                        window.dispatchEvent(new Event('storage'));
+                                        setLocation('/propostas');
+                                        if (window.location.pathname === '/propostas') {
+                                            window.location.reload();
+                                        }
+                                    }}
+                                >
+                                    <Scale className="w-5 h-5 text-gray-600" />
+                                    Enviar para jurídico
+                                </DropdownMenuItem>
+                            )}
 
                             <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
                                 <ArrowRight className="w-5 h-5 text-gray-600" />
