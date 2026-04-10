@@ -31,6 +31,8 @@ import { Canais } from "@/pages/Canais";
 import { Visitas } from "@/pages/Visitas";
 import { Aprender } from "@/pages/Aprender";
 import { AprenderArticle } from "@/pages/AprenderArticle";
+import { Produtos } from "@/pages/Produtos";
+import { Clientes } from "@/pages/Clientes";
 
 function Router() {
   return (
@@ -38,6 +40,7 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/pipeline" component={Pipeline} />
+      <Route path="/clientes" component={Clientes} />
       <Route path="/propostas" component={Propostas} />
       <Route path="/carteira" component={Carteira} />
       <Route path="/simulador" component={Simulador} />
@@ -56,6 +59,7 @@ function Router() {
       <Route path="/seguros/:id" component={SeguroDetail} />
       <Route path="/aprender" component={Aprender} />
       <Route path="/aprender/:id" component={AprenderArticle} />
+      <Route path="/produtos" component={Produtos} />
       <Route component={NotFound} />
     </Switch>
   );

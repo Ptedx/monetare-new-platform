@@ -2,234 +2,189 @@ import { useState, useEffect } from "react";
 import { DragDropContext } from "@hello-pangea/dnd";
 import { PipelineColumn } from "./PipelineColumn";
 
-// Mock data initialization
-const initialColumns = {
-    "col-1": {
-        id: "col-1",
-        name: "1. CECAD",
-        totalValue: "R$ 585.000.000",
-        count: 3,
-        cards: [
-            { id: "c1", name: "Faz. Soledade", value: "R$ 550.000.000", rawValue: 550000000, rating: "AA", analyst: "Ag. Brasília", days: 5, type: "Rural" },
-            { id: "c2", name: "Faz. Casa Branca", value: "R$ 30.000.000", rawValue: 30000000, rating: "C", analyst: "Ag. Brasília", days: 8, type: "Rural" },
-            { id: "c3", name: "Faz. Águas Claras", value: "R$ 5.000.000", rawValue: 5000000, rating: "D", analyst: "Ag. Brasília", days: 18, type: "Rural", hasPendency: true },
-        ]
-    },
-    "col-2": {
-        id: "col-2",
-        name: "2. GECRE",
-        totalValue: "R$ 350.000.000",
-        count: 2,
-        cards: [
-            { id: "c4", name: "Faz. Aurora", value: "R$ 250.000.000", rawValue: 250000000, rating: "A", analyst: "Ag. Brasília", days: 8, type: "Rural", hasPendency: true, hasFlag: true },
-            { id: "c5", name: "Faz. Girassol", value: "R$ 100.000.000", rawValue: 100000000, rating: "B", analyst: "Ag. Brasília", days: 5, type: "Rural" },
-        ]
-    },
-    "col-3": {
-        id: "col-3",
-        name: "3. GEOPE",
-        totalValue: "R$ 270.000.000",
-        count: 1,
-        cards: [
-            { id: "c6", name: "Fernando Fagundes", value: "R$ 50.000.000", rawValue: 50000000, rating: "A", analyst: "Ag. Brasília", days: 16, type: "Rural", hasPendency: true, hasFlag: true },
-        ]
-    },
-    "col-4": {
-        id: "col-4",
-        name: "4. GERPF/PJ/MIP/RED",
-        totalValue: "R$ 180.000.000",
-        count: 2,
-        cards: [
-            { id: "c7", name: "Vale do Cedro", value: "R$ 70.000.000", rawValue: 70000000, rating: "C", analyst: "Ag. Brasília", days: 5, type: "Corporate" },
-            { id: "c8", name: "Faz. Barra Funda", value: "R$ 110.000.000", rawValue: 110000000, rating: "B", analyst: "Ag. Brasília", days: 2, type: "Corporate" },
-        ]
-    },
-    "col-5": {
-        id: "col-5",
-        name: "5. GERIS",
-        totalValue: "R$ 780.000.000",
-        count: 3,
-        cards: [] // Empty for now as per design
-    },
-    "col-6": {
-        id: "col-6",
-        name: "6. CCONS",
-        totalValue: "R$ 0",
-        count: 0,
-        cards: []
-    }
+// Stage mapping: each column maps to a stage value stored in localStorage
+const STAGES = {
+    "col-1": "1. CECAD",
+    "col-2": "2. GECRE",
+    "col-3": "3. GEOPE",
+    "col-4": "4. GERPF/PJ/MIP/RED",
+    "col-5": "5. GERIS",
+    "col-6": "6. CCONS",
 };
 
-const columnOrder = ["col-1", "col-2", "col-3", "col-4", "col-5", "col-6"];
+const COLUMN_IDS = Object.keys(STAGES);
+const PIPELINE_STAGE_VALUES = Object.values(STAGES);
+
+const STAGE_NAMES = new Set(PIPELINE_STAGE_VALUES);
+
+function buildColumnsFromStorage(sortConfig) {
+    const storedProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
+
+    // Build column map
+    const columns = {};
+    COLUMN_IDS.forEach(colId => {
+        columns[colId] = {
+            id: colId,
+            name: STAGES[colId],
+            cards: [],
+        };
+    });
+
+    const stageToCol = {};
+    Object.entries(STAGES).forEach(([colId, stage]) => {
+        stageToCol[stage] = colId;
+    });
+
+    storedProposals.forEach((p) => {
+        let pStage = p.stage || "1. CECAD";
+        // Backwards compat with old stage naming
+        if (pStage === "1. Cadastro") pStage = "1. CECAD";
+
+        // Skip proposals in compliance/legal or final stages (not in operational pipeline)
+        const skipStages = new Set([
+            "EM_ANALISE_JURIDICA", "EM_SEGURO", "SEGURO_COTADO",
+            "FINALIZADA", "REPROVADA", "APROVADA"
+        ]);
+        if (skipStages.has(pStage)) return;
+
+        let colId = stageToCol[pStage] || "col-1";
+
+        const rawValue = p.rawValue || (p.value ? parseFloat(String(p.value).replace(/[^0-9.,]/g, '').replace(',', '.')) : 0);
+
+        const dateParts = p.date ? p.date.split('/') : null;
+        let daysDiff = 0;
+        if (dateParts && dateParts.length === 3) {
+            const createdDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+            daysDiff = Math.floor((new Date() - createdDate) / (1000 * 60 * 60 * 24));
+        } else if (p.createdAt) {
+            daysDiff = Math.floor((new Date() - new Date(p.createdAt)) / (1000 * 60 * 60 * 24));
+        }
+
+        columns[colId].cards.push({
+            id: String(p.id),
+            name: p.name,
+            value: p.value || "R$ 0",
+            rawValue: rawValue,
+            rating: p.score || "B",
+            analyst: "Ag. Brasília",
+            days: Math.max(daysDiff, 0),
+            type: p.segment || "Rural",
+            hasPendency: p.hasPendency || false,
+            hasFlag: p.hasFlag || false,
+            title: p.title,
+            companyName: p.companyName,
+            status: p.status,
+            line: p.line,
+            _raw: p,
+        });
+    });
+
+    // Re-calculate totals & counts
+    COLUMN_IDS.forEach(colId => {
+        const col = columns[colId];
+        const total = col.cards.reduce((sum, card) => sum + (card.rawValue || 0), 0);
+        col.totalValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
+        col.count = col.cards.length;
+    });
+
+    // Apply sort
+    if (sortConfig && sortConfig.key) {
+        const { key, direction } = sortConfig;
+        const multiplier = direction === 'asc' ? 1 : -1;
+
+        COLUMN_IDS.forEach(colId => {
+            const col = columns[colId];
+            if (col.cards.length > 0) {
+                let sorted = [...col.cards];
+                if (key === 'value') {
+                    sorted.sort((a, b) => ((a.rawValue || 0) - (b.rawValue || 0)) * multiplier);
+                } else if (key === 'date') {
+                    if (direction === 'desc') {
+                        sorted.sort((a, b) => (a.days || 0) - (b.days || 0));
+                    } else {
+                        sorted.sort((a, b) => (b.days || 0) - (a.days || 0));
+                    }
+                } else if (key === 'priority') {
+                    const ratingWeight = { 'AA': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
+                    sorted.sort((a, b) => ((ratingWeight[a.rating] || 0) - (ratingWeight[b.rating] || 0)) * multiplier);
+                }
+                col.cards = sorted;
+            }
+        });
+    }
+
+    return columns;
+}
 
 export function PipelineBoard({ sortConfig, onCardClick }) {
-    const [columns, setColumns] = useState(initialColumns);
+    const [columns, setColumns] = useState(() => buildColumnsFromStorage(sortConfig));
 
-    // Load proposals from localStorage and merge
+    // Re-read from localStorage when sort changes
     useEffect(() => {
-        const storedProposals = JSON.parse(localStorage.getItem("proposals") || "[]");
-
-        setColumns(prevColumns => {
-            const workingColumns = JSON.parse(JSON.stringify(initialColumns)); // Start fresh from initial + localStorage to avoid duplicates issue
-            // Actually, we should probably respect current state if we want drag to persist?
-            // But we already established that re-sorting resets order.
-            // Using initialColumns + storedProposals ensures clean state every time sort changes or proposals load
-
-            // Let's stick to safe merge into a copy of prevColumns to avoid resetting if user drifted,
-            // BUT we must dedupe carefully.
-            // Re-creating from initialColumns is safer for "Sort".
-            // Let's go with: workingColumns = { ...prevColumns } but we must not add duplicates.
-            // And we must RE-SORT everything.
-
-            // Wait, if we use { ...prevColumns }, we are operating on the ALREADY existing cards.
-            // If we re-sort, we just re-order them. 
-            // We only need to ADD storedProposals if they are missing.
-
-            // BUT if we want to ensure "Default Sort" works on page load, we must run this.
-
-            const currentColumns = { ...prevColumns };
-
-            storedProposals.forEach(p => {
-                let targetColId = "col-1";
-                if (p.stage.includes("2.")) targetColId = "col-2";
-                else if (p.stage.includes("3.")) targetColId = "col-3";
-                else if (p.stage.includes("4.")) targetColId = "col-4";
-
-                if (currentColumns[targetColId].cards.some(c => c.id === String(p.id))) {
-                    return;
-                }
-
-                const rawValue = p.value ? parseFloat(p.value.replace(/[^0-9,]/g, '').replace(',', '.')) : 0;
-
-                const dateParts = p.date.split('/');
-                const createdDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
-                const daysDiff = Math.floor((new Date() - createdDate) / (1000 * 60 * 60 * 24));
-
-                const newCard = {
-                    id: String(p.id),
-                    name: p.name,
-                    value: p.value,
-                    rawValue: rawValue,
-                    rating: p.score || "B",
-                    analyst: "Ag. Brasília",
-                    days: daysDiff >= 0 ? daysDiff : 0,
-                    type: p.segment
-                };
-
-                currentColumns[targetColId].cards.push(newCard);
-                currentColumns[targetColId].count = currentColumns[targetColId].cards.length;
-            });
-
-            // Re-calculate totals
-            Object.keys(currentColumns).forEach(colId => {
-                const col = currentColumns[colId];
-                const total = col.cards.reduce((sum, card) => sum + card.rawValue, 0);
-                col.totalValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total);
-            });
-
-            // Apply Sort
-            if (sortConfig && sortConfig.key) {
-                const { key, direction } = sortConfig;
-                const multiplier = direction === 'asc' ? 1 : -1;
-
-                Object.keys(currentColumns).forEach(colId => {
-                    const col = currentColumns[colId];
-                    if (col.cards.length > 0) {
-                        let sortedCards = [...col.cards];
-
-                        if (key === 'value') {
-                            sortedCards.sort((a, b) => (a.rawValue - b.rawValue) * multiplier);
-                        } else if (key === 'date') {
-                            // Date logic: 'desc' = Newest (Smallest days). 'asc' = Oldest (Largest days).
-                            if (direction === 'desc') {
-                                sortedCards.sort((a, b) => a.days - b.days);
-                            } else {
-                                sortedCards.sort((a, b) => b.days - a.days);
-                            }
-                        } else if (key === 'priority') {
-                            const ratingWeight = { 'AA': 5, 'A': 4, 'B': 3, 'C': 2, 'D': 1 };
-                            sortedCards.sort((a, b) => {
-                                const weightA = ratingWeight[a.rating] || 0;
-                                const weightB = ratingWeight[b.rating] || 0;
-                                return (weightA - weightB) * multiplier;
-                            });
-                        }
-                        col.cards = sortedCards;
-                    }
-                });
-            }
-
-            return currentColumns;
-        });
-
+        setColumns(buildColumnsFromStorage(sortConfig));
     }, [sortConfig]);
 
-    // Special modification to PipelineColumn to pass onClick
-    const ModifiedPipelineColumn = ({ column }) => {
-        return <PipelineColumn column={column} onCardClick={onCardClick} />;
-    }
+    const updateCardStageInStorage = (cardId, newStage) => {
+        const stored = JSON.parse(localStorage.getItem("proposals") || "[]");
+        const idx = stored.findIndex((p) => String(p.id) === String(cardId));
+        if (idx !== -1) {
+            stored[idx].stage = newStage;
+            localStorage.setItem("proposals", JSON.stringify(stored));
+        }
+    };
 
     const onDragEnd = (result) => {
         const { destination, source, draggableId } = result;
-
         if (!destination) return;
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
-        if (
-            destination.droppableId === source.droppableId &&
-            destination.index === source.index
-        ) {
-            return;
-        }
+        setColumns(prev => {
+            const startCol = prev[source.droppableId];
+            const finishCol = prev[destination.droppableId];
 
-        const startColumn = columns[source.droppableId];
-        const finishColumn = columns[destination.droppableId];
+            if (startCol === finishCol) {
+                const newCards = [...startCol.cards];
+                const [movedCard] = newCards.splice(source.index, 1);
+                newCards.splice(destination.index, 0, movedCard);
+                return {
+                    ...prev,
+                    [startCol.id]: { ...startCol, cards: newCards },
+                };
+            }
 
-        if (startColumn === finishColumn) {
-            const newCardIds = Array.from(startColumn.cards);
-            const [movedCard] = newCardIds.splice(source.index, 1);
-            newCardIds.splice(destination.index, 0, movedCard);
+            const startCards = [...startCol.cards];
+            const [movedCard] = startCards.splice(source.index, 1);
+            const finishCards = [...finishCol.cards];
+            finishCards.splice(destination.index, 0, { ...movedCard });
 
-            const newColumn = {
-                ...startColumn,
-                cards: newCardIds,
+            const newStage = STAGES[destination.droppableId];
+
+            // Persist to localStorage
+            updateCardStageInStorage(parseInt(draggableId, 10) || draggableId, newStage);
+
+            const newStart = { ...startCol, cards: startCards, count: startCards.length };
+            const newFinish = { ...finishCol, cards: finishCards, count: finishCards.length };
+
+            // Recalculate totals
+            newStart.totalValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                startCards.reduce((s, c) => s + (c.rawValue || 0), 0)
+            );
+            newFinish.totalValue = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                finishCards.reduce((s, c) => s + (c.rawValue || 0), 0)
+            );
+
+            return {
+                ...prev,
+                [newStart.id]: newStart,
+                [newFinish.id]: newFinish,
             };
-
-            setColumns({
-                ...columns,
-                [newColumn.id]: newColumn,
-            });
-            return;
-        }
-
-        const startCardIds = Array.from(startColumn.cards);
-        const [movedCard] = startCardIds.splice(source.index, 1);
-
-        const finishCardIds = Array.from(finishColumn.cards);
-        finishCardIds.splice(destination.index, 0, movedCard);
-
-        const newStartColumn = {
-            ...startColumn,
-            cards: startCardIds,
-            count: startColumn.count - 1
-        };
-
-        const newFinishColumn = {
-            ...finishColumn,
-            cards: finishCardIds,
-            count: finishColumn.count + 1
-        };
-
-        setColumns({
-            ...columns,
-            [newStartColumn.id]: newStartColumn,
-            [newFinishColumn.id]: newFinishColumn,
         });
     };
 
     return (
         <DragDropContext onDragEnd={onDragEnd}>
             <div className="flex h-full gap-6 overflow-x-auto pb-4">
-                {columnOrder.map((columnId) => {
+                {COLUMN_IDS.map((columnId) => {
                     const column = columns[columnId];
                     return (
                         <PipelineColumnKeyed
@@ -244,8 +199,6 @@ export function PipelineBoard({ sortConfig, onCardClick }) {
     );
 }
 
-// Helper to avoid circular dependency issues
-import { PipelineColumn as OriginalPipelineColumn } from "./PipelineColumn";
 function PipelineColumnKeyed({ column, onCardClick }) {
-    return <OriginalPipelineColumn column={column} onCardClick={onCardClick} />;
+    return <PipelineColumn column={column} onCardClick={onCardClick} />;
 }

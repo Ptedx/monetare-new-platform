@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Area, AreaChart
@@ -19,11 +19,51 @@ import {
 } from "lucide-react";
 import { RatingCard, DetailItem, StatCard, StatusBadge, ScoreCircle, TimelineStep } from "./ProposalHelpers";
 import { ProfileResult } from "../profile/ProfileResult";
+import { advanceProposal, ROLE_ACTIONS } from "@/lib/proposalFlow";
 
 const proposalTabs = [
-    "Resumo", "Assinaturas", "Perfil", "Linha do tempo",
-    "Documentação", "Garantias", "Pendências", "Auditoria"
+    "Resumo", "Cadastro", "Agro", "Financeiro", "Crédito e Compliance",
+    "Garantias", "Documentos", "Linha do tempo"
 ];
+
+const resumoData = {
+    cliente: "Fernando Freire Oliveira",
+    segmento: "Agro",
+    tamanho: "20-50 funcionários",
+    faturamento: "R$ 2.630.000 / ano",
+    cultura: "Soja",
+    endereco: "Residencial Cláudio Marchetti, Rua Três – Cuiabá, MT 78076-308",
+    telefone: "(00) 000000-0000",
+    cpf: "000.000.000-00",
+    email: "fernando@fffagundes.com.br",
+    dataInicio: "02/01/2026",
+    produto: "FNO",
+    valorSolicitado: "R$ 850.000,00",
+    prazo: "60 meses",
+    taxaEstimadas: "1,2–1,5% a.m.",
+    statusOperacao: "Ok",
+    etapa: "Crédito",
+    etapaDetalhe: "há 6 dias",
+    fila: "GEOPE",
+    responsavel: "Daniel Alves (analista)",
+    aprovacao: "Aprovado com Condições",
+    condicoes: [
+        "Manter garantias reais acima de 130%",
+        "Apresentar atualização semestral dos balanços",
+        "Seguro agrícola obrigatório"
+    ],
+    motivos: [
+        "Forte histórico de pagamentos",
+        "Garantias robustas (imóvel rural)",
+        "Setor do Agronegócio crescendo",
+        "Score de crédito elevado"
+    ],
+    mitigadores: [
+        "Reforço de garantia pessoal",
+        "Acompanhamento trimestral de fluxo de caixa",
+        "Restrição para novos financiamentos acima de 20%"
+    ]
+};
 
 export function AgroProposalDetail({ proposal, onBack }) {
     const [, setLocation] = useLocation();
@@ -34,6 +74,30 @@ export function AgroProposalDetail({ proposal, onBack }) {
     const [selectedDoc, setSelectedDoc] = useState('Matrícula');
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [signed, setSigned] = useState(false);
+    const [selectedFarmId, setSelectedFarmId] = useState("monte-verde");
+    const [creditDetailTab, setCreditDetailTab] = useState("validacoes");
+    const [selectedGuarantee, setSelectedGuarantee] = useState(null);
+    const [guaranteeDetailTab, setGuaranteeDetailTab] = useState("resumo");
+    const [documentsSubTab, setDocumentsSubTab] = useState("documentos");
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [pendingUploadFile, setPendingUploadFile] = useState(null);
+    const [selectedDocumentPreview, setSelectedDocumentPreview] = useState(null);
+    const [showApproveModal, setShowApproveModal] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [actionReason, setActionReason] = useState("");
+
+    const handleApprove = () => {
+        advanceProposal(proposal.id, "APROVADA", actionReason);
+        setShowApproveModal(false);
+        setActionReason("");
+    };
+
+    const handleReject = () => {
+        if (!actionReason.trim()) return;
+        advanceProposal(proposal.id, "REPROVADA", actionReason);
+        setShowRejectModal(false);
+        setActionReason("");
+    };
 
     const handleDownload = () => {
         const link = document.createElement('a');
@@ -59,12 +123,30 @@ export function AgroProposalDetail({ proposal, onBack }) {
         { name: "IRPF 2025", emission: "02/11/2025", valid: "31/12/2026", status: "OK" },
         { name: "Simulação", emission: "01/11/2025", valid: "31/12/2026", status: "OK" },
     ];
+    const initialDocumentRegistry = [
+        { id: "doc-1", name: "Matrícula", emission: "02/11/2025", valid: "20/11/2025", status: "OK", analysisStatus: "CONCLUÍDA", fileSize: "2.8 MB" },
+        { id: "doc-2", name: "Projeto", emission: "02/11/2025", valid: "12/11/2025", status: "OK", analysisStatus: "CONCLUÍDA", fileSize: "4.1 MB" },
+        { id: "doc-3", name: "IRPF 2024", emission: "02/11/2025", valid: "31/12/2025", status: "OK", analysisStatus: "CONCLUÍDA", fileSize: "1.9 MB" },
+        { id: "doc-4", name: "Registro", emission: "02/11/2025", valid: "30/11/2025", status: "OK", analysisStatus: "CONCLUÍDA", fileSize: "2.4 MB" },
+        { id: "doc-5", name: "IRPF 2025", emission: "02/11/2025", valid: "31/12/2026", status: "OK", analysisStatus: "CONCLUÍDA", fileSize: "2.2 MB" },
+        { id: "doc-6", name: "Simulação", emission: "01/11/2025", valid: "31/12/2026", status: "OK", analysisStatus: "CONCLUÍDA", fileSize: "1.3 MB" },
+    ];
+    const initialSignaturesRegistry = [
+        { id: "sig-1", name: "Parecer técnico", analyst: "Daniel Alves", completed: 2, total: 3, status: "PENDENTE", msg: "Sua assinatura está pendente." },
+        { id: "sig-2", name: "Parecer de análise", analyst: "Daniel Alves", completed: 3, total: 3, status: "OK", msg: "" },
+    ];
+    const [documentRegistry, setDocumentRegistry] = useState(initialDocumentRegistry);
+    const [signatureRegistry, setSignatureRegistry] = useState(initialSignaturesRegistry);
 
     const guaranteesData = {
         rural: [{ name: "Nome/Descrição", cpf: "20/11/2025", matricula: "********" }, { name: "Nome/Descrição", cpf: "20/11/2025", matricula: "********" }],
         urban: [{ name: "Nome/Descrição", cpf: "20/11/2025", matricula: "********" }, { name: "Nome/Descrição", cpf: "20/11/2025", matricula: "********" }],
         machine: [{ name: "Nome/Descrição", cpf: "********", matricula: "********" }]
     };
+    const guaranteeItems = [
+        { name: "Fazenda Esperança", type: "Imóvel", value: "R$ 320.000,00", onus: "Nenhum", insurance: "Vigente", registry: "Registrado" },
+        { name: "Penhor Agrícola", type: "Safra", value: "R$ 560.000,00", onus: "Hipoteca", insurance: "Vigente", registry: "Pendente" },
+    ];
 
     const auditData = [
         { date: "16/11/25", responsible: "Projetista", event: "stage_created", details: "Técnica → Crédito" },
@@ -74,6 +156,171 @@ export function AgroProposalDetail({ proposal, onBack }) {
     const pendenciesData = [
         { date: "16/11/25", description: "Enviar CAR atualizado", responsible: "Projetista", deadline: "20/11/25", status: "ABERTA" },
         { date: "16/11/25", description: "Atualizar matrícula", responsible: "Projetista", deadline: "20/11/25", status: "ABERTA" },
+    ];
+    const proposalStorageId = String(proposal?.id || "default");
+    const docsStorageKey = `proposal:${proposalStorageId}:documents`;
+    const signaturesStorageKey = `proposal:${proposalStorageId}:signatures`;
+
+    useEffect(() => {
+        const savedDocs = localStorage.getItem(docsStorageKey);
+        const savedSignatures = localStorage.getItem(signaturesStorageKey);
+        if (savedDocs) {
+            try { setDocumentRegistry(JSON.parse(savedDocs)); } catch { setDocumentRegistry(initialDocumentRegistry); }
+        } else {
+            setDocumentRegistry(initialDocumentRegistry);
+        }
+        if (savedSignatures) {
+            try { setSignatureRegistry(JSON.parse(savedSignatures)); } catch { setSignatureRegistry(initialSignaturesRegistry); }
+        } else {
+            setSignatureRegistry(initialSignaturesRegistry);
+        }
+    }, [proposalStorageId]);
+
+    useEffect(() => {
+        localStorage.setItem(docsStorageKey, JSON.stringify(documentRegistry));
+    }, [docsStorageKey, documentRegistry]);
+
+    useEffect(() => {
+        localStorage.setItem(signaturesStorageKey, JSON.stringify(signatureRegistry));
+    }, [signaturesStorageKey, signatureRegistry]);
+
+    const handleUploadFileChange = (event) => {
+        const file = event.target.files?.[0];
+        if (file) setPendingUploadFile(file);
+    };
+
+    const handleConfirmUpload = () => {
+        if (!pendingUploadFile) return;
+        const today = new Date();
+        const emission = today.toLocaleDateString("pt-BR");
+        const valid = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate()).toLocaleDateString("pt-BR");
+        const mbSize = `${Math.max(0.1, pendingUploadFile.size / (1024 * 1024)).toFixed(1)} MB`;
+        setDocumentRegistry((prev) => [
+            ...prev,
+            {
+                id: `doc-${Date.now()}`,
+                name: pendingUploadFile.name.replace(/\.[^/.]+$/, ""),
+                emission,
+                valid,
+                status: "OK",
+                analysisStatus: "CONCLUÍDA",
+                fileSize: mbSize,
+            },
+        ]);
+        setPendingUploadFile(null);
+        setIsUploadModalOpen(false);
+    };
+
+    const handleSignAsAnalyst = (signatureName) => {
+        setSignatureRegistry((prev) =>
+            prev.map((item) => {
+                if (item.name !== signatureName) return item;
+                const nextCompleted = Math.min(item.total, item.completed + 1);
+                return {
+                    ...item,
+                    completed: nextCompleted,
+                    status: nextCompleted >= item.total ? "OK" : "PENDENTE",
+                    msg: nextCompleted >= item.total ? "" : "Sua assinatura está pendente.",
+                };
+            }),
+        );
+    };
+
+    const agroProperties = [
+        {
+            id: "monte-verde",
+            name: "FAZENDA MONTE VERDE V, VIII E REDENÇÃO I",
+            city: "Nova Canaã do Norte, MT",
+            areaTotal: "3.200 ha",
+            areaAgricultavel: "2.400 ha",
+            reservaLegal: "800 ha",
+            areaPerene: "1200 ha",
+            areaTemporaria: "1200 ha",
+            produtividade: "58 sc/ha",
+            benchmark: "55 sc/ha",
+            produtividadeHint: "+5.45% acima do benchmark",
+            climate: "Tropical, Monção",
+            aptidaoPrimary: "Classe 3 (abc) - Restrita",
+            aptidaoSecondary: "Classe 6 - Inapta / Preserve",
+            altitude: { max: "392 m", med: "283 m", min: "255 m" },
+            topo: { plano: "56.2%", suave: "36.2%", ondulado: "7.4%" },
+            legal: { arrendamento: "SIM", assentamento: "NÃO", meeiro: "NÃO" },
+        },
+        {
+            id: "barra-bonita",
+            name: "FAZENDA BARRA BONITA - GLEBA A-1",
+            city: "Nova Canaã do Norte, MT",
+            areaTotal: "2.950 ha",
+            areaAgricultavel: "2.100 ha",
+            reservaLegal: "850 ha",
+            areaPerene: "980 ha",
+            areaTemporaria: "1120 ha",
+            produtividade: "54 sc/ha",
+            benchmark: "52 sc/ha",
+            produtividadeHint: "+3.84% acima do benchmark",
+            climate: "Tropical, estação seca",
+            aptidaoPrimary: "Classe 3 (ab) - Moderada",
+            aptidaoSecondary: "Classe 5 - Restrição alta",
+            altitude: { max: "376 m", med: "271 m", min: "244 m" },
+            topo: { plano: "49.0%", suave: "40.5%", ondulado: "10.5%" },
+            legal: { arrendamento: "NÃO", assentamento: "NÃO", meeiro: "SIM" },
+        },
+        {
+            id: "tucano",
+            name: "FAZENDA TUCANO MAT 1209",
+            city: "Nova Canaã do Norte, MT",
+            areaTotal: "3.480 ha",
+            areaAgricultavel: "2.620 ha",
+            reservaLegal: "860 ha",
+            areaPerene: "1320 ha",
+            areaTemporaria: "1300 ha",
+            produtividade: "61 sc/ha",
+            benchmark: "56 sc/ha",
+            produtividadeHint: "+8.92% acima do benchmark",
+            climate: "Tropical, quente úmido",
+            aptidaoPrimary: "Classe 2 (abc) - Boa",
+            aptidaoSecondary: "Classe 6 - Inapta / Preserve",
+            altitude: { max: "401 m", med: "292 m", min: "260 m" },
+            topo: { plano: "61.8%", suave: "31.0%", ondulado: "7.2%" },
+            legal: { arrendamento: "SIM", assentamento: "NÃO", meeiro: "NÃO" },
+        },
+    ];
+    const selectedFarm = agroProperties.find((farm) => farm.id === selectedFarmId) || agroProperties[0];
+    const cadastroData = {
+        personType: proposal?.registrationData?.personType || "Pessoa física",
+        birthDate: proposal?.registrationData?.birthDate || "24/05/1968",
+        cpf: proposal?.registrationData?.cpf || "000.000.000-00",
+        civilStatus: proposal?.registrationData?.civilStatus || "Casado",
+        dependents: proposal?.registrationData?.dependents || "2",
+        rg: proposal?.registrationData?.rg || "000.000-00",
+        issuingAgency: proposal?.registrationData?.issuingAgency || "SSP/PA",
+        nationality: proposal?.registrationData?.nationality || "Brasileiro",
+        gender: proposal?.registrationData?.gender || "Masculino",
+        contactEmail: proposal?.registrationData?.contactEmail || "diego.santos@email.com",
+        contactPhone: proposal?.registrationData?.contactPhone || "(00) 0000-0000",
+        sourceChannel: proposal?.registrationData?.sourceChannel || "Agência",
+        cep: proposal?.registrationData?.cep || "00.000-000",
+        georeference: proposal?.registrationData?.georeference || "Nova Canaã do Norte, MT",
+        street: proposal?.registrationData?.street || "Rua do Corvo, Zumbi do Pacheco",
+        neighborhood: proposal?.registrationData?.neighborhood || "Zumbi do Pacheco",
+        city: proposal?.registrationData?.city || "Jaboatão dos Guararapes",
+        uf: proposal?.registrationData?.uf || "PE",
+        number: proposal?.registrationData?.number || "14",
+        latitude: proposal?.registrationData?.latitude || "-3.2975",
+        longitude: proposal?.registrationData?.longitude || "-3.2975",
+        totalArea: proposal?.registrationData?.totalArea || "1.200 ha",
+    };
+    const financeiroSeries = [
+        { year: "2016", receita: 17, custo: 10 },
+        { year: "2017", receita: 20, custo: 12 },
+        { year: "2018", receita: 25, custo: 16 },
+        { year: "2019", receita: 20, custo: 16 },
+        { year: "2020", receita: 32, custo: 13 },
+        { year: "2021", receita: 23, custo: 17 },
+        { year: "2022", receita: 30, custo: 21 },
+        { year: "2023", receita: 26, custo: 20 },
+        { year: "2024", receita: 29, custo: 16 },
+        { year: "2025", receita: 35, custo: 25 },
     ];
 
     return (
@@ -122,6 +369,19 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                 <DropdownMenuItem
                                     className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
                                     onClick={() => {
+                                        advanceProposal(proposal.id, "next");
+                                    }}
+                                >
+                                    <ArrowRight className="w-5 h-5 text-gray-600" />
+                                    Avançar no pipeline
+                                </DropdownMenuItem>
+                            )}
+
+                            {(userRole === 'gerente' || userRole === 'analista') && (
+                                <DropdownMenuItem
+                                    className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
+                                    onClick={() => {
+                                        advanceProposal(proposal.id, "EM_ANALISE_JURIDICA");
                                         localStorage.setItem('userRole', 'juridico');
                                         window.dispatchEvent(new Event('storage'));
                                         setLocation('/propostas');
@@ -157,16 +417,40 @@ export function AgroProposalDetail({ proposal, onBack }) {
 
                             <DropdownMenuSeparator className="my-2 bg-gray-100" />
 
-                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-red-50 text-red-700 font-medium">
+                            <DropdownMenuItem
+                                className="gap-3 py-3 cursor-pointer hover:bg-red-50 text-red-700 font-medium"
+                                onClick={() => {
+                                    const all = JSON.parse(localStorage.getItem("proposals") || "[]");
+                                    const idx = all.findIndex(p => String(p.id) === String(proposal.id));
+                                    if (idx !== -1) {
+                                        all[idx].status = "REJEITADA";
+                                        all[idx].updatedAt = new Date().toISOString();
+                                        localStorage.setItem("proposals", JSON.stringify(all));
+                                    }
+                                    // Sync client proposals
+                                    const client = JSON.parse(localStorage.getItem("clientProposals") || "[]");
+                                    const cIdx = client.findIndex(p => String(p.id) === String(proposal.id));
+                                    if (cIdx !== -1) {
+                                        client[cIdx].statusBadge = "Rejeitada";
+                                        client[cIdx].statusType = "error";
+                                        localStorage.setItem("clientProposals", JSON.stringify(client));
+                                    }
+                                }}
+                            >
                                 <XIcon className="w-5 h-5" />
                                 Reprovar proposta
                             </DropdownMenuItem>
 
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100">
+                    <Button
+                        className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
+                        onClick={() => {
+                            advanceProposal(proposal.id, "next");
+                        }}
+                    >
                         <Send className="w-4 h-4 mr-2" />
-                        Enviar para comitê
+                        {userRole === 'gerente' ? 'Enviar para comitê' : 'Avançar no pipeline'}
                     </Button>
                 </div>
             </div>
@@ -190,6 +474,90 @@ export function AgroProposalDetail({ proposal, onBack }) {
                 </TabsList>
 
                 <TabsContent value="Resumo" className="mt-0">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-12 gap-4">
+                            <Card className="col-span-12 lg:col-span-8 p-4 border-gray-200 shadow-sm">
+                                <p className="text-sm text-gray-600 mb-3">Dados cadastrais</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2 text-sm"><User className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Cliente</p><p className="text-gray-900">Fernando Freire Oliveira</p></div>
+                                        <div className="flex gap-2 text-sm"><Building2 className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Segmento</p><p className="text-gray-900">Agro</p></div>
+                                        <div className="flex gap-2 text-sm"><Users className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Tamanho</p><p className="text-gray-900">20-50 funcionários</p></div>
+                                        <div className="flex gap-2 text-sm"><Hash className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Faturamento</p><p className="text-gray-900">R$ 2.630.000 / ano</p></div>
+                                        <div className="flex gap-2 text-sm"><Sprout className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Cultura principal</p><p className="text-gray-900">Soja</p></div>
+                                        <div className="flex gap-2 text-sm"><MapPin className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Endereço</p><p className="text-gray-900 leading-5">Residencial Cláudio Marchetti, Rua Três – Cuiabá, MT 78076-308</p></div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2 text-sm"><Phone className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Telefone</p><p className="text-gray-900">(00) 000000-0000</p></div>
+                                        <div className="flex gap-2 text-sm"><Hash className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">CPF</p><p className="text-gray-900">000.000.000-00</p></div>
+                                        <div className="flex gap-2 text-sm"><Mail className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">E-mail</p><p className="text-gray-900">fernando@fffagundes.com.br</p></div>
+                                        <div className="flex gap-2 text-sm"><Timer className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Data de início</p><p className="text-gray-900">02/01/2026</p></div>
+                                    </div>
+                                </div>
+                                <div className="mt-4 border-t border-gray-200 pt-3">
+                                    <p className="text-sm text-gray-600 mb-2">Solicitação</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Produto</p><p className="text-lg text-gray-900">FNO</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Valor solicitado</p><p className="text-lg text-gray-900">R$ 850.000,00</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Prazo</p><p className="text-lg text-gray-900">60 meses</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Taxa estimada</p><p className="text-lg text-gray-900">1,2–1,5% a.m.</p></div>
+                                    </div>
+                                </div>
+                            </Card>
+                            <div className="col-span-12 lg:col-span-4 space-y-3">
+                                <Card className="p-3 border-gray-200 shadow-sm">
+                                    <p className="text-sm text-gray-600 mb-2">Status da Operação</p>
+                                    <div className="h-9 rounded-lg bg-[#92dc49] flex items-center justify-center text-lg font-medium text-black">Ok</div>
+                                </Card>
+                                <Card className="p-3 border-gray-200 shadow-sm">
+                                    <p className="text-sm text-gray-600 mb-1">Etapa</p>
+                                    <p className="text-3xl leading-none text-gray-900">Crédito <span className="text-xs text-gray-500">há 6 dias</span></p>
+                                </Card>
+                                <Card className="p-3 border-gray-200 shadow-sm">
+                                    <p className="text-sm text-gray-600 mb-1">Fila atual</p>
+                                    <p className="text-3xl leading-none text-gray-900">GEOPE</p>
+                                </Card>
+                                <Card className="p-3 border-gray-200 shadow-sm">
+                                    <p className="text-sm text-gray-600 mb-1">Responsável atual</p>
+                                    <p className="text-3xl leading-none text-gray-900">Daniel Alves (analista)</p>
+                                </Card>
+                            </div>
+                        </div>
+                        <Card className="p-0 border-gray-200 shadow-sm overflow-hidden">
+                            <div className="h-14 bg-[#2f7d2d] text-white text-3xl font-medium flex items-center justify-center">
+                                <CheckCircle2 className="w-5 h-5 mr-2" />
+                                Aprovado com Condições
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3">
+                                <div className="p-4 border-r border-gray-200">
+                                    <p className="text-sm text-gray-700 mb-2">Condições</p>
+                                    <ul className="space-y-1 text-sm text-gray-800">
+                                        <li>• Manter garantias reais acima de 130%</li>
+                                        <li>• Apresentar atualização semestral dos balanços</li>
+                                        <li>• Seguro agrícola obrigatório</li>
+                                    </ul>
+                                </div>
+                                <div className="p-4 border-r border-gray-200">
+                                    <p className="text-sm text-gray-700 mb-2">Motivos para aprovação</p>
+                                    <ul className="space-y-1 text-sm text-gray-800">
+                                        <li>• Forte histórico de pagamentos</li>
+                                        <li>• Garantias robustas (imóvel rural)</li>
+                                        <li>• Setor do Agronegócio crescendo</li>
+                                        <li>• Score de crédito elevado</li>
+                                    </ul>
+                                </div>
+                                <div className="p-4">
+                                    <p className="text-sm text-gray-700 mb-2">Mitigadores exigidos</p>
+                                    <ul className="space-y-1 text-sm text-gray-800">
+                                        <li>• Reforço de garantia pessoal</li>
+                                        <li>• Acompanhamento trimestral de fluxo de caixa</li>
+                                        <li>• Restrição para novos financiamentos acima de 20%</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                    <div className="hidden">
                     <div className="space-y-6">
                         <Card className="p-6 border-gray-100 shadow-md">
                             <h3 className="text-xl font-bold mb-6 text-gray-900">Dados Cadastrais</h3>
@@ -1052,6 +1420,616 @@ export function AgroProposalDetail({ proposal, onBack }) {
                             </TabsContent>
                         </Tabs>
                     </div>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="Cadastro" className="mt-0 space-y-4">
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <h3 className="text-3xl font-semibold text-gray-900 mb-4">Dados pessoais</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-1"><p className="text-sm text-gray-700">Tipo de pessoa</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.personType}</div></div>
+                            <div className="space-y-1"><p className="text-sm text-gray-700">CPF</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.cpf}</div></div>
+                            <div className="space-y-1"><p className="text-sm text-gray-700">Data de nascimento</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.birthDate}</div></div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Estado civil</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.civilStatus}</div></div>
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Número de dependentes</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.dependents}</div></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1"><p className="text-sm text-gray-700">RG</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.rg}</div></div>
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Órgão emissor</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.issuingAgency}</div></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Nacionalidade</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.nationality}</div></div>
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Sexo</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.gender}</div></div>
+                            </div>
+                            <div className="space-y-1"><p className="text-sm text-gray-700">E-mail de contato</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.contactEmail}</div></div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Telefone de contato</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.contactPhone}</div></div>
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Canal de Origem</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.sourceChannel}</div></div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <h3 className="text-3xl font-semibold text-gray-900 mb-4">Endereço</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-3">
+                                <div className="space-y-1"><p className="text-sm text-gray-700">CEP</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.cep}</div></div>
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Logradouro</p><div className="min-h-[48px] rounded-md border border-gray-300 bg-white px-3 py-2 text-lg leading-6">{cadastroData.street}</div></div>
+                                <div className="space-y-1"><p className="text-sm text-gray-700">Bairro</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.neighborhood}</div></div>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-sm text-gray-700">Georreferenciamento</p>
+                                <div className="h-[196px] rounded-xl border border-gray-300 overflow-hidden">
+                                    <img src="https://maps.geoapify.com/v1/staticmap?style=osm-bright&width=800&height=400&center=lonlat:-51.2,-10.3&zoom=8&marker=lonlat:-51.2,-10.3;color:%233f7f3f;size:large&apiKey=demo" alt="Mapa de georreferenciamento" className="w-full h-full object-cover" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-6 gap-3 md:col-span-2">
+                                <div className="col-span-2 space-y-1"><p className="text-sm text-gray-700">Cidade</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.city}</div></div>
+                                <div className="col-span-1 space-y-1"><p className="text-sm text-gray-700">UF</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.uf}</div></div>
+                                <div className="col-span-1 space-y-1"><p className="text-sm text-gray-700">Número</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.number}</div></div>
+                                <div className="col-span-1 space-y-1"><p className="text-sm text-gray-700">Latitude</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.latitude}</div></div>
+                                <div className="col-span-1 space-y-1"><p className="text-sm text-gray-700">Longitude</p><div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg">{cadastroData.longitude}</div></div>
+                            </div>
+                            <div className="space-y-1 md:col-span-2">
+                                <p className="text-sm text-gray-700">Área total</p>
+                                <div className="h-12 rounded-md border border-gray-300 bg-white px-3 flex items-center text-lg w-[220px]">{cadastroData.totalArea}</div>
+                            </div>
+                        </div>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="Financeiro" className="mt-0 space-y-4">
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-3">Desempenho financeiro</p>
+                        <div className="grid grid-cols-7 gap-2 mb-3">
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Receita média anual</p><p className="text-lg">R$ 8.200.00</p><p className="text-[10px] text-green-600">+5% YoY</p></div>
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Endividamento Total</p><p className="text-lg">R$ 1,2 MM</p><p className="text-[10px] text-gray-500">Estável</p></div>
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">DSCR</p><p className="text-lg">1.85x</p><p className="text-[10px] text-green-600">Bom</p></div>
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Alavancagem</p><p className="text-lg">0.27x</p><p className="text-[10px] text-green-600">Bom</p></div>
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Comprometimento</p><p className="text-lg">32%</p><p className="text-[10px] text-amber-600">Moderado</p></div>
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Risco de inadimplência</p><p className="text-lg">AA</p><p className="text-[10px] text-green-600">0.2% • Muito baixo</p></div>
+                            <div className="rounded border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Perda esperada</p><p className="text-lg">25%</p></div>
+                        </div>
+                        <div className="h-[250px] mb-3">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={financeiroSeries} margin={{ top: 10, right: 8, left: -10, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="recGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#84cc16" stopOpacity={0.35} />
+                                            <stop offset="100%" stopColor="#84cc16" stopOpacity={0.03} />
+                                        </linearGradient>
+                                        <linearGradient id="cusGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#facc15" stopOpacity={0.35} />
+                                            <stop offset="100%" stopColor="#facc15" stopOpacity={0.03} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid stroke="#e5e7eb" vertical={false} />
+                                    <XAxis dataKey="year" tick={{ fill: "#6b7280", fontSize: 10 }} />
+                                    <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} />
+                                    <RechartsTooltip />
+                                    <Area type="monotone" dataKey="receita" stroke="#3f8f2a" strokeWidth={2} fill="url(#recGrad)" />
+                                    <Area type="monotone" dataKey="custo" stroke="#d99900" strokeWidth={2} fill="url(#cusGrad)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent text-[10px] text-gray-400">
+                                    <TableHead className="pl-0">Ano</TableHead>
+                                    <TableHead>Receita bruta</TableHead>
+                                    <TableHead>Custos totais</TableHead>
+                                    <TableHead className="pr-0 text-right">Margem bruta</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">2025</TableCell><TableCell className="py-1.5">R$ 4,5 MM</TableCell><TableCell className="py-1.5">R$ 4,5 MM</TableCell><TableCell className="py-1.5 pr-0 text-right">40% (R$ 1.8 MM)</TableCell></TableRow>
+                                <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">2024</TableCell><TableCell className="py-1.5">R$ 3,9 MM</TableCell><TableCell className="py-1.5">R$ 4,5 MM</TableCell><TableCell className="py-1.5 pr-0 text-right">40% (R$ 1.8 MM)</TableCell></TableRow>
+                                <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">2023</TableCell><TableCell className="py-1.5">R$ 3,9 MM</TableCell><TableCell className="py-1.5">R$ 4,5 MM</TableCell><TableCell className="py-1.5 pr-0 text-right">40% (R$ 1.8 MM)</TableCell></TableRow>
+                            </TableBody>
+                        </Table>
+                    </Card>
+
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-3">Resumo financeiro das propriedades</p>
+                        <div className="grid grid-cols-3 gap-3 mb-3">
+                            <div className="rounded border border-gray-200 p-3"><p className="text-[10px] text-gray-400">Receita total</p><p className="text-2xl">R$ 19.613.406,24</p></div>
+                            <div className="rounded border border-gray-200 p-3"><p className="text-[10px] text-gray-400">Custo total</p><p className="text-2xl">R$ 12.715.402,11</p></div>
+                            <div className="rounded border border-gray-200 p-3"><p className="text-[10px] text-gray-400">Resultado total</p><p className="text-2xl">R$ 6.898.004,13</p></div>
+                        </div>
+                        <div className="space-y-3 text-xs">
+                            <div className="border-t border-gray-200 pt-3">
+                                <p className="text-gray-500 mb-1">FAZENDA MONTE VERDE V, VIII E REDENÇÃO I</p>
+                                <div className="grid grid-cols-4"><p>Participação do proprietário</p><p>Receita</p><p>Custo</p><p>Resultado</p></div>
+                                <div className="grid grid-cols-4 text-sm mt-1"><p>24,138%</p><p>R$ 3.536.457,49</p><p>R$ 2.098.297,38</p><p>R$ 1.438.160,11</p></div>
+                            </div>
+                            <div className="border-t border-gray-200 pt-3">
+                                <p className="text-gray-500 mb-1">FAZENDA BARRA BONITA - GLEBA A-1</p>
+                                <div className="grid grid-cols-4"><p>Participação do proprietário</p><p>Receita</p><p>Custo</p><p>Resultado</p></div>
+                                <div className="grid grid-cols-4 text-sm mt-1"><p>24,138%</p><p>R$ 3.536.457,49</p><p>R$ 2.098.297,38</p><p>R$ 1.438.160,11</p></div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <Card className="p-4 border-gray-200 shadow-sm">
+                            <p className="text-sm text-gray-600 mb-3">Indicadores Detalhados</p>
+                            <Table>
+                                <TableHeader><TableRow className="hover:bg-transparent text-[10px] text-gray-400"><TableHead className="pl-0">Indicador</TableHead><TableHead>Valor</TableHead><TableHead>Benchmark</TableHead><TableHead className="pr-0 text-right">Status</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">DSCR</TableCell><TableCell>1.85x</TableCell><TableCell>&gt; 1.25x</TableCell><TableCell className="pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Bom (acima do benchmark)</Badge></TableCell></TableRow>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">Margem EBITDA</TableCell><TableCell>25%</TableCell><TableCell>&gt; 20%</TableCell><TableCell className="pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Bom (Saudável)</Badge></TableCell></TableRow>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">Liquidez Corrente</TableCell><TableCell>1.6x</TableCell><TableCell>&gt; 1.0x</TableCell><TableCell className="pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Bom (Liquidez Adequada)</Badge></TableCell></TableRow>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">Índice de Cobertura (Interest Coverage)</TableCell><TableCell>4.2x</TableCell><TableCell>&gt; 2.5x</TableCell><TableCell className="pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Bom (Cobertura Folgada)</Badge></TableCell></TableRow>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">ROE (Retorno sobre Patrimônio)</TableCell><TableCell>14%</TableCell><TableCell>&gt; 10%</TableCell><TableCell className="pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Bom (Rentabilidade Positiva)</Badge></TableCell></TableRow>
+                                </TableBody>
+                            </Table>
+                        </Card>
+                        <Card className="p-4 border-gray-200 shadow-sm">
+                            <p className="text-sm text-gray-600 mb-3">Capacidade de pagamento</p>
+                            <div className="flex items-center gap-5 mb-4">
+                                <div className="relative w-40 h-24 overflow-hidden">
+                                    <div className="absolute inset-x-0 bottom-0 h-40 w-40 rounded-full border-[14px] border-[#d5e7c7]"></div>
+                                    <div className="absolute inset-x-0 bottom-0 h-40 w-40 rounded-full border-[14px] border-transparent border-t-[#f4c62d] border-r-[#7eb83f] border-b-[#2f7d2d] rotate-[-30deg]"></div>
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-1 text-center">
+                                        <p className="text-2xl font-semibold text-gray-800">8.5/10</p>
+                                        <p className="text-[10px] text-gray-400">SCORE</p>
+                                    </div>
+                                </div>
+                                <div className="flex-1 space-y-2 text-sm">
+                                    <div className="border-b border-gray-200 pb-1"><p className="text-gray-500">Geração de Caixa Mensal</p><p className="text-2xl text-gray-900">R$ 180.000</p></div>
+                                    <div className="border-b border-gray-200 pb-1"><p className="text-gray-500">Compromisso Mensal Estimado</p><p className="text-2xl text-gray-900">R$ 58.000</p></div>
+                                    <div><p className="text-gray-500">Margem Disponível</p><p className="text-2xl text-gray-900">R$ 122.000</p></div>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="Crédito e Compliance" className="mt-0 space-y-3">
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <p className="text-xs text-gray-500 mb-3">Status de Compliance</p>
+                        <div className="grid grid-cols-3 divide-x divide-gray-200">
+                            <div className="text-center px-4">
+                                <p className="text-2xl text-gray-900 mb-2">SCR: Regular</p>
+                                <div className="w-8 h-8 rounded-full border border-green-600 mx-auto mb-2 flex items-center justify-center"><Check className="w-4 h-4 text-green-600" /></div>
+                                <Badge className="bg-green-700 text-white rounded-full px-3 py-0.5">Sem restrições</Badge>
+                            </div>
+                            <div className="text-center px-4">
+                                <p className="text-2xl text-gray-900 mb-2">PEP: Negativo</p>
+                                <div className="w-8 h-8 rounded-full border border-green-600 mx-auto mb-2 flex items-center justify-center"><Check className="w-4 h-4 text-green-600" /></div>
+                                <Badge className="bg-green-700 text-white rounded-full px-3 py-0.5">Sem exposição pública</Badge>
+                            </div>
+                            <div className="text-center px-4">
+                                <p className="text-2xl text-gray-900 mb-2">Hard Stops: 0</p>
+                                <div className="w-8 h-8 rounded-full border border-green-600 mx-auto mb-2 flex items-center justify-center"><Check className="w-4 h-4 text-green-600" /></div>
+                                <Badge className="bg-green-700 text-white rounded-full px-3 py-0.5">Nenhum bloqueio crítico</Badge>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="grid grid-cols-12 gap-3">
+                        <Card className="col-span-12 lg:col-span-6 p-4 border-gray-200 shadow-sm">
+                            <p className="text-xs text-gray-500 mb-3">Score de Crédito</p>
+                            <div className="grid grid-cols-2 gap-4 items-center">
+                                <div className="flex items-center justify-center">
+                                    <div className="relative w-48 h-48 rounded-full bg-gradient-to-b from-red-100 to-white border border-red-100 flex items-center justify-center">
+                                        <div className="absolute -left-2 top-6 h-24 w-8 rounded-full bg-[#ef5350] rotate-[35deg]"></div>
+                                        <AlertTriangle className="w-8 h-8 text-red-500 absolute top-[56px]" />
+                                        <p className="text-5xl text-gray-900 mt-16">400</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600 mb-2">Composição do Score</p>
+                                    <div className="space-y-2 text-xs">
+                                        {[
+                                            ["Histórico de Pagamentos", "95%"],
+                                            ["Utilização de Crédito", "30%"],
+                                            ["Idade do Crédito", "80%"],
+                                            ["Mix de Crédito", "70%"],
+                                            ["Consultas Recentes", "90%"],
+                                        ].map(([label, pct]) => (
+                                            <div key={label}>
+                                                <div className="flex justify-between mb-0.5"><span>{label}</span><span>{pct}</span></div>
+                                                <div className="h-1 bg-gray-200 rounded"><div className="h-1 bg-green-700 rounded" style={{ width: pct }}></div></div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
+                        <Card className="col-span-12 lg:col-span-6 p-4 border-gray-200 shadow-sm">
+                            <p className="text-xs text-gray-500 mb-2">Decisão do motor</p>
+                            <p className="text-4xl text-gray-900 mb-3">Reprovado</p>
+                            <ul className="space-y-2 text-sm text-gray-700">
+                                <li className="flex items-start gap-2"><XCircle className="w-4 h-4 text-red-400 mt-0.5" />Possui contratos com grande quantidade de parcelas</li>
+                                <li className="flex items-start gap-2"><XCircle className="w-4 h-4 text-red-400 mt-0.5" />Possui utilização de alto valor de crédito do tipo emergencial nos últimos 3 meses</li>
+                                <li className="flex items-start gap-2"><XCircle className="w-4 h-4 text-red-400 mt-0.5" />Possui pouco volume de pagamentos em dia</li>
+                                <li className="flex items-start gap-2"><XCircle className="w-4 h-4 text-red-400 mt-0.5" />Possui histórico de atraso nos últimos 3 meses</li>
+                            </ul>
+                        </Card>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-3">
+                        <Card className="col-span-12 lg:col-span-6 p-4 border-gray-200 shadow-sm">
+                            <p className="text-xs text-gray-500 mb-3">Histórico de Consultas Bureau</p>
+                            <Table>
+                                <TableHeader><TableRow className="hover:bg-transparent text-[10px] text-gray-400"><TableHead className="pl-0">Data</TableHead><TableHead>Bureau</TableHead><TableHead>Motivo</TableHead><TableHead className="pr-0 text-right">Status</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">15/10/2025</TableCell><TableCell className="py-1.5">Serasa</TableCell><TableCell className="py-1.5">Nova operação</TableCell><TableCell className="py-1.5 pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Concluído</Badge></TableCell></TableRow>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">15/10/2025</TableCell><TableCell className="py-1.5">Boa vista</TableCell><TableCell className="py-1.5">Análise periódica</TableCell><TableCell className="py-1.5 pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Concluído</Badge></TableCell></TableRow>
+                                    <TableRow className="text-xs"><TableCell className="pl-0 py-1.5">15/10/2025</TableCell><TableCell className="py-1.5">SPC Brasil</TableCell><TableCell className="py-1.5">Prospecção</TableCell><TableCell className="py-1.5 pr-0 text-right"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">Concluído</Badge></TableCell></TableRow>
+                                </TableBody>
+                            </Table>
+                        </Card>
+
+                        <Card className="col-span-12 lg:col-span-3 p-4 border-gray-200 shadow-sm">
+                            <p className="text-xs text-gray-500 mb-3">Sanções & Listas Restritivas</p>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between"><div><p>OFAC/ONU</p><p className="text-xs text-gray-500">Negativo</p></div><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+                                <div className="flex items-center justify-between"><div><p>Lista de Embargos IBAMA</p><p className="text-xs text-gray-500">Negativo</p></div><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+                                <div className="flex items-center justify-between"><div><p>Lista de Trabalho Escravo</p><p className="text-xs text-gray-500">Negativo</p></div><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+                            </div>
+                        </Card>
+
+                        <Card className="col-span-12 lg:col-span-3 p-4 border-gray-200 shadow-sm">
+                            <p className="text-xs text-gray-500 mb-3">Anotações Negativas e Protestos</p>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between"><div><p>Protestos em cartório</p><p className="text-xs text-gray-500">0</p></div><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+                                <div className="flex items-center justify-between"><div><p>Inadimplência (BACEN)</p><p className="text-xs text-gray-500">R$0</p></div><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+                                <div className="flex items-center justify-between"><div><p>Ações Judiciais relevantes</p><p className="text-xs text-gray-500">0</p></div><CheckCircle2 className="w-4 h-4 text-green-600" /></div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <p className="text-xs text-gray-500 mb-2">Detalhamento</p>
+                        <div className="flex items-center gap-4 border-b border-gray-200 mb-3">
+                            <button type="button" onClick={() => setCreditDetailTab("validacoes")} className={`text-sm pb-2 ${creditDetailTab === "validacoes" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>Validações Primárias</button>
+                            <button type="button" onClick={() => setCreditDetailTab("decisoes")} className={`text-sm pb-2 ${creditDetailTab === "decisoes" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>Decisões de Negócio</button>
+                            <button type="button" onClick={() => setCreditDetailTab("scr")} className={`text-sm pb-2 ${creditDetailTab === "scr" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>SCR</button>
+                            <button type="button" onClick={() => setCreditDetailTab("processos")} className={`text-sm pb-2 ${creditDetailTab === "processos" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>Processos</button>
+                            <button type="button" onClick={() => setCreditDetailTab("compliance")} className={`text-sm pb-2 ${creditDetailTab === "compliance" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>Compliance</button>
+                        </div>
+                        {creditDetailTab === "validacoes" && (
+                            <div className="space-y-2">
+                                <div className="rounded-md border border-red-100 bg-red-50 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><XCircle className="w-4 h-4 text-red-400" /> CPNJ possui restrições no CADIN</p><p className="text-[10px] text-red-500 mt-1">RESTRIÇÃO DETECTADA</p></div>
+                                <div className="rounded-md border border-amber-100 bg-amber-50 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> CPNJ possui ações judiciais</p></div>
+                                <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /> CNPJ Ativo</p><p className="text-[10px] text-green-600 mt-1">OK</p></div>
+                                <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /> CPNJ Recuperação Judicial;?</p><p className="text-[10px] text-green-600 mt-1">Não consta</p></div>
+                                <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /> CPNJ sem registro no CCF</p></div>
+                                <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /> CPNJ não é de altíssimo risco</p></div>
+                            </div>
+                        )}
+                        {creditDetailTab === "decisoes" && (
+                            <div className="space-y-2">
+                                {[
+                                    ["Período de fundação > 2 anos", "OK"],
+                                    ["CPNJ é PME", "Não consta"],
+                                    ["QSA atualizado há mais de um ano", ""],
+                                    ["Sócio maior de idade", ""],
+                                    ["Sócio sem registro de óbito", ""],
+                                    ["Sócio sem registro no CCF", ""],
+                                    ["Sócio não se enquadra em score de altíssimo risco", ""],
+                                    ["Sócio sem restrições ou com valor inferior a R$ 1.000,00", ""],
+                                ].map(([title, sub]) => (
+                                    <div key={title} className="rounded-md border border-lime-100 bg-lime-100 p-3">
+                                        <p className="text-xl text-gray-900 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" />{title}</p>
+                                        {sub ? <p className="text-[10px] text-green-700 mt-1">{sub}</p> : null}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {creditDetailTab === "scr" && (
+                            <div className="space-y-3">
+                                <Card className="p-3 border-gray-300 shadow-none">
+                                    <div className="grid grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                                        <div><p className="text-xs text-gray-500">Documento</p><p className="font-semibold">527185780000179</p></div>
+                                        <div><p className="text-xs text-gray-500">Documento</p><p className="font-semibold">527185780000179</p></div>
+                                        <div><p className="text-xs text-gray-500">Valor da Carteira</p><p className="font-semibold">R$ 128.163.572,64</p></div>
+                                        <div><p className="text-xs text-gray-500">Valor Coobrigações</p><p>R$ 0,00</p></div>
+                                        <div><p className="text-xs text-gray-500">Valor de crédito a vencer</p><p>R$ 127.807.074,78</p></div>
+                                        <div><p className="text-xs text-gray-500">Valor de crédito vencido</p><p>R$ 356.497,86</p></div>
+                                        <div><p className="text-xs text-gray-500">Valor Prejuízo</p><p>R$ 0,00</p></div>
+                                        <div><p className="text-xs text-gray-500">Limite de crédito</p><p>R$ 422.970,26</p></div>
+                                        <div><p className="text-xs text-gray-500">Crédito a liberar</p><p>R$ 0,00</p></div>
+                                    </div>
+                                    <div className="border-t border-gray-200 mt-3 pt-3 grid grid-cols-3 gap-6 text-sm">
+                                        <div><p className="font-medium mb-1">A vencer</p><p>Até 30 dias<br /><span className="font-semibold">R$ 8.825.846,80</span></p><p className="mt-1">de 91 a 180 dias<br /><span className="font-semibold">R$ 12.970.962,21</span></p></div>
+                                        <div><p className="font-medium mb-1">&nbsp;</p><p>de 31 a 60 dias<br /><span className="font-semibold">R$ 4.068.364,11</span></p><p className="mt-1">de 181 a 360 dias<br /><span className="font-semibold">R$ 19.049.764,84</span></p></div>
+                                        <div><p className="font-medium mb-1">&nbsp;</p><p>de 61 a 90 dias<br /><span className="font-semibold">R$ 4.717.519,32</span></p><p className="mt-1">acima de 360 dias<br /><span className="font-semibold">R$ 78.174.617,50</span></p></div>
+                                    </div>
+                                </Card>
+                                <Card className="p-3 border-gray-300 shadow-none">
+                                    <p className="text-sm mb-2">Modalidades</p>
+                                    <Table>
+                                        <TableHeader><TableRow className="hover:bg-transparent text-[10px] text-gray-400"><TableHead className="pl-0">CÓDIGO</TableHead><TableHead>DESCRIÇÃO</TableHead><TableHead>REGULAMENTO</TableHead><TableHead className="pr-0 text-right">VALOR</TableHead></TableRow></TableHeader>
+                                        <TableBody>{[["101", "Adiantamentos e depositantes", "Adiantamentos e depositantes", "R$ 202,55"], ["213", "Empréstimos", "Cheque especial", "R$ 4.631,54"], ["214", "Empréstimos", "Conta garantida", "R$ 4.965.399,18"]].map((row) => <TableRow key={row[0]} className="text-xs"><TableCell className="pl-0 py-1.5">{row[0]}</TableCell><TableCell className="py-1.5">{row[1]}</TableCell><TableCell className="py-1.5">{row[2]}</TableCell><TableCell className="py-1.5 pr-0 text-right">{row[3]}</TableCell></TableRow>)}</TableBody>
+                                    </Table>
+                                </Card>
+                            </div>
+                        )}
+                        {creditDetailTab === "processos" && (
+                            <div className="rounded-2xl bg-gray-100 p-4">
+                                <div className="grid grid-cols-5 gap-3 mb-4">
+                                    <div className="bg-white rounded-xl p-3"><p className="text-xs text-gray-500">Total de processos</p><p className="text-4xl mt-3">738</p></div>
+                                    <div className="bg-white rounded-xl p-3"><p className="text-xs text-gray-500">Valor total</p><p className="text-4xl mt-3">R$ 23.948.640,00</p></div>
+                                    <div className="bg-white rounded-xl p-3"><p className="text-xs text-gray-500">Polo ativo</p><p className="text-4xl mt-3">196</p></div>
+                                    <div className="bg-white rounded-xl p-3"><p className="text-xs text-gray-500">Polo passivo</p><p className="text-4xl mt-3">558</p></div>
+                                    <div className="bg-white rounded-xl p-3"><p className="text-xs text-gray-500">Polo variado</p><p className="text-4xl mt-3">32</p></div>
+                                </div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="h-10 w-[300px] bg-white rounded-xl border border-gray-200 px-3 flex items-center gap-2"><Search className="w-4 h-4 text-gray-400" /><span className="text-gray-400">Pesquise um processo</span></div>
+                                    <button type="button" className="h-10 w-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center"><Filter className="w-4 h-4 text-gray-500" /></button>
+                                </div>
+                                <Table>
+                                    <TableHeader><TableRow className="hover:bg-transparent text-[10px] text-gray-500"><TableHead className="pl-0">NÚMERO DO PROCESSO</TableHead><TableHead>TRIBUNAL</TableHead><TableHead>ÁREA</TableHead><TableHead>ÓRGÃO JULGADOR</TableHead><TableHead>VALOR DA CAUSA</TableHead><TableHead>STATUS</TableHead><TableHead>ÚLTIMA MOVIMENTAÇÃO</TableHead><TableHead className="pr-0"></TableHead></TableRow></TableHeader>
+                                    <TableBody>{Array.from({ length: 6 }).map((_, i) => <TableRow key={i} className="text-xs"><TableCell className="pl-0 py-2">00012345620238190001</TableCell><TableCell className="py-2">TRJSP</TableCell><TableCell className="py-2">Indenização por dano material</TableCell><TableCell className="py-2">13 VARA CÍVEL</TableCell><TableCell className="py-2">Não informado</TableCell><TableCell className="py-2"><Badge className="bg-slate-200 text-slate-700">ARQUIVADO</Badge></TableCell><TableCell className="py-2">21/08/2024</TableCell><TableCell className="pr-0 py-2 text-right">↗</TableCell></TableRow>)}</TableBody>
+                                </Table>
+                            </div>
+                        )}
+                        {creditDetailTab === "compliance" && (
+                            <div className="space-y-2">
+                                <div className="rounded-md border border-amber-100 bg-amber-50 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-500" /> Pessoa física possui processos judiciais</p></div>
+                                <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-600" /> Sócio não é PEP</p><p className="text-[10px] text-green-700 mt-1">OK</p></div>
+                                <div className="rounded-md border border-gray-200 bg-gray-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-gray-400" /> CNPJ possui registro no CEIS?</p><p className="text-[10px] text-gray-500 mt-1">Sem resultado</p></div>
+                                <div className="rounded-md border border-gray-200 bg-gray-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-gray-400" /> CNPJ possui registro no CNAP?</p><p className="text-[10px] text-gray-500 mt-1">Sem resultado</p></div>
+                                <div className="rounded-md border border-gray-200 bg-gray-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-gray-400" /> Pessoa física possui antecedentes criminais?</p><p className="text-[10px] text-gray-500 mt-1">Sem resultado</p></div>
+                                <div className="rounded-md border border-gray-200 bg-gray-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-gray-400" /> Pessoa física possui mandados de prisão?</p><p className="text-[10px] text-gray-500 mt-1">Sem resultado</p></div>
+                                <div className="rounded-md border border-gray-200 bg-gray-100 p-3"><p className="text-xl text-gray-900 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-gray-400" /> Pessoa física possui certificado negativo de débitos?</p><p className="text-[10px] text-gray-500 mt-1">Sem resultado</p></div>
+                            </div>
+                        )}
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="Agro" className="mt-0 space-y-4">
+                    <Card className="p-4 border-gray-100 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-3">Capacidade produtiva</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="h-[180px] rounded-lg overflow-hidden border border-gray-200">
+                                <img
+                                    src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/36555/24855"
+                                    alt="Mapa da propriedade"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2">Área e uso da terra</p>
+                                <div className="grid grid-cols-4 gap-2 mb-2">
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área total</p><p className="text-sm font-semibold">3.200 ha</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área agricultável</p><p className="text-sm font-semibold">2.400 ha</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Reserva legal</p><p className="text-sm font-semibold">800 ha</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área perene</p><p className="text-sm font-semibold">1200 ha</p></div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área temporária</p><p className="text-sm font-semibold">1200 ha</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Produtividade</p><p className="text-sm font-semibold">58 sc/ha</p><p className="text-[10px] text-green-600">+5.45% acima do benchmark</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Benchmark regional</p><p className="text-sm font-semibold">55 sc/ha</p></div>
+                                </div>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent border-none text-[10px] text-gray-400">
+                                            <TableHead className="pl-0">Cultura</TableHead>
+                                            <TableHead>Área (ha)</TableHead>
+                                            <TableHead>Margem</TableHead>
+                                            <TableHead>Prod. projetada</TableHead>
+                                            <TableHead className="text-right pr-0">Prod. estimada</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="border-none hover:bg-transparent text-xs">
+                                            <TableCell className="pl-0 py-1.5 font-medium">Soja</TableCell>
+                                            <TableCell className="py-1.5">1400</TableCell>
+                                            <TableCell className="py-1.5">24%</TableCell>
+                                            <TableCell className="py-1.5">60 sc/ha</TableCell>
+                                            <TableCell className="py-1.5 text-right pr-0">84.000 sc</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 border-gray-100 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-3">Tendência de Produtividade (5 anos)</p>
+                        <div className="h-[170px] relative rounded border border-gray-100 px-3 pt-3 pb-6">
+                            <div className="absolute left-0 top-3 bottom-6 w-10 text-[10px] text-gray-400 flex flex-col justify-between">
+                                <span>180 sc/ha</span>
+                                <span>70 sc/ha</span>
+                                <span>50 sc/ha</span>
+                                <span>40 sc/ha</span>
+                                <span>0</span>
+                            </div>
+                            <div className="ml-10 h-full">
+                                <div className="h-[125px] flex items-end gap-2">
+                                    {[40, 38, 44, 46, 44, 48, 58].map((value, index) => (
+                                        <div key={index} className="flex-1 bg-[#92dc49] rounded-t-sm opacity-95" style={{ height: `${value * 2}px` }}></div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between text-[10px] text-gray-400 mt-2">
+                                    <span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 border-gray-100 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-2">Etapas da safra</p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="hover:bg-transparent border-none text-[10px] text-gray-400">
+                                    <TableHead className="pl-0">Cultura</TableHead>
+                                    <TableHead>Início do plantio</TableHead>
+                                    <TableHead>Fim do plantio</TableHead>
+                                    <TableHead>Colheita</TableHead>
+                                    <TableHead className="pr-0 text-right">Ciclo (dias)</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                <TableRow className="border-none hover:bg-transparent text-xs">
+                                    <TableCell className="pl-0 py-2 font-medium">Soja</TableCell>
+                                    <TableCell className="py-2">05/10/2026</TableCell>
+                                    <TableCell className="py-2">20/10/2026</TableCell>
+                                    <TableCell className="py-2">10/01/2027</TableCell>
+                                    <TableCell className="py-2 pr-0 text-right">95</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </Card>
+
+                    <Card className="p-4 border-gray-100 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-3">Propriedades</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {agroProperties.map((farm) => {
+                                const isSelected = selectedFarmId === farm.id;
+                                return (
+                                    <button
+                                        key={farm.id}
+                                        type="button"
+                                        onClick={() => setSelectedFarmId(farm.id)}
+                                        className={`rounded-lg border px-4 py-3 text-left transition-colors ${
+                                            isSelected
+                                                ? "border-[#92dc49] bg-[#92dc49] text-white"
+                                                : "border-gray-200 bg-white text-gray-800 hover:border-gray-300"
+                                        }`}
+                                    >
+                                        <p className="text-[11px] font-semibold uppercase">{farm.name}</p>
+                                        <p className={`text-xs mt-1 flex items-center gap-1 ${isSelected ? "opacity-90" : "text-gray-500"}`}>
+                                            <MapPin className="w-3 h-3" />
+                                            {farm.city}
+                                        </p>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </Card>
+
+                    <Card className="p-4 border-gray-100 shadow-sm">
+                        <p className="text-sm text-gray-600 mb-3">Capacidade produtiva</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="h-[180px] rounded-lg overflow-hidden border border-gray-200">
+                                <img
+                                    src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/36555/24855"
+                                    alt="Mapa da propriedade"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 mb-2">Área e uso da terra</p>
+                                <div className="grid grid-cols-4 gap-2 mb-2">
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área total</p><p className="text-sm font-semibold">{selectedFarm.areaTotal}</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área agricultável</p><p className="text-sm font-semibold">{selectedFarm.areaAgricultavel}</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Reserva legal</p><p className="text-sm font-semibold">{selectedFarm.reservaLegal}</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área perene</p><p className="text-sm font-semibold">{selectedFarm.areaPerene}</p></div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Área temporária</p><p className="text-sm font-semibold">{selectedFarm.areaTemporaria}</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Produtividade</p><p className="text-sm font-semibold">{selectedFarm.produtividade}</p><p className="text-[10px] text-green-600">{selectedFarm.produtividadeHint}</p></div>
+                                    <div className="border border-gray-200 rounded p-2"><p className="text-[10px] text-gray-400">Benchmark regional</p><p className="text-sm font-semibold">{selectedFarm.benchmark}</p></div>
+                                </div>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent border-none text-[10px] text-gray-400">
+                                            <TableHead className="pl-0">Cultura</TableHead>
+                                            <TableHead>Área (ha)</TableHead>
+                                            <TableHead>Margem</TableHead>
+                                            <TableHead>Prod. projetada</TableHead>
+                                            <TableHead className="text-right pr-0">Prod. estimada</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow className="border-none hover:bg-transparent text-xs">
+                                            <TableCell className="pl-0 py-1.5 font-medium">Soja</TableCell>
+                                            <TableCell className="py-1.5">1400</TableCell>
+                                            <TableCell className="py-1.5">24%</TableCell>
+                                            <TableCell className="py-1.5">60 sc/ha</TableCell>
+                                            <TableCell className="py-1.5 text-right pr-0">84.000 sc</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <Card className="p-3 border-gray-200 shadow-none">
+                            <p className="text-[13px] text-gray-600 mb-2">Clima</p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-base">☀️</span>
+                                <p className="text-[30px] leading-none font-semibold text-gray-900">{selectedFarm.climate}</p>
+                                <Badge className="ml-1 h-5 rounded-full bg-green-700 text-white text-[9px] px-2 py-0">AMAZÔNIA</Badge>
+                            </div>
+                            <p className="text-[12px] text-gray-500 mt-2 leading-4">
+                                Caracterizado por temperaturas altas o ano todo e uma estação seca curta seguida de fortes chuvas de monção.
+                            </p>
+                        </Card>
+
+                        <Card className="p-3 border-gray-200 shadow-none">
+                            <p className="text-[13px] text-gray-600 mb-2">Laudo de aptidão agrícola</p>
+                            <div className="space-y-2">
+                                <div className="rounded-lg border border-amber-200 bg-[#fffbea] p-2.5 flex items-start gap-2">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5" />
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-gray-800 leading-4">{selectedFarm.aptidaoPrimary}</p>
+                                        <p className="text-[12px] text-gray-600 leading-4">Terras com aptidão regular para lavouras nos níveis de manejo A, B e C, indicando limitações médias na produção.</p>
+                                    </div>
+                                </div>
+                                <div className="rounded-lg border border-red-200 bg-[#fff5f5] p-2.5 flex items-start gap-2">
+                                    <XCircle className="w-3.5 h-3.5 text-red-400 mt-0.5" />
+                                    <div>
+                                        <p className="text-[13px] font-semibold text-gray-800 leading-4">{selectedFarm.aptidaoSecondary}</p>
+                                        <p className="text-[12px] text-gray-600 leading-4">Terras inaptas para uso agrícola, indicadas exclusivamente para preservação da flora e fauna nativas.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <Card className="p-3 border-gray-200 shadow-none">
+                            <p className="text-[13px] text-gray-600 mb-2">Altitude e topografia</p>
+                            <div className="flex items-center justify-between text-[12px] text-gray-600 mb-2">
+                                <span>{selectedFarm.altitude.max} máx.</span>
+                                <span>{selectedFarm.altitude.med} méd.</span>
+                                <span>{selectedFarm.altitude.min} mín.</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-y-1 gap-x-3 text-[12px] text-gray-700">
+                                <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#7BC043]"></span><span className="font-medium">Plano</span> {selectedFarm.topo.plano}</p>
+                                <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#275D2B]"></span><span className="font-medium">Suave Ondulado</span> {selectedFarm.topo.suave}</p>
+                                <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#7a2f2f]"></span><span className="font-medium">Ondulado</span> {selectedFarm.topo.ondulado}</p>
+                                <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#ef476f]"></span><span className="font-medium">Montanhosa</span> 0.0%</p>
+                                <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-black"></span><span className="font-medium">Ingrime</span> 0.0%</p>
+                                <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#d9a404]"></span><span className="font-medium">Forte ondulada</span> 0.0%</p>
+                            </div>
+                        </Card>
+
+                        <Card className="p-3 border-gray-200 shadow-none">
+                            <p className="text-[13px] text-gray-600 mb-2">Dados faltantes</p>
+                            <ul className="space-y-1 text-[13px] text-red-700">
+                                <li>x Dados de Safra (Ausente)</li>
+                                <li>x Arquivo KML/Geo (Ausente)</li>
+                                <li>x Compliance Ambiental (Vazio)</li>
+                                <li>x Polígonos de Desmatamento (Ausente)</li>
+                            </ul>
+                        </Card>
+                    </div>
+
+                    <Card className="p-3 border-gray-200 shadow-none">
+                        <p className="text-[13px] text-gray-600 mb-2">Dados legais e monitoramento (compliance)</p>
+                        <div className="flex flex-wrap gap-1.5 text-[12px] mb-2.5">
+                            <Badge className={selectedFarm.legal.arrendamento === "SIM" ? "h-6 rounded-full bg-lime-100 text-lime-700 border border-lime-200 font-medium" : "h-6 rounded-full bg-red-100 text-red-700 border border-red-200 font-medium"}>Arrendamento: {selectedFarm.legal.arrendamento}</Badge>
+                            <Badge className={selectedFarm.legal.assentamento === "SIM" ? "h-6 rounded-full bg-lime-100 text-lime-700 border border-lime-200 font-medium" : "h-6 rounded-full bg-red-100 text-red-700 border border-red-200 font-medium"}>Assentamento: {selectedFarm.legal.assentamento}</Badge>
+                            <Badge className={selectedFarm.legal.meeiro === "SIM" ? "h-6 rounded-full bg-lime-100 text-lime-700 border border-lime-200 font-medium" : "h-6 rounded-full bg-red-100 text-red-700 border border-red-200 font-medium"}>Meeiro/Parceiro: {selectedFarm.legal.meeiro}</Badge>
+                        </div>
+                        <p className="text-base text-gray-800 font-medium">Registro no Cartório</p>
+                        <p className="text-[13px] text-gray-600 mt-1">Matrícula: 1209</p>
+                        <p className="text-[13px] text-gray-600">Livro: 02</p>
+                        <p className="text-[13px] text-gray-600">Páginas: 01 à 02</p>
+                        <p className="text-[13px] text-gray-600">MT (Nova Canaã do Norte)</p>
+                        <p className="text-[10px] text-gray-400 mt-2">ID único: MT-5106216-FE553D7E8E0647B4B70E692C06E46A38</p>
+                    </Card>
                 </TabsContent>
 
                 <TabsContent value="Assinaturas" className="mt-0">
@@ -1073,9 +2051,299 @@ export function AgroProposalDetail({ proposal, onBack }) {
                 </TabsContent>
 
                 <TabsContent value="Garantias" className="mt-0">
-                    <Card className="p-6 border-gray-100 shadow-md space-y-8">
-                        <div><h4 className="text-sm font-semibold text-gray-500 mb-4">Imóveis rurais</h4><div className="bg-white rounded-lg border border-gray-100 overflow-hidden"><Table><TableHeader className="bg-gray-50"><TableRow><TableHead>Nome/Descrição</TableHead><TableHead>CPF/CNPJ</TableHead><TableHead className="text-right">Matrícula</TableHead></TableRow></TableHeader><TableBody>{guaranteesData.rural.map((item, i) => (<TableRow key={i}><TableCell className="font-medium text-gray-500">{item.name}</TableCell><TableCell className="text-gray-500">{item.cpf}</TableCell><TableCell className="text-right font-mono text-gray-400">{item.matricula}</TableCell></TableRow>))}</TableBody></Table></div></div>
-                        <div><h4 className="text-sm font-semibold text-gray-500 mb-4">Imóveis urbanos</h4><div className="bg-white rounded-lg border border-gray-100 overflow-hidden"><Table><TableHeader className="bg-gray-50"><TableRow><TableHead>Nome/Descrição</TableHead><TableHead>CPF/CNPJ</TableHead><TableHead className="text-right">Matrícula</TableHead></TableRow></TableHeader><TableBody>{guaranteesData.urban.map((item, i) => (<TableRow key={i}><TableCell className="font-medium text-gray-500">{item.name}</TableCell><TableCell className="text-gray-500">{item.cpf}</TableCell><TableCell className="text-right font-mono text-gray-400">{item.matricula}</TableCell></TableRow>))}</TableBody></Table></div></div>
+                    {!selectedGuarantee ? (
+                        <Card className="p-5 border-gray-200 shadow-sm">
+                            <p className="text-sm text-gray-600 mb-4">Resumo das Garantias</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+                                <div className="rounded-xl border border-gray-200 p-4">
+                                    <p className="text-xs text-gray-500 mb-2">Cobertura total</p>
+                                    <p className="text-4xl text-gray-900 mb-2">142%</p>
+                                    <div className="relative h-2 rounded-full bg-gray-200 overflow-hidden mb-2">
+                                        <div className="absolute left-0 top-0 h-2 bg-green-700 rounded-full" style={{ width: "73%" }}></div>
+                                        <div className="absolute left-[47%] -top-5 text-[11px] text-green-700">100%</div>
+                                        <div className="absolute right-[24%] -top-5 text-[11px] text-[#92dc49]">142%</div>
+                                    </div>
+                                    <p className="text-sm text-gray-700">Excedente de R$ 670.000</p>
+                                </div>
+                                <div className="rounded-xl border border-gray-200 p-4">
+                                    <p className="text-xs text-gray-500 mb-2">Loan-to-value</p>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-4xl text-gray-900">55%</p>
+                                            <p className="text-sm text-gray-700 mt-1">Margem de segurança saudável</p>
+                                        </div>
+                                        <div className="relative w-48 h-24">
+                                            <svg viewBox="0 0 200 100" className="w-full h-full">
+                                                <defs>
+                                                    <linearGradient id="ltvGrad" x1="0" y1="0" x2="1" y2="0">
+                                                        <stop offset="0%" stopColor="#166534" />
+                                                        <stop offset="100%" stopColor="#84cc16" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <path d="M20,80 A80,80 0 0,1 180,80" fill="none" stroke="#e5e7eb" strokeWidth="18" strokeLinecap="round" />
+                                                <path d="M20,80 A80,80 0 0,1 100,0" fill="none" stroke="url(#ltvGrad)" strokeWidth="18" strokeLinecap="round" />
+                                                <text x="100" y="80" textAnchor="middle" className="fill-[#2f7d2d]" style={{ fontSize: "40px", fontWeight: 600 }}>55%</text>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent text-[10px] text-gray-400">
+                                        <TableHead className="pl-0">Nome/Descrição</TableHead>
+                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Valor Líquido</TableHead>
+                                        <TableHead>Ônus</TableHead>
+                                        <TableHead>Seguro</TableHead>
+                                        <TableHead>Registro</TableHead>
+                                        <TableHead className="pr-0 text-right"></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {guaranteeItems.map((item) => (
+                                        <TableRow key={item.name} className="text-2xl border-none">
+                                            <TableCell className="pl-0 py-2">{item.name}</TableCell>
+                                            <TableCell className="py-2">{item.type}</TableCell>
+                                            <TableCell className="py-2">{item.value}</TableCell>
+                                            <TableCell className="py-2">{item.onus}</TableCell>
+                                            <TableCell className="py-2">{item.insurance}</TableCell>
+                                            <TableCell className="py-2">{item.registry}</TableCell>
+                                            <TableCell className="pr-0 py-2 text-right">
+                                                <button type="button" onClick={() => { setSelectedGuarantee(item); setGuaranteeDetailTab("resumo"); }} className="inline-flex w-7 h-7 rounded-full bg-gray-100 items-center justify-center">↗</button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Card>
+                    ) : (
+                        <Card className="p-4 border-gray-200 shadow-sm space-y-4">
+                            <button type="button" onClick={() => setSelectedGuarantee(null)} className="text-sm text-gray-500 flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Garantia</button>
+                            <div className="flex items-center gap-3">
+                                <h3 className="text-5xl text-gray-900">Fazenda Esperança</h3>
+                                <Badge className="bg-amber-100 text-amber-900 rounded-full px-3">Em análise</Badge>
+                                <Badge className="bg-red-100 text-red-700 rounded-full px-3">⚠ Requer atenção</Badge>
+                            </div>
+                            <div className="flex items-center gap-4 border-b border-gray-200">
+                                <button type="button" onClick={() => setGuaranteeDetailTab("resumo")} className={`pb-2 ${guaranteeDetailTab === "resumo" ? "border-b-2 border-[#92dc49] text-gray-900" : "text-gray-500"}`}>Resumo</button>
+                                <button type="button" onClick={() => setGuaranteeDetailTab("imovel")} className={`pb-2 ${guaranteeDetailTab === "imovel" ? "border-b-2 border-[#92dc49] text-gray-900" : "text-gray-500"}`}>Dados do imóvel</button>
+                                <button type="button" onClick={() => setGuaranteeDetailTab("registro")} className={`pb-2 ${guaranteeDetailTab === "registro" ? "border-b-2 border-[#92dc49] text-gray-900" : "text-gray-500"}`}>Registro</button>
+                                <button type="button" onClick={() => setGuaranteeDetailTab("area")} className={`pb-2 ${guaranteeDetailTab === "area" ? "border-b-2 border-[#92dc49] text-gray-900" : "text-gray-500"}`}>Área e exploração</button>
+                                <button type="button" onClick={() => setGuaranteeDetailTab("compliance")} className={`pb-2 ${guaranteeDetailTab === "compliance" ? "border-b-2 border-[#92dc49] text-gray-900" : "text-gray-500"}`}>Compliance</button>
+                                <button type="button" onClick={() => setGuaranteeDetailTab("docs")} className={`pb-2 ${guaranteeDetailTab === "docs" ? "border-b-2 border-[#92dc49] text-gray-900" : "text-gray-500"}`}>Documentos</button>
+                            </div>
+
+                            {guaranteeDetailTab === "resumo" && (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-4 gap-4 text-sm">
+                                        <div><p className="text-gray-500">ID</p><p className="text-2xl">GAR-2026-000184</p></div>
+                                        <div><p className="text-gray-500">Tipo</p><p className="text-2xl">Imóvel rural</p></div>
+                                        <div><p className="text-gray-500">Status</p><p className="text-2xl">Em análise</p></div>
+                                        <div><p className="text-gray-500">Origem dos dados</p><p className="text-2xl">Agronavis + preenchimento interno</p></div>
+                                        <div><p className="text-gray-500">Garantidor Principal</p><p className="text-2xl">Agropecuária Santa Aurora Ltda</p></div>
+                                        <div><p className="text-gray-500">CPF/CNPJ</p><p className="text-2xl">12.345.678/0001-90</p></div>
+                                        <div><p className="text-gray-500">Valor da operação</p><p className="text-2xl">R$ 4.800.000,00</p></div>
+                                        <div><p className="text-gray-500">Operação vinculada</p><p className="text-2xl">Crédito de Investimento Rural</p></div>
+                                        <div><p className="text-gray-500">Situação documental</p><p className="text-2xl">Parcialmente válida</p></div>
+                                        <div><p className="text-gray-500">Situação socioambiental</p><p className="text-2xl text-red-700">Atenção</p></div>
+                                        <div><p className="text-gray-500">Recomendação preliminar</p><p className="text-2xl">Em análise</p></div>
+                                    </div>
+                                    <div className="rounded-xl border border-gray-200 p-4 grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-sm text-gray-500 mb-2">Cobertura da operação</p>
+                                            <p className="text-6xl">119%</p>
+                                            <div className="relative h-2 rounded-full bg-gray-200 overflow-hidden mt-2">
+                                                <div className="absolute left-0 top-0 h-2 bg-green-700 rounded-full" style={{ width: "54%" }}></div>
+                                                <div className="absolute left-[42%] -top-5 text-[11px] text-green-700">100%</div>
+                                                <div className="absolute left-[52%] -top-5 text-[11px] text-[#92dc49]">119%</div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 text-sm">
+                                            <div><p className="text-gray-500">Valor de mercado</p><p className="text-4xl">R$ 8.200.000,00</p></div>
+                                            <div><p className="text-gray-500">Valor da operação</p><p className="text-4xl">R$ 4.800.000,00</p></div>
+                                            <div><p className="text-gray-500">Valor aceito como garantia</p><p className="text-4xl">R$ 5.740.000,00</p></div>
+                                            <div><p className="text-gray-500">Folga de cobertura</p><p className="text-4xl">R$ 940.000,00</p></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {guaranteeDetailTab === "imovel" && (
+                                <div className="space-y-4 text-sm">
+                                    <div><p className="text-gray-500">CAR</p><p className="text-2xl">MT-5102504-7F8A9C1D23B44567A890BCDEF1234567</p></div>
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div><p className="text-gray-500">Nome do Imóvel</p><p className="text-2xl">Fazenda Esperança</p></div>
+                                        <div><p className="text-gray-500">Município</p><p className="text-2xl">Primavera do Leste</p></div>
+                                        <div><p className="text-gray-500">UF</p><p className="text-2xl">MT</p></div>
+                                        <div><p className="text-gray-500">Arrendatário / Parceiro</p><p className="text-2xl">Não</p></div>
+                                        <div><p className="text-gray-500">Proprietário</p><p className="text-2xl">Agropecuária Santa Aurora Ltda</p></div>
+                                        <div><p className="text-gray-500">Latitude</p><p className="text-2xl">-15.563214</p></div>
+                                        <div><p className="text-gray-500">Longitude</p><p className="text-2xl">-54.298741</p></div>
+                                        <div><p className="text-gray-500">Imóvel em assentamento rural</p><p className="text-2xl">Não</p></div>
+                                    </div>
+                                    <div className="border-t border-gray-200 pt-3"><p className="text-gray-500 mb-2">Titulares</p><div className="grid grid-cols-2 gap-4"><p className="text-2xl">Agropecuária Santa Aurora LTDA<br /><span className="text-xl">Titular Principal - CNPJ 12.345.678/0001-90</span></p><p className="text-2xl">João Carlos Ferreira<br /><span className="text-xl">Segundo titular — CPF 123.456.789-10</span></p></div></div>
+                                    <div className="border-t border-gray-200 pt-3"><p className="text-gray-500 mb-2">Polígono CAR</p><div className="h-[260px] rounded-xl overflow-hidden border border-gray-200"><img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/9158/6455" alt="Polígono CAR" className="w-full h-full object-cover" /></div></div>
+                                </div>
+                            )}
+
+                            {guaranteeDetailTab === "registro" && (
+                                <div className="space-y-4 text-sm">
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div><p className="text-gray-500">Matrícula n°</p><p className="text-2xl">18.742</p></div>
+                                        <div><p className="text-gray-500">Livro</p><p className="text-2xl">2</p></div>
+                                        <div><p className="text-gray-500">Página</p><p className="text-2xl">153</p></div>
+                                        <div></div>
+                                        <div><p className="text-gray-500">Cartório / Cidade</p><p className="text-2xl">Registro de Imóveis — Primavera do Leste</p></div>
+                                        <div><p className="text-gray-500">UF</p><p className="text-2xl">MT</p></div>
+                                        <div><p className="text-gray-500">KML Disponível</p><p className="text-2xl">Sim</p></div>
+                                        <div><p className="text-gray-500">QTD. Proprietários</p><p className="text-2xl">2</p></div>
+                                    </div>
+                                    <div className="border-t border-gray-200 pt-3 grid grid-cols-2 gap-4"><div><p className="text-gray-500">Titular principal</p><p className="text-2xl">Agropecuária Santa Aurora Ltda</p></div><div><p className="text-gray-500">Documento</p><p className="text-2xl">12.345.678/0001-90</p></div><div><p className="text-gray-500">Segundo titular</p><p className="text-2xl">João Carlos Ferreira</p></div><div><p className="text-gray-500">Documento</p><p className="text-2xl">123.456.789-10</p></div></div>
+                                    <div className="border-t border-gray-200 pt-3 grid grid-cols-3 gap-4"><div><p className="text-gray-500">Matrícula encontrada</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Titular confere com proponente</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Há coproprietário</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Há Arrendamento</p><p className="text-2xl">NÃO</p></div><div><p className="text-gray-500">Divergência documental</p><p className="text-2xl">NÃO</p></div><div><p className="text-gray-500">Necessita validação jurídica</p><p className="text-2xl">SIM ⚠</p></div></div>
+                                </div>
+                            )}
+
+                            {guaranteeDetailTab === "area" && (
+                                <div className="space-y-4 text-sm">
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div><p className="text-gray-500">Área total</p><p className="text-2xl">2.450,00 ha</p></div><div><p className="text-gray-500">Área agricultivável</p><p className="text-2xl">1.820,00 ha</p></div><div><p className="text-gray-500">Área temporária agricultivável</p><p className="text-2xl">1.650,00 ha</p></div>
+                                        <div><p className="text-gray-500">Área perene agricultivável</p><p className="text-2xl">170,00 ha</p></div><div><p className="text-gray-500">Reserva legal</p><p className="text-2xl">420,00 ha (17,1%)</p></div><div><p className="text-gray-500">APP</p><p className="text-2xl">96,00 ha</p></div>
+                                        <div><p className="text-gray-500">Vegetação nativa</p><p className="text-2xl">505,00 ha</p></div><div><p className="text-gray-500">Área irrigada</p><p className="text-2xl">310,00 ha</p></div><div><p className="text-gray-500">Área do pivô</p><p className="text-2xl">280,00 ha</p></div>
+                                    </div>
+                                    <div className="border-t border-gray-200 pt-3 grid grid-cols-3 gap-4"><div><p className="text-gray-500">Vol. anual permitido (irrigação)</p><p className="text-2xl">1.250.000 m³</p></div><div><p className="text-gray-500">Cultura principal</p><p className="text-2xl">Soja</p></div><div><p className="text-gray-500">Área da cultura principal</p><p className="text-2xl">1.140,00 ha</p></div><div><p className="text-gray-500">Capacidade de silos</p><p className="text-2xl">18.000 toneladas</p></div><div><p className="text-gray-500">Bovinos</p><p className="text-2xl">420 cabeças</p></div><div><p className="text-gray-500">Aves / Suínos</p><p className="text-2xl">Não há</p></div></div>
+                                    <div className="border-t border-gray-200 pt-3"><p className="text-gray-500 mb-2">Safras registradas</p><Table><TableHeader><TableRow className="hover:bg-transparent text-[10px] text-gray-400"><TableHead className="pl-0">Período</TableHead><TableHead>Cultura</TableHead><TableHead className="pr-0">Área</TableHead></TableRow></TableHeader><TableBody><TableRow className="text-xs"><TableCell className="pl-0 py-1">09/2023 – 03/2024</TableCell><TableCell className="py-1">◉ Soja</TableCell><TableCell className="pr-0 py-1">1.120 ha</TableCell></TableRow><TableRow className="text-xs"><TableCell className="pl-0 py-1">03/2024 – 08/2024</TableCell><TableCell className="py-1">◉ Milho</TableCell><TableCell className="pr-0 py-1">780 ha</TableCell></TableRow><TableRow className="text-xs"><TableCell className="pl-0 py-1">09/2024 – 03/2025</TableCell><TableCell className="py-1">◉ Soja</TableCell><TableCell className="pr-0 py-1">1.140 ha</TableCell></TableRow></TableBody></Table></div>
+                                </div>
+                            )}
+
+                            {guaranteeDetailTab === "compliance" && (
+                                <div className="space-y-4 text-sm">
+                                    <p className="text-gray-500">Compliance do produtor</p>
+                                    <div className="space-y-2 border-t border-gray-200 pt-3">
+                                        <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-2xl flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-700" /> IBAMA</p><p className="text-xs text-green-700">Sem registro</p></div>
+                                        <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-2xl flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-700" /> Trabalho escravo</p><p className="text-xs text-green-700">Sem registro</p></div>
+                                        <div className="rounded-md border border-lime-100 bg-lime-100 p-3"><p className="text-2xl flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-700" /> Embargo ambiental</p><p className="text-xs text-green-700">Sem registro</p></div>
+                                        <div className="rounded-md border border-amber-100 bg-amber-50 p-3"><p className="text-2xl flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-amber-600" /> Restrição socioambiental geral</p><p className="text-xs text-amber-700">Em monitoramento</p></div>
+                                    </div>
+                                    <p className="text-gray-500">Compliance da propriedade</p>
+                                    <div className="border-t border-gray-200 pt-3 grid grid-cols-3 gap-4"><div><p className="text-gray-500">Status socioambiental</p><p className="text-2xl">ATENÇÃO</p></div><div><p className="text-gray-500">Área com alerta de desmatamento</p><p className="text-2xl">3,8 ha interceptados</p></div><div><p className="text-gray-500">Polígonos de desmatamento</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Reserva legal informada</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">APP informada</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Necessita análise de compliance</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Impede aceitação automática</p><p className="text-2xl">SIM</p></div><div><p className="text-gray-500">Exige condicionante?</p><p className="text-2xl">SIM</p></div></div>
+                                </div>
+                            )}
+
+                            {guaranteeDetailTab === "docs" && (
+                                <div className="space-y-4 text-sm">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {[
+                                            ["CAR", "Recebido", "Confere com consulta Agronavis"],
+                                            ["Matrícula atualizada", "Recebido", "Exigir certidão mais recente em 30 dias"],
+                                            ["Mapa / KML", "Recebido", "Validado"],
+                                            ["Documento societário", "Recebido", "Sem divergência"],
+                                            ["Certidão de ônus reais", "Pendente", "Obrigatório antes do aceite final"],
+                                            ["Certidão ambiental complementar", "Pendente", "Solicitar ao cliente"],
+                                            ["Parecer jurídico", "Em elaboração", "Dependente da certidão de ônus reais"],
+                                            ["Parecer de compliance", "Em elaboração", "Dependente da validação do alerta de desmatamento"],
+                                        ].map(([title, status, desc]) => (
+                                            <div key={title} className="rounded-xl border border-gray-200 p-3">
+                                                <p className="text-2xl">{title} <Badge className={status === "Recebido" ? "bg-lime-100 text-lime-800" : status === "Pendente" ? "bg-red-100 text-red-800" : "bg-slate-200 text-slate-800"}>{status}</Badge></p>
+                                                <p className="text-xl text-gray-700 mt-1">{desc}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="border-t border-gray-200 pt-3">
+                                        <p className="text-gray-500 text-sm mb-2">PENDÊNCIAS</p>
+                                        <ul className="space-y-1 text-2xl">
+                                            <li>Certidão de ônus reais</li>
+                                            <li>Certidão ambiental complementar</li>
+                                            <li>Atualização da matrícula</li>
+                                            <li>Parecer jurídico</li>
+                                            <li>Parecer de compliance</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </Card>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="Documentos" className="mt-0">
+                    <Card className="p-4 border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-4 border-b border-gray-200 mb-4">
+                            <button type="button" onClick={() => setDocumentsSubTab("documentos")} className={`pb-2 ${documentsSubTab === "documentos" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>Documentos</button>
+                            <button type="button" onClick={() => setDocumentsSubTab("assinaturas")} className={`pb-2 ${documentsSubTab === "assinaturas" ? "text-gray-900 border-b-2 border-[#92dc49]" : "text-gray-500"}`}>Assinaturas <span className="text-red-500 text-xs align-top">●</span></button>
+                        </div>
+
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <button type="button" className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center"><Search className="w-4 h-4 text-gray-500" /></button>
+                                <button type="button" className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center"><Filter className="w-4 h-4 text-gray-500" /></button>
+                                <Button variant="outline" className="h-9 rounded-full bg-white border-gray-200 text-gray-700"><ChevronDown className="w-4 h-4 mr-1" />Tipo</Button>
+                            </div>
+                            {documentsSubTab === "documentos" && (
+                                <Button className="rounded-full h-9 px-4 bg-[#92dc49] hover:bg-[#7ab635] text-white" onClick={() => setIsUploadModalOpen(true)}>Subir documento</Button>
+                            )}
+                        </div>
+
+                        {documentsSubTab === "documentos" ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent text-[10px] text-gray-400">
+                                        <TableHead className="pl-0">Nome</TableHead>
+                                        <TableHead>Data de emissão</TableHead>
+                                        <TableHead>Data de validade</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Status da análise</TableHead>
+                                        <TableHead className="pr-0 text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {documentRegistry.map((doc) => (
+                                        <TableRow key={doc.id} className="text-sm">
+                                            <TableCell className="pl-0 py-2">{doc.name}</TableCell>
+                                            <TableCell className="py-2">{doc.emission}</TableCell>
+                                            <TableCell className="py-2">{doc.valid}</TableCell>
+                                            <TableCell className="py-2"><Badge className="bg-lime-100 text-lime-700 border border-lime-200">OK</Badge></TableCell>
+                                            <TableCell className="py-2"><Badge className="bg-green-700 text-white">{doc.analysisStatus}</Badge></TableCell>
+                                            <TableCell className="py-2 pr-0 text-right">
+                                                <div className="inline-flex gap-2">
+                                                    <button type="button" className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">...</button>
+                                                    <button type="button" onClick={() => setSelectedDocumentPreview(doc)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">↗</button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent text-[10px] text-gray-400">
+                                        <TableHead className="pl-0">Nome</TableHead>
+                                        <TableHead>Analista</TableHead>
+                                        <TableHead>Assinaturas</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Mensagem</TableHead>
+                                        <TableHead className="pr-0 text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {signatureRegistry.map((item) => (
+                                        <TableRow key={item.id} className="text-sm">
+                                            <TableCell className="pl-0 py-2">{item.name}</TableCell>
+                                            <TableCell className="py-2"><span className="inline-flex items-center gap-1"><span className="w-4 h-4 rounded-full bg-green-600 inline-flex items-center justify-center text-white text-[9px]">A</span>{item.analyst}</span></TableCell>
+                                            <TableCell className="py-2">{item.completed} de {item.total}</TableCell>
+                                            <TableCell className="py-2"><Badge className={item.status === "OK" ? "bg-lime-100 text-lime-700 border border-lime-200" : "bg-amber-100 text-amber-800 border border-amber-200"}>{item.status}</Badge></TableCell>
+                                            <TableCell className="py-2">{item.msg}</TableCell>
+                                            <TableCell className="py-2 pr-0 text-right">
+                                                <div className="inline-flex gap-2">
+                                                    <button type="button" className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">...</button>
+                                                    <button type="button" onClick={() => setSelectedDocumentPreview({ name: item.name, fileSize: "3.8 MB" })} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">↗</button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
                     </Card>
                 </TabsContent>
 
@@ -1198,6 +2466,68 @@ export function AgroProposalDetail({ proposal, onBack }) {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+                <DialogContent className="max-w-3xl rounded-2xl p-0 overflow-hidden">
+                    <div className="p-6 border-b border-gray-200">
+                        <DialogTitle className="text-4xl text-gray-900">Upload de arquivo</DialogTitle>
+                    </div>
+                    <div className="p-6">
+                        <label className="block border-2 border-dashed border-gray-300 rounded-xl p-10 text-center cursor-pointer">
+                            <FileText className="w-10 h-10 mx-auto text-gray-500 mb-3" />
+                            <p className="text-2xl text-gray-800">Arraste o arquivo aqui</p>
+                            <p className="text-gray-500">ou <span className="text-[#2f7d2d] underline">Escolha um arquivo</span></p>
+                            <input type="file" className="hidden" onChange={handleUploadFileChange} />
+                        </label>
+                        <div className="flex justify-between text-xs text-gray-500 mt-2 mb-4"><span>Formatos suportados: .pdf, .xls, .docx</span><span>Tamanho máximo: 15 MB</span></div>
+                        {pendingUploadFile && (
+                            <div className="rounded-xl border border-gray-200 p-3">
+                                <div className="flex items-center justify-between"><p className="text-2xl">{pendingUploadFile.name}</p><button type="button" onClick={() => setPendingUploadFile(null)}>×</button></div>
+                                <p className="text-sm text-gray-500">{`${Math.max(0.1, pendingUploadFile.size / (1024 * 1024)).toFixed(1)} MB`}</p>
+                                <div className="h-1.5 bg-gray-200 rounded mt-2"><div className="h-1.5 bg-[#92dc49] rounded" style={{ width: "30%" }}></div></div>
+                                <p className="text-xs text-right mt-1 text-gray-500">30%</p>
+                            </div>
+                        )}
+                        <div className="flex justify-end mt-4">
+                            <Button onClick={handleConfirmUpload} className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white" disabled={!pendingUploadFile}>Pronto</Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!selectedDocumentPreview} onOpenChange={(open) => !open && setSelectedDocumentPreview(null)}>
+                <DialogContent className="max-w-[1200px] h-[90vh] p-0 bg-[#1f1f1f] border-none">
+                    <div className="h-full grid grid-cols-[260px_1fr_320px] gap-3 p-3">
+                        <Card className="p-4 bg-white/95">
+                            <Button variant="outline" className="w-full justify-start rounded-full mb-4" onClick={() => setSelectedDocumentPreview(null)}><ChevronLeft className="w-4 h-4 mr-1" />Fernando Fagundes</Button>
+                            <h4 className="text-xl text-gray-900 mb-2">{selectedDocumentPreview?.name || "Parecer de análise"}</h4>
+                            <p className="text-sm text-gray-500">Data de envio: 24/01/2026</p>
+                            <p className="text-sm text-gray-500">Responsável: Daniel Alves (Analista)</p>
+                            <p className="text-sm text-gray-500">Tempo de espera: 2d</p>
+                        </Card>
+                        <div className="bg-white rounded-xl overflow-hidden">
+                            <div className="h-20 bg-[#00523a]"></div>
+                            <div className="p-6 text-sm text-gray-800 leading-6">
+                                <p className="font-semibold mb-2">IX - OUTRAS CONSIDERAÇÕES</p>
+                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vulputate dui non mauris pellentesque, eu ornare eros porttitor...</p>
+                                <p className="font-semibold mt-6 mb-2">X - CONCLUSÃO</p>
+                                <p>De acordo com as informações apresentadas na peça técnica, econômica e financeira, o crédito demonstra viabilidade...</p>
+                            </div>
+                        </div>
+                        <Card className="p-4 bg-white/95">
+                            <h4 className="text-2xl mb-3">Status de Assinatura (2/3)</h4>
+                            <div className="space-y-3 text-sm mb-4">
+                                <div><p className="text-green-700">☑ Analista</p><p className="text-gray-500">Daniel Alves - 000.000.000-00</p></div>
+                                <div><p className="text-green-700">☑ Supervisor</p><p className="text-gray-500">Ronaldo H - 000.000.000-00</p></div>
+                                <div><p className="text-gray-500">☐ Gerente (Você)</p><p className="text-gray-500">Aguardando...</p></div>
+                            </div>
+                            <Button className="w-full rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white mb-2" onClick={() => handleSignAsAnalyst(selectedDocumentPreview?.name || "Parecer técnico")}>Assinar</Button>
+                            <Button variant="outline" className="w-full rounded-full mb-2">Baixar documento</Button>
+                            <Button variant="outline" className="w-full rounded-full">Solicitar complemento</Button>
+                        </Card>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Report Dialog */}
             <Dialog open={showReport} onOpenChange={setShowReport}>

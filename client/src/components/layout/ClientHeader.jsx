@@ -8,8 +8,9 @@ export function ClientHeader() {
     const notifRef = useRef(null);
 
     const navItems = [
-        { label: "Propostas", path: "/propostas" },
+        { label: "Produtos", path: "/produtos" },
         { label: "Simulador", path: "/simulador" },
+        { label: "Propostas", path: "/propostas" },
         { label: "Pagamentos", path: "/pagamentos" },
     ];
 

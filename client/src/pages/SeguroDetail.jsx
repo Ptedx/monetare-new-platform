@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,16 @@ export function SeguroDetail() {
     const [, setLocation] = useLocation();
     const [modalOpen, setModalOpen] = useState(false);
     const [signed, setSigned] = useState(false);
+    const [seguro, setSeguro] = useState(null);
+
+    useEffect(() => {
+        const details = JSON.parse(localStorage.getItem('segurosDetail') || '[]');
+        if (details.length > 0) {
+            setSeguro(details[0]);
+        }
+    }, []);
+
+    const s = seguro || {};
 
     return (
         <Layout>
@@ -24,7 +34,7 @@ export function SeguroDetail() {
                         >
                             <ChevronLeft className="w-8 h-8 text-gray-800" />
                         </button>
-                        <h1 className="text-3xl font-semibold text-gray-900">Victor Oliveira de Sá</h1>
+                        <h1 className="text-3xl font-semibold text-gray-900">{s.cliente || "Victor Oliveira de Sá"}</h1>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -107,19 +117,19 @@ export function SeguroDetail() {
                         <div className="flex flex-wrap gap-4">
                             <div className="border border-gray-200 rounded-xl p-3 w-48 shrink-0">
                                 <span className="text-xs flex items-center gap-1 text-gray-500 mb-1"><DollarSign className="w-3 h-3" /> Valor segurado</span>
-                                <span className="font-semibold text-gray-900">R$ 250.000</span>
+                                <span className="font-semibold text-gray-900">{s.valorSegurado || "R$ 250.000"}</span>
                             </div>
                             <div className="border border-gray-200 rounded-xl p-3 w-32 shrink-0">
                                 <span className="text-xs flex items-center gap-1 text-gray-500 mb-1"><span className="text-[10px]">🍃</span> Cultura</span>
-                                <span className="font-semibold text-gray-900">Soja</span>
+                                <span className="font-semibold text-gray-900">{s.cultura || "Soja"}</span>
                             </div>
                             <div className="border border-gray-200 rounded-xl p-3 w-32 shrink-0">
                                 <span className="text-xs flex items-center gap-1 text-gray-500 mb-1"><span className="text-[10px]">🗺️</span> Área</span>
-                                <span className="font-semibold text-gray-900">80 ha</span>
+                                <span className="font-semibold text-gray-900">{s.area || "80 ha"}</span>
                             </div>
                             <div className="border border-gray-200 rounded-xl p-3 w-48 shrink-0">
                                 <span className="text-xs flex items-center gap-1 text-gray-500 mb-1"><span className="text-[10px]">📍</span> Município/UF</span>
-                                <span className="font-semibold text-gray-900">Santarém/PA</span>
+                                <span className="font-semibold text-gray-900">{s.municipio || "Santarém/PA"}</span>
                             </div>
                         </div>
                     </div>
@@ -144,11 +154,11 @@ export function SeguroDetail() {
                             </div>
                             <div className="border border-gray-200 rounded-xl p-3 w-32 shrink-0">
                                 <span className="text-xs text-gray-500 block mb-1">Apólice</span>
-                                <span className="font-semibold text-gray-900">456789</span>
+                                <span className="font-semibold text-gray-900">{s.apolice || "456789"}</span>
                             </div>
                             <div className="border border-gray-200 rounded-xl p-3 w-48 shrink-0">
                                 <span className="text-xs text-gray-500 block mb-1">Vigência</span>
-                                <span className="font-semibold text-gray-900">01/01/25 – 31/12/25</span>
+                                <span className="font-semibold text-gray-900">{s.vigencia || "01/01/25 – 31/12/25"}</span>
                             </div>
                             <div className="border border-gray-200 rounded-xl p-3 w-32 shrink-0">
                                 <span className="text-xs text-gray-500 block mb-1">Status</span>

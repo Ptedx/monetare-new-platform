@@ -45,7 +45,10 @@ export function CobrancaDetail() {
                         <h1 className="text-3xl font-semibold text-gray-900">{clientName}</h1>
                     </div>
 
-                    <Button className="rounded-full bg-[#92dc49] hover:bg-[#7ab635] text-white px-8 font-semibold shadow-lg shadow-green-100">
+                    <Button
+                        disabled
+                        className="rounded-full bg-gray-300 text-gray-500 px-8 font-semibold shadow-none cursor-not-allowed"
+                    >
                         Renegociar
                     </Button>
                 </div>

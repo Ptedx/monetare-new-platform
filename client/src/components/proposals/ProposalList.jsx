@@ -7,157 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocation } from "wouter";
 
-const initialMockProposals = [
-  {
-    id: 1,
-    name: "Fernando Fagundes",
-    score: "AA",
-    status: "ATRASO",
-    segment: "Rural",
-    stage: "3. Análise de Crédito",
-    value: "R$ 270.000.000",
-    date: "15/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 2,
-    name: "Fazenda do Gigante",
-    score: "A",
-    status: "OK",
-    segment: "Rural",
-    stage: "3. Análise de Crédito",
-    value: "R$ 270.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 3,
-    name: "Faz Aurora",
-    score: "B",
-    status: "OK",
-    segment: "Rural",
-    stage: "2. Análise Técnica",
-    value: "R$ 150.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 4,
-    name: "Faz Ouro Preto",
-    score: "A",
-    status: "OK",
-    segment: "Rural",
-    stage: "3. Análise de Crédito",
-    value: "R$ 270.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 5,
-    name: "Faz Porto",
-    score: "C",
-    status: "OK",
-    segment: "Rural",
-    stage: "2. Análise Técnica",
-    value: "R$ 150.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 6,
-    name: "Fernando & CIA",
-    score: "B",
-    status: "OK",
-    segment: "Corporate",
-    stage: "3. Análise de Crédito",
-    value: "R$ 270.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 7,
-    name: "Faz Girassol",
-    score: "A",
-    status: "OK",
-    segment: "Rural",
-    stage: "2. Análise Técnica",
-    value: "R$ 150.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-  {
-    id: 8,
-    name: "Faz Nova Jornada",
-    score: "A",
-    status: "OK",
-    segment: "Rural",
-    stage: "4. Análise de Garantias",
-    value: "R$ 270.000.000",
-    date: "17/11/2025",
-    line: "FNO - Agro",
-  },
-];
-
-const clientMockProposals = [
-  {
-    id: 101,
-    name: "Custeio Agro",
-    hash: "id78f094vf",
-    statusBadge: "⚠ 1 pendência",
-    statusType: "error",
-    value: "R$ 25.000",
-    date: "15/11/2025",
-    tab: "Em aberto"
-  },
-  {
-    id: 102,
-    name: "Investimento Agro",
-    hash: "52fsddsE395",
-    statusBadge: "Em análise de crédito",
-    statusType: "neutral",
-    value: "R$ 70.000",
-    date: "15/11/2025",
-    tab: "Em aberto"
-  },
-  {
-    id: 103,
-    name: "Investimento Agro",
-    hash: "a8876h09ffersp",
-    statusBadge: "Contratado",
-    statusType: "success",
-    value: "R$ 70.000",
-    date: "13/02/2025",
-    tab: "Contratados"
-  }
-];
-
-const juridicoMockProposals = [
-  {
-    id: 201,
-    name: "Victor Oliveira de Sá",
-    hash: "lM3312f324",
-    value: "50.250,34",
-    statusBadge: "A ANALISAR",
-    statusType: "neutral" // gray
-  },
-  {
-    id: 202,
-    name: "Sebastião de Souza",
-    hash: "287posSrQ42",
-    value: "50.250,34",
-    statusBadge: "EM ASSINATURA",
-    statusType: "warning" // yellow
-  },
-  {
-    id: 203,
-    name: "Paula Diniz",
-    hash: "a8876h09ffersp",
-    value: "75.000,00",
-    statusBadge: "ASSINADO",
-    statusType: "success" // green
-  }
-];
-
 const getScoreColor = (score) => {
   switch (score) {
     case "AA": return "bg-green-500 hover:bg-green-600";
@@ -169,45 +18,47 @@ const getScoreColor = (score) => {
 };
 
 const getStatusColor = (status) => {
-  return status === "ATRASO" ? "text-red-500 font-bold" : "text-green-500 font-bold";
+  if (status === "ATRASO") return "text-red-500 font-bold";
+  if (status === "REPROVADA" || status === "REJEITADA") return "text-red-500 font-bold";
+  if (status === "OK") return "text-green-500 font-bold";
+  if (status === "PENDENTE_COMITE") return "text-amber-600 font-bold";
+  if (status === "EM_ANALISE_JURIDICA") return "text-blue-600 font-bold";
+  if (status === "EM_SEGURO") return "text-green-600 font-bold";
+  return "text-gray-500 font-bold";
+};
+
+const getStatusDotColor = (status) => {
+  if (status === "ATRASO" || status === "REPROVADA" || status === "REJEITADA") return "bg-red-500";
+  if (status === "PENDENTE_COMITE") return "bg-amber-500";
+  if (status === "EM_ANALISE_JURIDICA" || status === "EM_SEGURO") return "bg-blue-500";
+  return "bg-green-500";
 };
 
 export function ProposalList({ onSelectProposal, title, userRole }) {
   const [proposals, setProposals] = useState([]);
   const [search, setSearch] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("all");
-  const [sortOrder, setSortOrder] = useState("desc"); // desc = newest first
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const [clientTab, setClientTab] = useState("Todos");
-  const [clientProposals, setClientProposals] = useState([]);
   const [juridicoProposals, setJuridicoProposals] = useState([]);
   const [, setLocation] = useLocation();
 
+  // Read proposals directly from localStorage
   useEffect(() => {
     if (userRole === 'cliente') {
-      const storedClient = localStorage.getItem("clientProposals");
-      if (storedClient) {
-        setClientProposals(JSON.parse(storedClient));
-      } else {
-        setClientProposals(clientMockProposals);
-        localStorage.setItem("clientProposals", JSON.stringify(clientMockProposals));
-      }
+      const stored = localStorage.getItem("clientProposals");
+      setProposals(stored ? JSON.parse(stored) : []);
     } else if (userRole === 'juridico') {
-      const storedJuridico = localStorage.getItem("juridicoProposals");
-      if (storedJuridico) {
-        setJuridicoProposals(JSON.parse(storedJuridico));
-      } else {
-        setJuridicoProposals(juridicoMockProposals);
-        localStorage.setItem("juridicoProposals", JSON.stringify(juridicoMockProposals));
-      }
+      const stored = JSON.parse(localStorage.getItem("proposals") || "[]");
+      setJuridicoProposals(stored.filter(p => p.status === "EM_ANALISE_JURIDICA"));
+    } else if (userRole === 'analista') {
+      const stored = JSON.parse(localStorage.getItem("proposals") || "[]");
+      // Analista vê apenas propostas pendentes de análise (PENDENTE_COMITE)
+      setProposals(stored.filter(p => p.status === "PENDENTE_COMITE"));
     } else {
       const stored = localStorage.getItem("proposals");
-      if (stored) {
-        setProposals(JSON.parse(stored));
-      } else {
-        setProposals(initialMockProposals);
-        localStorage.setItem("proposals", JSON.stringify(initialMockProposals));
-      }
+      setProposals(stored ? JSON.parse(stored) : []);
     }
   }, [userRole]);
 
@@ -216,16 +67,39 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
     setSortOrder(newOrder);
   };
 
-  // Parsing date "DD/MM/YYYY" for sorting
   const parseDate = (dateStr) => {
     const parts = dateStr.split('/');
-    return new Date(parts[2], parts[1] - 1, parts[0]);
+    if (parts.length === 3) return new Date(parts[2], parts[1] - 1, parts[0]);
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date(0) : d;
   };
+
+  const formatCurrency = (val) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString("pt-BR");
+  };
+
+  // Map proposal data to client view
+  const clientProposals = proposals.map((p) => {
+    const statusBadge = p.statusBadge || (p.status === "ATIVA" ? "Em análise" : p.status || "Em aberto");
+    const statusType = p.statusType || (p.status === "APROVADA" ? "success" : "neutral");
+    const tab = p.tab || (p.status === "APROVADA" ? "Contratados" : "Em aberto");
+    return { ...p, statusBadge, statusType, tab };
+  });
+
+  const filteredClientProposals = clientProposals.filter(p => clientTab === "Todos" || p.tab === clientTab);
+
+  const filteredJuridico = juridicoProposals.filter(p =>
+    (p.name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (p.hash || "").toLowerCase().includes(search.toLowerCase())
+  );
 
   // ----- CLIENT VIEW -----
   if (userRole === 'cliente') {
-    const filteredClientProposals = clientProposals.filter(p => clientTab === "Todos" || p.tab === clientTab);
-
     return (
       <div className="w-full">
         <div className="flex items-center justify-between mb-8">
@@ -238,20 +112,22 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
           </Button>
         </div>
 
-        <div className="flex gap-2 mb-6 bg-white/50 p-1.5 rounded-xl border border-gray-100/50 w-fit">
-          {["Todos", "Em aberto", "Contratados", "Finalizados"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setClientTab(tab)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${clientTab === tab
-                ? "bg-[#cceebd] text-gray-900 shadow-sm"
-                : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+        {proposals.length > 0 && (
+          <div className="flex gap-2 mb-6 bg-white/50 p-1.5 rounded-xl border border-gray-100/50 w-fit">
+            {["Todos", "Em aberto", "Contratados", "Finalizados"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setClientTab(tab)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${clientTab === tab
+                  ? "bg-[#cceebd] text-gray-900 shadow-sm"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="space-y-4">
           {filteredClientProposals.map((proposal) => (
@@ -263,7 +139,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-lg font-bold text-gray-900">{proposal.name}</span>
-                  <span className="text-xs text-gray-400 font-mono">{proposal.hash}</span>
+                  <span className="text-xs text-gray-400 font-mono">{proposal.hash || `#${proposal.id}`}</span>
                 </div>
                 <div>
                   <span className={`inline-flex px-2 py-0.5 rounded-md text-xs font-semibold ${proposal.statusType === 'error' ? 'bg-red-100 text-red-600' :
@@ -276,8 +152,8 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
               </div>
               <div className="flex items-center gap-6">
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-lg font-bold text-gray-900">{proposal.value}</span>
-                  <span className="text-xs text-gray-400">{proposal.date}</span>
+                  <span className="text-lg font-bold text-gray-900">{proposal.value || formatCurrency(proposal.requestedValue)}</span>
+                  <span className="text-xs text-gray-400">{proposal.date || formatDate(proposal.createdAt)}</span>
                 </div>
                 <ArrowUpRight className="w-6 h-6 text-gray-400 group-hover:text-[#92dc49] transition-colors" />
               </div>
@@ -285,7 +161,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
           ))}
           {filteredClientProposals.length === 0 && (
             <div className="text-center py-10 text-gray-500 bg-white border border-gray-100 rounded-xl">
-              Nenhuma proposta encontrada nesta categoria.
+              {proposals.length === 0 ? "Nenhuma proposta cadastrada ainda. Clique em 'Nova proposta' para começar." : "Nenhuma proposta encontrada nesta categoria."}
             </div>
           )}
         </div>
@@ -295,13 +171,10 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
 
   // ----- JURIDICO VIEW -----
   if (userRole === 'juridico') {
-    const filteredJuridico = juridicoProposals.filter(p => p.name.toLowerCase().includes(search.toLowerCase()) || p.hash.toLowerCase().includes(search.toLowerCase()));
-
     return (
       <div className="p-8 w-full max-w-6xl mx-auto space-y-6">
         <div>
           <h1 className="text-3xl lg:text-4xl text-gray-900 mb-8">Caixa de Entrada</h1>
-
           <div className="flex items-center gap-2 mb-6">
             <div className="relative w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50">
               <Search className="w-4 h-4 text-gray-600" />
@@ -341,7 +214,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="inline-flex w-8 h-8 rounded-lg bg-gray-100 items-center justify-center group-hover:bg-[#cceebd] transition-colors">
+                      <div className="inline-flex w-8 h-8 rounded-lg bg-gray-100 items-center justify-center transition-colors">
                         <ArrowUpRight className="w-4 h-4 text-gray-600" />
                       </div>
                     </TableCell>
@@ -357,28 +230,17 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
               </TableBody>
             </Table>
           </div>
-
-          <div className="flex justify-end gap-2 mt-6 text-sm text-gray-500 items-center">
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&lt;&lt;</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&lt;</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#92dc49] bg-[#f0f4f1] text-gray-900 font-bold">1</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">2</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">3</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">...</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&gt;</span>
-            <span className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 bg-white cursor-pointer hover:bg-gray-50">&gt;&gt;</span>
-          </div>
         </div>
       </div>
     );
   }
 
-  // ----- DEFAULT VIEW -----
+  // ----- DEFAULT VIEW (Analista, Gerente, etc.) -----
   const filteredProposals = proposals
     .filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.value.includes(search) ||
-        p.line.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = (p.name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (p.value || "").includes(search) ||
+        (p.line || "").toLowerCase().includes(search.toLowerCase());
       const matchesSegment = segmentFilter === 'all' || p.segment === segmentFilter;
       return matchesSearch && matchesSegment;
     })
@@ -441,7 +303,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredProposals.map((proposal) => (
+              {filteredProposals.length > 0 ? filteredProposals.map((proposal) => (
                 <TableRow
                   key={proposal.id}
                   className="cursor-pointer hover:bg-gray-50"
@@ -450,14 +312,12 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <span>{proposal.name}</span>
-                      <Badge className={`${getScoreColor(proposal.score)} text-white border-0`}>
-                        {proposal.score}
-                      </Badge>
+                      {proposal.score && <Badge className={`${getScoreColor(proposal.score)} text-white border-0`}>{proposal.score}</Badge>}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${proposal.status === 'ATRASO' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                      <div className={`w-2 h-2 rounded-full ${getStatusDotColor(proposal.status)}`}></div>
                       <span className={getStatusColor(proposal.status)}>{proposal.status}</span>
                     </div>
                   </TableCell>
@@ -475,29 +335,17 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
                     <ChevronRight className="w-4 h-4 text-gray-400" />
                   </TableCell>
                 </TableRow>
-              ))}
-              {filteredProposals.length === 0 && (
+              )) : (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                    Nenhuma proposta encontrada.
+                    {proposals.length === 0 ? "Nenhuma proposta cadastrada ainda." : "Nenhuma proposta encontrada."}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
-
-        <div className="flex justify-end gap-2 mt-4 text-sm text-gray-500">
-          <span>&lt;&lt;</span>
-          <span>&lt;</span>
-          <span className="font-bold text-black">1</span>
-          <span>2</span>
-          <span>3</span>
-          <span>&gt;</span>
-          <span>&gt;&gt;</span>
-        </div>
       </div>
     </div>
   );
 }
-

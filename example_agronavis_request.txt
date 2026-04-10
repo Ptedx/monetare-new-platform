@@ -1,0 +1,731 @@
+{
+	"execution_id": "ad7238e5-3dc5-477a-933c-77ad876672da",
+	"document_type": "CNPJ",
+	"cached": true,
+	"saved_raw_path": null,
+	"saved_frontend_path": null,
+	"cached_document_path": "agronavis/by_document/17211227000189.json",
+	"result": {
+	"	"header": {
+			"executionId": "ad7238e5-3dc5-477a-933c-77ad876672da",
+			"status": "Finalizado",
+			"document": "17211227000189",
+			"documentMasked": "17.***.***/****-89",
+			"documentType": "CNPJ",
+			"source": "Agronavis",
+			"messageId": "delivery_get_owner_successfull"
+		},
+		"decision": {
+			"code": "approve",
+			"label": "Sem impedimentos relevantes",
+			"description": "Não foram encontrados impedimentos relevantes na resposta de compliance."
+		},
+		"producer": {
+			"document": "17211227000189",
+			"documentType": "CNPJ",
+			"owner": "NAZARE AGROPEC LTDA",
+			"email": [],
+			"phone": [],
+			"stateRegistration": null,
+			"isCustomer": null,
+			"realtyCount": 3,
+			"ruralInsurance": null,
+			"technifiedIndicator": null
+		},
+		"financialSummary": {
+			"totalCommitments": 0,
+			"totalCost": 12715402.10717,
+			"totalIncome": 19613406.23902,
+			"totalResult": 6898004.13185,
+			"finalResult": 6898004.13185,
+			"commitments": [],
+			"realtyFinancial": [
+				{
+					"owner_participation_rate": 0.24138,
+					"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+					"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+					"total_cost": 2098297.377012188,
+					"total_income": 3536457.4881217605,
+					"total_result": 1438160.1111095722,
+					"year": 2025
+				},
+				{
+					"owner_participation_rate": 1,
+					"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+					"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+					"total_cost": 35927.575733814294,
+					"total_income": 60552.06628085987,
+					"total_result": 24624.490547045578,
+					"year": 2025
+				},
+				{
+					"owner_participation_rate": 0.38462,
+					"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+					"realty_name": "FAZENDA TUCANO  MAT 1209",
+					"total_cost": 2643238.276832221,
+					"total_income": 4454893.937756323,
+					"total_result": 1811655.660924102,
+					"year": 2025
+				},
+				{
+					"owner_participation_rate": 0.24138,
+					"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+					"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+					"total_cost": 12112054.75054904,
+					"total_income": 18524233.91261984,
+					"total_result": 6412179.1620708,
+					"year": 2024
+				},
+				{
+					"owner_participation_rate": 1,
+					"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+					"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+					"total_cost": 102603.43606798824,
+					"total_income": 149026.81354733984,
+					"total_result": 46423.37747935161,
+					"year": 2024
+				},
+				{
+					"owner_participation_rate": 0.38462,
+					"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+					"realty_name": "FAZENDA TUCANO  MAT 1209",
+					"total_cost": 1804366.4517311505,
+					"total_income": 2747367.4551878953,
+					"total_result": 943001.003456745,
+					"year": 2024
+				},
+				{
+					"owner_participation_rate": 0.24138,
+					"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+					"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+					"total_cost": 13385528.98199151,
+					"total_income": 20457620.84480792,
+					"total_result": 7072091.862816407,
+					"year": 2023
+				},
+				{
+					"owner_participation_rate": 1,
+					"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+					"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+					"total_cost": 6166.838055432172,
+					"total_income": 9635.67669356193,
+					"total_result": 3468.838638129758,
+					"year": 2023
+				},
+				{
+					"owner_participation_rate": 0.24138,
+					"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+					"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+					"total_cost": 6766967.262823158,
+					"total_income": 10770653.62436263,
+					"total_result": 4003686.3615394733,
+					"year": 2022
+				},
+				{
+					"owner_participation_rate": 1,
+					"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+					"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+					"total_cost": 79297.03054314836,
+					"total_income": 120480.39261969454,
+					"total_result": 41183.36207654618,
+					"year": 2022
+				},
+				{
+					"owner_participation_rate": 0.38462,
+					"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+					"realty_name": "FAZENDA TUCANO  MAT 1209",
+					"total_cost": 690960.1674993974,
+					"total_income": 1078645.281442412,
+					"total_result": 387685.11394301447,
+					"year": 2022
+				}
+			]
+		},
+		"compliance": {
+			"ownerStatus": false,
+			"criteria": [
+				{
+					"compliance": "ibama",
+					"last_registry": null,
+					"status_compliance": null
+				},
+				{
+					"compliance": "trabalho_escravo",
+					"last_registry": null,
+					"status_compliance": null
+				}
+			],
+			"flags": []
+		},
+		"properties": [
+			{
+				"meta": {
+					"realtyIdPresence": "available",
+					"harvestPresence": "missing",
+					"kmlPresence": "missing",
+					"propertyCompliancePresence": "empty",
+					"deforestationPolygonsPresence": "missing"
+				},
+				"realtyId": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+				"realtyName": "Fazenda Monte Verde V, VIII e Redenção I",
+				"owner": "NAZARE AGROPEC LTDA",
+				"city": "Itaúba",
+				"state": "MT",
+				"totalArea": 44161209.07625445,
+				"arableArea": 7443803.64004,
+				"temporaryArableArea": 7443803.64004,
+				"perennialArableArea": 0,
+				"legalReserveArea": 30334797.065339647,
+				"latitude": -11.000385,
+				"longitude": -55.615982,
+				"sharecropper": true,
+				"kml": null,
+				"ruralSettlement": false,
+				"altitude": {
+					"max": 376.0,
+					"mean": 321.45426525954394,
+					"min": 275.0
+				},
+				"declivity": {
+					"flat": 0.3856,
+					"mountainous": 0.0,
+					"soft_wavy": 0.4396,
+					"steep": 0.0,
+					"strong_wavy": 0.0083,
+					"wavy": 0.1665
+				},
+				"biome": [
+					"Amazônia"
+				],
+				"climate": [
+					{
+						"class": "Am",
+						"description": "Tropical, monção"
+					}
+				],
+				"agriculturalAptitude": [
+					{
+						"legend_ap": "Aptidão BOA para lavouras no nível de manejo C e RESTRITA nos níveis de manejo A e B.",
+						"simb_apt": "1(ab)C"
+					},
+					{
+						"legend_ap": "Aptidão RESTRITA para pastagem plantada e INAPTA para lavouras.",
+						"simb_apt": "4(p)"
+					}
+				],
+				"mainCulture": {
+					"culture": "milho",
+					"area": 4213969.617521623
+				},
+				"registry": {
+					"book": "02",
+					"city": "Itaúba",
+					"number": "373",
+					"page": "01",
+					"uf": "MT"
+				},
+				"harvest": [],
+				"propertyCompliance": null,
+				"deforestationPolygons": null
+			},
+			{
+				"meta": {
+					"realtyIdPresence": "available",
+					"harvestPresence": "missing",
+					"kmlPresence": "missing",
+					"propertyCompliancePresence": "empty",
+					"deforestationPolygonsPresence": "missing"
+				},
+				"realtyId": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+				"realtyName": "FAZENDA BARRA BONITA - GLEBA A-1",
+				"owner": "NAZARE AGROPEC LTDA",
+				"city": "Nova Canaã do Norte",
+				"state": "MT",
+				"totalArea": 102091.34212766173,
+				"arableArea": 102091.33237,
+				"temporaryArableArea": 102091.33237,
+				"perennialArableArea": 0,
+				"legalReserveArea": 0.0,
+				"latitude": -10.655099,
+				"longitude": -56.126317,
+				"sharecropper": false,
+				"kml": null,
+				"ruralSettlement": false,
+				"altitude": {
+					"max": 278.0,
+					"mean": 272.8333333333333,
+					"min": 268.0
+				},
+				"declivity": {
+					"flat": 0.8081,
+					"mountainous": 0.0,
+					"soft_wavy": 0.1919,
+					"steep": 0.0,
+					"strong_wavy": 0.0,
+					"wavy": 0.0
+				},
+				"biome": [
+					"Amazônia"
+				],
+				"climate": [
+					{
+						"class": "Am",
+						"description": "Tropical, monção"
+					}
+				],
+				"agriculturalAptitude": [
+					{
+						"legend_ap": "Aptidão RESTRITA para lavouras nos níveis de manejo A, B e C.",
+						"simb_apt": "3(abc)"
+					}
+				],
+				"mainCulture": {
+					"culture": "milho",
+					"area": 51232.106692751026
+				},
+				"registry": {
+					"book": "02",
+					"city": "Nova Canaã do Norte",
+					"number": "4363",
+					"page": "01 -02",
+					"uf": "MT"
+				},
+				"harvest": [],
+				"propertyCompliance": null,
+				"deforestationPolygons": null
+			},
+			{
+				"meta": {
+					"realtyIdPresence": "available",
+					"harvestPresence": "missing",
+					"kmlPresence": "missing",
+					"propertyCompliancePresence": "empty",
+					"deforestationPolygonsPresence": "missing"
+				},
+				"realtyId": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+				"realtyName": "FAZENDA TUCANO  MAT 1209",
+				"owner": "NAZARE AGROPEC LTDA",
+				"city": "Nova Canaã do Norte",
+				"state": "MT",
+				"totalArea": 13241302.826575177,
+				"arableArea": 5962764.03276,
+				"temporaryArableArea": 5962764.03276,
+				"perennialArableArea": 0,
+				"legalReserveArea": 5806075.3219297165,
+				"latitude": -10.611702,
+				"longitude": -56.146516,
+				"sharecropper": true,
+				"kml": null,
+				"ruralSettlement": false,
+				"altitude": {
+					"max": 392.0,
+					"mean": 283.7905405405405,
+					"min": 255.0
+				},
+				"declivity": {
+					"flat": 0.5623,
+					"mountainous": 0.0,
+					"soft_wavy": 0.3623,
+					"steep": 0.0,
+					"strong_wavy": 0.0014,
+					"wavy": 0.074
+				},
+				"biome": [
+					"Amazônia"
+				],
+				"climate": [
+					{
+						"class": "Am",
+						"description": "Tropical, monção"
+					}
+				],
+				"agriculturalAptitude": [
+					{
+						"legend_ap": "Aptidão RESTRITA para lavouras nos níveis de manejo A, B e C.",
+						"simb_apt": "3(abc)"
+					},
+					{
+						"legend_ap": "Terras INAPTAS para uso agrícola, indicadas para a preservação de flora e fauna.",
+						"simb_apt": "6"
+					}
+				],
+				"mainCulture": {
+					"culture": "milho",
+					"area": 5467924.366212174
+				},
+				"registry": {
+					"book": "02 ",
+					"city": "Nova Canaã do Norte",
+					"number": "1209",
+					"page": "01 À 02",
+					"uf": "MT"
+				},
+				"harvest": [],
+				"propertyCompliance": null,
+				"deforestationPolygons": null
+			}
+		],
+		"productivity": [],
+		"layer": [],
+		"otherActivities": [],
+		"summary": {
+			"propertiesCount": 3,
+			"productivityCount": 0,
+			"layerCount": 0,
+			"otherActivitiesCount": 0,
+			"criteriaCount": 2
+		},
+		"meta": {
+			"rootPresence": {
+				"owner": "available",
+				"realty": "available",
+				"productivity": "missing",
+				"compliance": "available",
+				"layer": "missing",
+				"other_activities": "empty"
+			},
+			"ownerPresence": {
+				"document": "available",
+				"document_type": "available",
+				"email": "missing",
+				"financial_summary": "available",
+				"is_customer": "missing",
+				"owner": "available",
+				"phone": "missing",
+				"realty_count": "available",
+				"rural_insurance": "missing",
+				"state_registration": "missing",
+				"technified_indicator": "missing"
+			},
+			"financialPresence": {
+				"commitments": "empty",
+				"final_result": "available",
+				"total_commitments": "available",
+				"total_cost": "available",
+				"total_income": "available",
+				"total_result": "available",
+				"realty_financial": "available"
+			},
+			"compliancePresence": {
+				"criteria": "available",
+				"owner_status": "available"
+			}
+		},
+		"technical": {
+			"rawMessageId": "delivery_get_owner_successfull",
+			"rawMetadata": {},
+			"rawError": false,
+			"rawData": {
+				"compliance": {
+					"criteria": [
+						{
+							"compliance": "ibama",
+							"last_registry": null,
+							"status_compliance": null
+						},
+						{
+							"compliance": "trabalho_escravo",
+							"last_registry": null,
+							"status_compliance": null
+						}
+					],
+					"owner_status": false
+				},
+				"other_activities": null,
+				"owner": {
+					"document": "17211227000189",
+					"document_type": "CNPJ",
+					"financial_summary": {
+						"commitments": [],
+						"final_result": 6898004.13185,
+						"realty_financial": [
+							{
+								"owner_participation_rate": 0.24138,
+								"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+								"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+								"total_cost": 2098297.377012188,
+								"total_income": 3536457.4881217605,
+								"total_result": 1438160.1111095722,
+								"year": 2025
+							},
+							{
+								"owner_participation_rate": 1,
+								"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+								"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+								"total_cost": 35927.575733814294,
+								"total_income": 60552.06628085987,
+								"total_result": 24624.490547045578,
+								"year": 2025
+							},
+							{
+								"owner_participation_rate": 0.38462,
+								"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+								"realty_name": "FAZENDA TUCANO  MAT 1209",
+								"total_cost": 2643238.276832221,
+								"total_income": 4454893.937756323,
+								"total_result": 1811655.660924102,
+								"year": 2025
+							},
+							{
+								"owner_participation_rate": 0.24138,
+								"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+								"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+								"total_cost": 12112054.75054904,
+								"total_income": 18524233.91261984,
+								"total_result": 6412179.1620708,
+								"year": 2024
+							},
+							{
+								"owner_participation_rate": 1,
+								"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+								"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+								"total_cost": 102603.43606798824,
+								"total_income": 149026.81354733984,
+								"total_result": 46423.37747935161,
+								"year": 2024
+							},
+							{
+								"owner_participation_rate": 0.38462,
+								"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+								"realty_name": "FAZENDA TUCANO  MAT 1209",
+								"total_cost": 1804366.4517311505,
+								"total_income": 2747367.4551878953,
+								"total_result": 943001.003456745,
+								"year": 2024
+							},
+							{
+								"owner_participation_rate": 0.24138,
+								"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+								"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+								"total_cost": 13385528.98199151,
+								"total_income": 20457620.84480792,
+								"total_result": 7072091.862816407,
+								"year": 2023
+							},
+							{
+								"owner_participation_rate": 1,
+								"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+								"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+								"total_cost": 6166.838055432172,
+								"total_income": 9635.67669356193,
+								"total_result": 3468.838638129758,
+								"year": 2023
+							},
+							{
+								"owner_participation_rate": 0.24138,
+								"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+								"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+								"total_cost": 6766967.262823158,
+								"total_income": 10770653.62436263,
+								"total_result": 4003686.3615394733,
+								"year": 2022
+							},
+							{
+								"owner_participation_rate": 1,
+								"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+								"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+								"total_cost": 79297.03054314836,
+								"total_income": 120480.39261969454,
+								"total_result": 41183.36207654618,
+								"year": 2022
+							},
+							{
+								"owner_participation_rate": 0.38462,
+								"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+								"realty_name": "FAZENDA TUCANO  MAT 1209",
+								"total_cost": 690960.1674993974,
+								"total_income": 1078645.281442412,
+								"total_result": 387685.11394301447,
+								"year": 2022
+							}
+						],
+						"total_commitments": 0,
+						"total_cost": 12715402.10717,
+						"total_income": 19613406.23902,
+						"total_result": 6898004.13185
+					},
+					"owner": "NAZARE AGROPEC LTDA",
+					"realty_count": 3
+				},
+				"realty": [
+					{
+						"agricultural_aptitude": [
+							{
+								"legend_ap": "Aptidão BOA para lavouras no nível de manejo C e RESTRITA nos níveis de manejo A e B.",
+								"simb_apt": "1(ab)C"
+							},
+							{
+								"legend_ap": "Aptidão RESTRITA para pastagem plantada e INAPTA para lavouras.",
+								"simb_apt": "4(p)"
+							}
+						],
+						"altitude": {
+							"max": 376.0,
+							"mean": 321.45426525954394,
+							"min": 275.0
+						},
+						"arable_area": 7443803.64004,
+						"biome": [
+							"Amazônia"
+						],
+						"city_name": "Itaúba",
+						"climate": [
+							{
+								"class": "Am",
+								"description": "Tropical, monção"
+							}
+						],
+						"compliance": null,
+						"declivity": {
+							"flat": 0.3856,
+							"mountainous": 0.0,
+							"soft_wavy": 0.4396,
+							"steep": 0.0,
+							"strong_wavy": 0.0083,
+							"wavy": 0.1665
+						},
+						"lat": -11.000385,
+						"legal_reserve_area": 30334797.065339647,
+						"long": -55.615982,
+						"main_culture": {
+							"area": 4213969.617521623,
+							"culture": "milho"
+						},
+						"owner": "NAZARE AGROPEC LTDA",
+						"perennial_arable_area": 0,
+						"realty_id": "MT-5104559-57E45DC8467C4BB9AFC8640D4D10D698",
+						"realty_name": "Fazenda Monte Verde V, VIII e Redenção I",
+						"registry": {
+							"book": "02",
+							"city": "Itaúba",
+							"number": "373",
+							"page": "01",
+							"uf": "MT"
+						},
+						"rural_settlement": false,
+						"sharecropper": true,
+						"temporary_arable_area": 7443803.64004,
+						"total_area": 44161209.07625445,
+						"uf": "MT"
+					},
+					{
+						"agricultural_aptitude": [
+							{
+								"legend_ap": "Aptidão RESTRITA para lavouras nos níveis de manejo A, B e C.",
+								"simb_apt": "3(abc)"
+							}
+						],
+						"altitude": {
+							"max": 278.0,
+							"mean": 272.8333333333333,
+							"min": 268.0
+						},
+						"arable_area": 102091.33237,
+						"biome": [
+							"Amazônia"
+						],
+						"city_name": "Nova Canaã do Norte",
+						"climate": [
+							{
+								"class": "Am",
+								"description": "Tropical, monção"
+							}
+						],
+						"compliance": null,
+						"declivity": {
+							"flat": 0.8081,
+							"mountainous": 0.0,
+							"soft_wavy": 0.1919,
+							"steep": 0.0,
+							"strong_wavy": 0.0,
+							"wavy": 0.0
+						},
+						"lat": -10.655099,
+						"legal_reserve_area": 0.0,
+						"long": -56.126317,
+						"main_culture": {
+							"area": 51232.106692751026,
+							"culture": "milho"
+						},
+						"owner": "NAZARE AGROPEC LTDA",
+						"perennial_arable_area": 0,
+						"realty_id": "MT-5106216-0DB24439D23C43BB9CDD58452867CE64",
+						"realty_name": "FAZENDA BARRA BONITA - GLEBA A-1",
+						"registry": {
+							"book": "02",
+							"city": "Nova Canaã do Norte",
+							"number": "4363",
+							"page": "01 -02",
+							"uf": "MT"
+						},
+						"rural_settlement": false,
+						"sharecropper": false,
+						"temporary_arable_area": 102091.33237,
+						"total_area": 102091.34212766173,
+						"uf": "MT"
+					},
+					{
+						"agricultural_aptitude": [
+							{
+								"legend_ap": "Aptidão RESTRITA para lavouras nos níveis de manejo A, B e C.",
+								"simb_apt": "3(abc)"
+							},
+							{
+								"legend_ap": "Terras INAPTAS para uso agrícola, indicadas para a preservação de flora e fauna.",
+								"simb_apt": "6"
+							}
+						],
+						"altitude": {
+							"max": 392.0,
+							"mean": 283.7905405405405,
+							"min": 255.0
+						},
+						"arable_area": 5962764.03276,
+						"biome": [
+							"Amazônia"
+						],
+						"city_name": "Nova Canaã do Norte",
+						"climate": [
+							{
+								"class": "Am",
+								"description": "Tropical, monção"
+							}
+						],
+						"compliance": null,
+						"declivity": {
+							"flat": 0.5623,
+							"mountainous": 0.0,
+							"soft_wavy": 0.3623,
+							"steep": 0.0,
+							"strong_wavy": 0.0014,
+							"wavy": 0.074
+						},
+						"lat": -10.611702,
+						"legal_reserve_area": 5806075.3219297165,
+						"long": -56.146516,
+						"main_culture": {
+							"area": 5467924.366212174,
+							"culture": "milho"
+						},
+						"owner": "NAZARE AGROPEC LTDA",
+						"perennial_arable_area": 0,
+						"realty_id": "MT-5106216-FE553D7E8E0647B4B70E692CC6E46A38",
+						"realty_name": "FAZENDA TUCANO  MAT 1209",
+						"registry": {
+							"book": "02 ",
+							"city": "Nova Canaã do Norte",
+							"number": "1209",
+							"page": "01 À 02",
+							"uf": "MT"
+						},
+						"rural_settlement": false,
+						"sharecropper": true,
+						"temporary_arable_area": 5962764.03276,
+						"total_area": 13241302.826575177,
+						"uf": "MT"
+					}
+				]
+			}
+		}
+	}
+}

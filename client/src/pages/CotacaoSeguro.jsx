@@ -6,21 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ArrowRight, Briefcase, DollarSign, Building2, Users, Receipt, User, Phone, FileDigit, Mail, Check, FileText, Download, Send } from "lucide-react";
 import { useLocation } from "wouter";
 
-const proposals = [
-    { id: 1, name: "Victor de Sá", active: true },
-    { id: 2, name: "Faz. Colheita Alegre", active: true },
-    { id: 3, name: "Faz. Universeg", active: true },
-    { id: 4, name: "Fazenda do Gigante", active: true },
-    { id: 5, name: "Faz. FerroMato", active: true },
-    { id: 6, name: "Faz. Recanto dos Patos", active: false },
-    { id: 7, name: "Faz. Aurora", active: false },
-    { id: 8, name: "Faz. Girassol", active: false },
-    { id: 9, name: "FFFagundes", active: false },
-    { id: 10, name: "FFFagundes", active: false },
-    { id: 11, name: "FFFagundes", active: false },
-];
-
 export function CotacaoSeguro() {
+    const proposals = JSON.parse(localStorage.getItem("proposals") || "[]").map(p => ({
+        id: p.id,
+        name: p.name,
+        active: p.status === "EM_SEGURO" || p.status === "SEGURO_COTADO" || p.stage === "6. CCONS" || p.status === "FINALIZADA" || p.status === "OK",
+    }));
     const [, setLocation] = useLocation();
     const [step, setStep] = useState(1);
     const [selectedProposal, setSelectedProposal] = useState(null);
@@ -692,21 +683,47 @@ export function CotacaoSeguro() {
 
                                             // Append to Seguros table
                                             const selectedPropName = proposals.find(p => p.id === selectedProposal)?.name || "Victor Oliveira de Sá";
+                                            const seguroId = "seguro-" + Date.now();
                                             const newSeguro = {
-                                                id: Date.now(),
+                                                id: seguroId,
                                                 cliente: selectedPropName,
                                                 proposta: "N" + Math.floor(Math.random() * 1000000) + "S",
                                                 prestacao: "1 de 12",
-                                                valor: selectedOffer?.premio?.split('/')[0] || "R$ 0,00",
+                                                valor: selectedOffer?.premio || "R$ 0",
                                                 renovacao: "24/01/2027",
                                                 status: "PREVISTO"
                                             };
                                             const existing = JSON.parse(localStorage.getItem('addedSeguros') || '[]');
                                             localStorage.setItem('addedSeguros', JSON.stringify([newSeguro, ...existing]));
 
+                                            // Save detailed seguro info for SeguroDetail
+                                            const seguroDetail = {
+                                                ...newSeguro,
+                                                tipo: "Rural / Safra",
+                                                franquia: selectedOffer?.franquia || "10%",
+                                                coberturas: [
+                                                    ...(selectedOffer?.seca ? ["Seca"] : []),
+                                                    ...(selectedOffer?.granizo ? ["Granizo"] : []),
+                                                ],
+                                                apolice: "456789",
+                                                vigencia: "01/01/2026 – 31/12/2026",
+                                                lmi: "R$ 300.000",
+                                                premioBruto: "R$ 18.000",
+                                                subvencao: "R$ 7.000",
+                                                produtorPaga: "R$ 11.000",
+                                                valorSegurado: "R$ 250.000",
+                                                cultura: "Soja",
+                                                area: "80 ha",
+                                                municipio: "Santarém/PA",
+                                                statusSeguro: "Ativa",
+                                                signedAt: new Date().toISOString(),
+                                            };
+                                            const existingDetails = JSON.parse(localStorage.getItem('segurosDetail') || '[]');
+                                            localStorage.setItem('segurosDetail', JSON.stringify([seguroDetail, ...existingDetails]));
+
                                             setTimeout(() => {
                                                 setModalOpen(false);
-                                                setLocation('/seguros'); // redirect to list after signing
+                                                setLocation('/seguros');
                                             }, 1000);
                                         }}
                                     >

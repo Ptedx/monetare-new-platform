@@ -25,6 +25,7 @@ const menuItems = {
   analise: [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Columns3, label: "Pipeline", path: "/pipeline" },
+    { icon: User, label: "Clientes", path: "/clientes" },
     { icon: Briefcase, label: "Propostas", path: "/propostas" },
     { icon: Briefcase, label: "Carteira", path: "/carteira" },
     { icon: Megaphone, label: "Canais", path: "/canais" },

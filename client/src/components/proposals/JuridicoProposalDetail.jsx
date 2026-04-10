@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from "wouter";
+import { advanceProposal } from "@/lib/proposalFlow";
 import { ChevronLeft, ChevronDown, Paperclip, MoreHorizontal, ArrowUpRight, Search, Filter, PenTool, CheckCircle, Clock, Download, Check, FileText, CheckCircle2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -129,32 +130,32 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                     <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                         <p className="text-sm text-gray-500 font-medium mb-1">Valor da proposta</p>
                         <div className="flex items-center gap-2">
-                            <span className="text-2xl font-bold text-gray-900">R$ 50.000.000,00</span>
-                            <span className="px-2 py-0.5 bg-[#92dc49] text-white text-xs font-bold rounded-full">AA</span>
+                            <span className="text-2xl font-bold text-gray-900">{proposal.value || `R$ ${Number(proposal.requestedValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</span>
+                            <span className="px-2 py-0.5 bg-[#92dc49] text-white text-xs font-bold rounded-full">{proposal.score || "B"}</span>
                         </div>
                     </div>
                     <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
                         <div>
                             <p className="text-sm text-gray-500 font-medium mb-1">Etapa</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold text-gray-900">Crédito</span>
+                                <span className="text-xl font-bold text-gray-900">{proposal.stage || "Crédito"}</span>
                                 <span className="text-gray-400 text-sm">→ Jurídico</span>
                             </div>
                         </div>
                     </div>
                     <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
                         <p className="text-sm text-gray-500 font-medium mb-1">Linha de crédito</p>
-                        <span className="text-xl font-bold text-gray-900">Não rural</span>
+                        <span className="text-xl font-bold text-gray-900">{proposal.line || proposal.creditType || "FNO"}</span>
                     </div>
                     <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm grid grid-cols-2 gap-4">
                         <div>
                             <p className="text-sm text-gray-500 font-medium mb-1">Status</p>
-                            <span className="inline-block px-8 py-1.5 bg-[#92dc49] text-white text-sm font-bold rounded-full shadow-sm">Ok</span>
+                            <span className={`inline-block px-8 py-1.5 text-sm font-bold rounded-full shadow-sm ${proposal.status === 'REPROVADA' ? 'bg-red-200 text-red-800' : proposal.status === 'EM_ANALISE_JURIDICA' ? 'bg-yellow-200 text-yellow-800' : 'bg-[#92dc49] text-white'}`}>{proposal.status || "Ok"}</span>
                         </div>
                         <div className="flex flex-col items-center border-l border-gray-100 pl-4 justify-center">
                             <p className="text-sm text-gray-500 font-medium mb-1">Andamento</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-2xl font-bold text-gray-900">58%</span>
+                                <span className="text-2xl font-bold text-gray-900">{proposal.percent || "58"}%</span>
                                 <div className="w-6 h-6 rounded-full border-4 border-gray-100 border-t-[#92dc49] border-r-[#92dc49] transform rotate-45"></div>
                             </div>
                         </div>
@@ -165,31 +166,34 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                     <h4 className="text-base font-semibold text-gray-900 mb-4">Dados cadastrais</h4>
                     <div className="grid grid-cols-[130px_1fr] gap-y-3 gap-x-4 text-sm break-words">
                         <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Empresa</div>
-                        <div className="text-gray-900 font-medium">Victor Oliveira de Sá</div>
+                        <div className="text-gray-900 font-medium">{proposal.companyName || proposal.title || proposal.name || "Não informado"}</div>
 
-                        <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Indústria</div>
-                        <div className="text-gray-900">Agronomia</div>
+                        <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Segmento</div>
+                        <div className="text-gray-900">{proposal.sector || proposal.type || "Não informado"}</div>
 
-                        <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Faturamento</div>
-                        <div className="text-gray-900">R$ 300.000.000 / ano</div>
+                        <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Valor</div>
+                        <div className="text-gray-900">{proposal.value || `R$ ${Number(proposal.requestedValue || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}</div>
 
-                        <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Tamanho</div>
-                        <div className="text-gray-900">500-1000 funcionários</div>
-
+                        <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Prazo</div>
+                        <div className="text-gray-900">{proposal.term ? proposal.term + " meses" : "Não informado"}</div>
+{proposal.user && (
+                        <>
                         <div className="text-gray-400 flex items-center justify-end gap-2"><UserIcon /> Cliente</div>
-                        <div className="text-gray-900">Fernando Fagundes</div>
-
-                        <div className="text-gray-400 flex items-center justify-end gap-2"><PhoneIcon /> Telefone</div>
-                        <div className="text-gray-900">(00) 000000-0000</div>
+                        <div className="text-gray-900">{proposal.user.name || proposal.user.email || "Não informado"}</div>
 
                         <div className="text-gray-400 flex items-center justify-end gap-2"><HashIcon /> CPF</div>
-                        <div className="text-gray-900">000.000.000-00</div>
+                        <div className="text-gray-900">{proposal.user.cpf || proposal.user.documentNumber || "Não informado"}</div>
 
                         <div className="text-gray-400 flex items-center justify-end gap-2"><MailIcon /> E-mail</div>
-                        <div className="text-gray-900">victor.oli@pdiniz.com.br</div>
+                        <div className="text-gray-900">{proposal.user.email || "Não informado"}</div>
 
                         <div className="text-gray-400 flex items-center justify-end gap-2"><MapPinIcon /> Endereço</div>
-                        <div className="text-gray-900">Residencial Claúdio Marchetti, Rua Três - Cuiabá, MT 78076-308</div>
+                        <div className="text-gray-900">{proposal.user.address || "Não informado"}</div>
+                        </>
+)}
+{!proposal.user && (
+                        <div className="text-gray-400 text-sm col-span-2">Dados do cliente não disponíveis</div>
+)}
                     </div>
                 </div>
 
@@ -386,7 +390,15 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                                 Enviar para Cotação e Seguro
                             </button>
                         ) : (
-                            <button className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors">
+                            <button
+                                className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors"
+                                onClick={() => {
+                                    const updated = advanceProposal(proposal.id, "EM_SEGURO");
+                                    localStorage.setItem('userRole', 'posvenda');
+                                    window.dispatchEvent(new Event('storage'));
+                                    setLocation('/seguros');
+                                }}
+                            >
                                 {primaryButtonText}
                             </button>
                         )}

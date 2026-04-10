@@ -1,0 +1,30 @@
+{
+    "id": "9ba8e418-85ff-4d13-9749-9d0107df022d",
+    "name": "Vinícius Costa",
+    "email": "vinicosta37@gmail.com",
+    "pfType": "FISICA",
+    "pfDetails": {
+        "id": "3f3f6374-4975-4e37-b95b-d3c9bbdf733f",
+        "cpf": "06496899177",
+        "rg": "3119016",
+        "birthDate": "1999-12-31T00:00:00.000Z",
+        "maritalStatus": "SOLTEIRO",
+        "motherName": "Midridi Costa",
+        "monthlyIncome": "11000",
+        "occupation": "dev",
+        "address": "Rua Babaçu 3",
+        "neighborhood": "Sul (Águas Claras)",
+        "city": "Brasília",
+        "state": "DF",
+        "zipCode": "71928000",
+        "userId": "9ba8e418-85ff-4d13-9749-9d0107df022d",
+        "rgIssuer": null,
+        "nationality": null,
+        "gender": null,
+        "phone": "(61) 98252-9025",
+        "addressNumber": "3",
+        "latitude": null,
+        "longitude": null
+    },
+    "pjDetails": null
+}

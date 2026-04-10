@@ -1,129 +1,163 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
-
+import { ArrowLeft, Maximize2, Minimize2, ArrowUp, TrendingUp, Percent, FileText, Download } from "lucide-react";
 import { useLocation } from "wouter";
 
 export function SimulationResult({ data, onBack }) {
     const [, setLocation] = useLocation();
-    const { financeValue, term, rate, gracePeriod, amortizationSystem } = data;
+    const d = data?.data || {};
 
-    const calculateAmortization = () => {
-        const monthlyRate = rate / 100 / 12;
-        const installments = [];
-        let balance = financeValue;
+    const formatCurrency = (value) =>
+        new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
 
-        // Grace Period (Interest Only)
-        for (let i = 1; i <= gracePeriod; i++) {
-            const interest = balance * monthlyRate;
-            installments.push({
-                month: i,
-                installment: interest,
-                interest: interest,
-                amortization: 0,
-                balance: balance
-            });
-        }
-
-        // Amortization Period
-        // We assume 'term' is the total payment period. So if term is 60 months, and grace is 12,
-        // we have 60 months of amortization? Or 48? 
-        // Usually "Prazo" in simulators is the amortization time. Let's assume AmortizationTerm = term.
-        const amortizationMonths = term;
-        let amortizationValue = 0;
-
-        // PRICE Calculation Constants
-        // PMT = PV * [i * (1+i)^n] / [(1+i)^n - 1]
-        const pricePayment = balance * (monthlyRate * Math.pow(1 + monthlyRate, amortizationMonths)) / (Math.pow(1 + monthlyRate, amortizationMonths) - 1);
-
-        for (let i = 1; i <= amortizationMonths; i++) {
-            const interest = balance * monthlyRate;
-            let installmentAmount = 0;
-            let currentAmortization = 0;
-
-            if (amortizationSystem === 'price') {
-                installmentAmount = pricePayment;
-                currentAmortization = installmentAmount - interest;
-            } else {
-                // SAC
-                currentAmortization = financeValue / amortizationMonths; // Constant Amortization
-                installmentAmount = currentAmortization + interest;
-            }
-
-            balance -= currentAmortization;
-            if (balance < 0) balance = 0; // Floating point correction
-
-            installments.push({
-                month: gracePeriod + i,
-                installment: installmentAmount,
-                interest: interest,
-                amortization: currentAmortization,
-                balance: balance
-            });
-        }
-
-        return installments;
-    };
-
-    const rows = calculateAmortization();
-
-    // Calculate Totals
-    const totalPaid = rows.reduce((acc, row) => acc + row.installment, 0);
-    const totalInterest = rows.reduce((acc, row) => acc + row.interest, 0);
-    const firstInstallmentAfterGrace = rows[gracePeriod] ? rows[gracePeriod].installment : 0;
-
-    const formatCurrency = (value) => {
-        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    // Download amortization table as CSV
+    const downloadCSV = () => {
+        if (!d.tabelaAmortizacao) return;
+        const headers = ["Mês", "Parcela (R$)", "Juros (R$)", "Amortização (R$)", "Saldo Devedor (R$)"];
+        const rows = d.tabelaAmortizacao.map(row => [
+            row.mes,
+            row.parcela.toFixed(2),
+            row.juros.toFixed(2),
+            row.amortizacao.toFixed(2),
+            row.saldoDevedor.toFixed(2),
+        ]);
+        const csv = ["\ufeff" + [headers, ...rows].map(r => r.join(";")).join("\n")][0];
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `simulacao_fno_${d.modalidade || "resultado"}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     return (
         <div className="max-w-7xl mx-auto">
+            {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={onBack}>
                         <ArrowLeft className="w-6 h-6" />
                     </Button>
-                    <h1 className="text-4xl font-bold">Resultados de Simulação</h1>
+                    <div>
+                        <h1 className="text-[32px] font-medium text-gray-900 leading-tight">Resultados da Simulação</h1>
+                        <p className="text-gray-500 text-sm mt-0.5">{d.sistema || "FNO"}</p>
+                    </div>
                 </div>
                 <Button
                     className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full px-6"
                     onClick={() => setLocation("/cadastro-proposta")}
                 >
+                    <FileText className="w-4 h-4 mr-2" />
                     Cadastrar Proposta
                 </Button>
             </div>
 
-            <div className="flex items-center gap-4 mb-8">
-                <span className="bg-[#92dc49] text-white px-4 py-1 rounded-full text-sm font-medium">Pequeno Porte</span>
-                <span className="bg-[#e8f5e0] text-[#7ab635] px-4 py-1 rounded-full text-sm font-medium border border-[#92dc49]">
-                    Taxa de juros: {rate}% a.a. + IPCA (PÓS-FIXADA)
-                </span>
-                <span className="bg-gray-100 text-gray-600 px-4 py-1 rounded-full text-sm font-medium border border-gray-200">
-                    Sistema: {amortizationSystem?.toUpperCase()}
-                </span>
+            {/* Tags */}
+            <div className="flex flex-wrap items-center gap-3 mb-8">
+                <Badge variant="secondary" className="bg-[#e8f5e0] text-[#7ab635] border-[#92dc49] font-medium px-3 py-1.5 rounded-full">
+                    {d.modalidade || ""}
+                </Badge>
+                <Badge variant="secondary" className="bg-gray-100 text-gray-600 border border-gray-200 font-medium px-3 py-1.5 rounded-full">
+                    {d.taxaJuros || ""}
+                </Badge>
+                <Badge variant="secondary" className="bg-gray-100 text-gray-600 border border-gray-200 font-medium px-3 py-1.5 rounded-full">
+                    {d.prazoTotal || 0} meses + {(d.carencia || 0)} meses carência
+                </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-8">
-                <Card className="p-8 shadow-sm">
-                    <p className="text-3xl font-bold mb-1">{formatCurrency(financeValue)}</p>
-                    <p className="text-gray-500">Valor financiado</p>
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+                <Card className="p-6 shadow-sm border-gray-100">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-[#e8f5e0] rounded-lg">
+                            <TrendingUp className="w-4 h-4 text-[#7ab635]" />
+                        </div>
+                    </div>
+                    <p className="text-[13px] text-gray-500">Valor financiado</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(d.valorFinanciado)}
+                    </p>
                 </Card>
-                <Card className="p-8 shadow-sm">
-                    <p className="text-3xl font-bold mb-1">{formatCurrency(totalPaid)}</p>
-                    <p className="text-gray-500">Total pago</p>
+
+                <Card className="p-6 shadow-sm border-gray-100">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-blue-50 rounded-lg">
+                            <ArrowUp className="w-4 h-4 text-blue-500" />
+                        </div>
+                    </div>
+                    <p className="text-[13px] text-gray-500">Total pago</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(d.valorTotalPago)}
+                    </p>
                 </Card>
-                <Card className="p-8 shadow-sm">
-                    <p className="text-3xl font-bold mb-1">{formatCurrency(firstInstallmentAfterGrace)}</p>
-                    <p className="text-gray-500">Primeira parcela após carência</p>
+
+                <Card className="p-6 shadow-sm border-gray-100">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-amber-50 rounded-lg">
+                            <Percent className="w-4 h-4 text-amber-500" />
+                        </div>
+                    </div>
+                    <p className="text-[13px] text-gray-500">Total de juros</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(d.totalJuros)}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                        {d.percentualFinanciado > 0 ? `${d.percentualFinanciado}%` : ""} do projeto
+                    </p>
                 </Card>
-                <Card className="p-8 shadow-sm">
-                    <p className="text-3xl font-bold mb-1">{formatCurrency(totalInterest)}</p>
-                    <p className="text-gray-500">Total de juros</p>
+
+                <Card className="p-6 shadow-sm border-gray-100">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2 bg-purple-50 rounded-lg">
+                            <TrendingUp className="w-4 h-4 text-purple-500" />
+                        </div>
+                    </div>
+                    <p className="text-[13px] text-gray-500">Primeira parcela</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                        {formatCurrency(d.valorPrimeiraParcela)}
+                    </p>
                 </Card>
             </div>
 
-            <h3 className="text-xl font-semibold mb-4">Simulação completa</h3>
+            {/* Additional info */}
+            <div className="grid grid-cols-3 gap-5 mb-8">
+                <Card className="p-5 shadow-sm border-gray-100">
+                    <p className="text-[13px] text-gray-500">Taxa mensal</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">
+                        {d.taxaMensal ? `${d.taxaMensal.toFixed(4)}%` : "—"}
+                    </p>
+                </Card>
+                <Card className="p-5 shadow-sm border-gray-100">
+                    <p className="text-[13px] text-gray-500">Taxa anual</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">
+                        {d.taxaAnual ? `${d.taxaAnual.toFixed(2)}% a.a.` : "—"}
+                    </p>
+                </Card>
+                <Card className="p-5 shadow-sm border-gray-100">
+                    <p className="text-[13px] text-gray-500">Prazo total</p>
+                    <p className="text-xl font-bold text-gray-900 mt-1">
+                        {d.prazoTotal || 0} meses
+                        {d.carencia > 0 && <span className="text-sm text-gray-400 ml-1">(+{d.carencia}m carência)</span>}
+                    </p>
+                </Card>
+            </div>
+
+            {/* Amortization table */}
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">Simulação completa</h3>
+                <Button
+                    variant="outline"
+                    className="rounded-full border-gray-200"
+                    onClick={downloadCSV}
+                >
+                    <Download className="w-4 h-4 mr-2" />
+                    Baixar tabela
+                </Button>
+            </div>
+
             <div className="bg-[#2d3339] rounded-xl overflow-hidden shadow-lg">
                 <div className="p-2 flex gap-2">
                     <Button size="icon" variant="ghost" className="text-white hover:bg-white/10">
@@ -145,13 +179,20 @@ export function SimulationResult({ data, onBack }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {rows.map((row) => (
-                                <TableRow key={row.month} className="border-b-gray-700 hover:bg-white/5">
-                                    <TableCell>{String(row.month).padStart(2, '0')}</TableCell>
-                                    <TableCell>{formatCurrency(row.installment)}</TableCell>
-                                    <TableCell>{formatCurrency(row.interest)}</TableCell>
-                                    <TableCell>{formatCurrency(row.amortization)}</TableCell>
-                                    <TableCell>{formatCurrency(row.balance)}</TableCell>
+                            {(d.tabelaAmortizacao || []).map((row) => (
+                                <TableRow key={row.mes} className={`border-b-gray-700 hover:bg-white/5 ${
+                                    row.mes <= (d.carencia || 0) ? "bg-amber-50/10" : ""
+                                }`}>
+                                    <TableCell>
+                                        {String(row.mes).padStart(2, "0")}
+                                        {row.mes <= (d.carencia || 0) && (
+                                            <span className="block text-[10px] text-amber-400">carência</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>{formatCurrency(row.parcela)}</TableCell>
+                                    <TableCell>{formatCurrency(row.juros)}</TableCell>
+                                    <TableCell>{formatCurrency(row.amortizacao)}</TableCell>
+                                    <TableCell>{formatCurrency(row.saldoDevedor)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

@@ -1,0 +1,496 @@
+{
+	"execution_id": "76c57761-7ee1-4751-b6b7-fcba7934069e",
+	"document_type": "CNPJ",
+	"cached": true,
+	"saved_raw_path": null,
+	"saved_frontend_path": null,
+	"cached_document_path": "xcurve/by_document/17211227000189.json",
+	"result": {
+		"header": {
+			"executionId": "76c57761-7ee1-4751-b6b7-fcba7934069e",
+			"status": "Finalizado",
+			"createdAt": "2026-03-28T01:15:28.7131805",
+			"updatedAt": null,
+			"document": "17211227000189",
+			"documentMasked": "17.***.***/****-89",
+			"documentType": "CNPJ",
+			"source": "XCurve"
+		},
+		"decision": {
+			"code": "deny",
+			"label": "Negado automaticamente",
+			"description": "Negado diretamente pela política/motor"
+		},
+		"policy": {
+			"id": "09af0698-5fec-4b8c-921b-a15fcb439272",
+			"code": "POLITICA_PJ",
+			"name": "Política PJ",
+			"description": "Política PJ",
+			"status": "Ativo"
+		},
+		"company": {
+			"document": "17211227000189",
+			"legalName": "NAZARE AGROPECUARIA LTDA",
+			"tradeName": null,
+			"status": "Ativo",
+			"foundationDate": "26/11/2012",
+			"companyAgeYears": 13,
+			"address": {
+				"street": "FAZENDA NOSSA SENHORA DE NAZARE, S/N",
+				"district": "ZONA RURAL",
+				"city": "MARCELANDIA",
+				"state": "MT",
+				"zipCode": "78535000"
+			}
+		},
+		"riskSummary": {
+			"scores": {
+				"equifax": {
+					"score": 840,
+					"rating": "A",
+					"classification": "Risco Muito Baixo"
+				},
+				"quod": {
+					"score": 632,
+					"classification": "Risco Médio",
+					"reasons": [
+						"Possui utilização de alto valor de crédito do tipo emergencial nos últimos 3 meses",
+						"Possui atrasos e/ou pendencias financeiras ativas",
+						"Possui contratos com alto valor para quitação",
+						"Possui grande quantidade de credores e/ou contratos com dividas em aberto nos últimos 6 meses"
+					]
+				}
+			},
+			"credit": {
+				"presumedRevenueAnnualRange": "Entre R$100.000.001 e R$150.000.000",
+				"presumedRevenueAnnualAverage": "R$ 125.000.000,50",
+				"presumedRevenueMonthlyAverage": "R$ 10.416.666,71",
+				"companySize": "5 - Demais portes",
+				"totalCreditPortfolio": "R$ 37.196.015,74",
+				"relationshipStartDate": "2014-06-27T00:00:00",
+				"relationshipAgeMonths": 141
+			},
+			"alerts": [
+				{
+					"code": "cnpj_possui_a_es_judiciais",
+					"label": "CNPJ possui ações judiciais",
+					"severity": "warning"
+				},
+				{
+					"code": "comprometimento_de_opera_es_de_cr_dito_vencido_vencer_at_360_dias",
+					"label": "Percentual de comprometimento das operações de crédito é maior que 30% (159.00 %)",
+					"severity": "warning"
+				},
+				{
+					"code": "utiliza_o_de_cheque_especial",
+					"label": "Percentual de participação nas operações de crédito é maior que 30%",
+					"severity": "warning"
+				},
+				{
+					"code": "s_cio_pep",
+					"label": "Sócio é pessoa exposta politicamente",
+					"severity": "warning"
+				},
+				{
+					"code": "pessoa_f_sica_processos_judiciais",
+					"label": "Pessoa física possui processos judiciais",
+					"severity": "warning"
+				}
+			]
+		},
+		"rules": [
+			{
+				"name": "Validações Primárias",
+				"description": "CEP/ End Entrega = CEP/ End ENtrega presente em propostas anteriores, com crédito rejeitado ou com valores em aberto",
+				"decision": "Análise",
+				"items": [
+					{
+						"order": 0,
+						"name": "Empresa Ativo?",
+						"description": "Verifica se o CNPJ está ativo",
+						"result": "CNPJ está ativo",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 1,
+						"name": "CNPJ Recuperação Judicial?",
+						"description": "A empresa possui registros para recuperação judicial",
+						"result": "Não constam informações sobre recuperação judicial para o CNPJ",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 2,
+						"name": "CNPJ se enquadra em score de altissimo risco?",
+						"description": "A empresa possui Score de altissimo risco",
+						"result": "CNPJ não se enquadrada em score de altissimo risco",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 3,
+						"name": "CNPJ possui ações judiciais?",
+						"description": "Verifica se a empresa possui ações judiciais",
+						"result": "CNPJ possui ações judiciais",
+						"decision": "Análise",
+						"active": true
+					}
+				]
+			},
+			{
+				"name": "Decisões de Negócio",
+				"description": "Verificação da empresa",
+				"decision": "Negado",
+				"items": [
+					{
+						"order": 0,
+						"name": "Período de fundação < 2 anos?",
+						"description": "",
+						"result": "CNPJ com data de fundação maior que dois anos",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 1,
+						"name": "QSA < 1 Ano?",
+						"description": "",
+						"result": "CNPJ com QSA atualizado há mais de um ano",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 2,
+						"name": "Sócio menor de 18 anos?",
+						"description": "",
+						"result": "Sócio maior de idade",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 3,
+						"name": "Sócio com registro de óbito?",
+						"description": "",
+						"result": "Sócio sem registro de óbito",
+						"decision": "Aprovado",
+						"active": true
+					},
+					{
+						"order": 4,
+						"name": "Sócio se enquadra em score de altissimo risco?",
+						"description": "",
+						"result": "Sócio se enquadra em score de altissimo risco",
+						"decision": "Negado",
+						"active": true
+					}
+				]
+			},
+			{
+				"name": "SCR",
+				"description": "SCR loaders",
+				"decision": "Negado",
+				"items": [
+					{
+						"order": 0,
+						"name": "Limite aprovado e não utilizado",
+						"description": "",
+						"result": "Possui limite aprovado e não utilizado (R$ 164.051,22)",
+						"decision": "Não",
+						"active": true
+					},
+					{
+						"order": 1,
+						"name": "Valor total da carteira de crédito",
+						"description": "",
+						"result": "Possui valores de carteira de crédito (R$ 37.196.015,74)",
+						"decision": "Sim",
+						"active": true
+					},
+					{
+						"order": 2,
+						"name": "Comprometimento de operações de crédito vencido + vencer até 360 dias",
+						"description": "",
+						"result": "Percentual de comprometimento das operações de crédito é maior que 30% (159.00 %)",
+						"decision": "Análise",
+						"active": true
+					},
+					{
+						"order": 3,
+						"name": "Utilização de cheque especial",
+						"description": "",
+						"result": "Percentual de participação nas operações de crédito é maior que 30%",
+						"decision": "Análise",
+						"active": true
+					}
+				]
+			},
+			{
+				"name": "Compliance",
+				"description": "Compliance loaders",
+				"decision": "Análise",
+				"items": [
+					{
+						"order": 0,
+						"name": "Sócio é PEP?",
+						"description": "",
+						"result": "Sócio é pessoa exposta politicamente",
+						"decision": "Análise",
+						"active": true
+					},
+					{
+						"order": 1,
+						"name": "Pessoa física processos judiciais?",
+						"description": "",
+						"result": "Pessoa física possui processos judiciais",
+						"decision": "Análise",
+						"active": true
+					}
+				]
+			}
+		],
+		"notes": [
+			{
+				"title": "Quod Score reason1",
+				"description": "Possui utilização de alto valor de crédito do tipo emergencial nos últimos 3 meses"
+			},
+			{
+				"title": "Quod Score reason2",
+				"description": "Possui atrasos e/ou pendencias financeiras ativas"
+			},
+			{
+				"title": "Quod Score reason3",
+				"description": "Possui contratos com alto valor para quitação"
+			},
+			{
+				"title": "Quod Score reason4",
+				"description": "Possui grande quantidade de credores e/ou contratos com dividas em aberto nos últimos 6 meses"
+			}
+		],
+		"technical": {
+			"inputAttributes": [
+				{
+					"name": "CNPJ",
+					"value": "17211227000189"
+				}
+			],
+			"approvedAmount": null,
+			"providers": {
+				"equifax": {
+					"OUT_EQFX_CNPJ_Numero": "17211227000189",
+					"OUT_EQFX_CNPJ_Nome_Social": "NAZARE AGROPECUARIA LTDA",
+					"OUT_EQFX_CNPJ_Nome_Fantasia": null,
+					"OUT_EQFX_CNPJ_Endereco_Logradouro": "FAZENDA NOSSA SENHORA DE NAZARE, S/N",
+					"OUT_EQFX_CNPJ_Endereco_Bairro": "ZONA RURAL",
+					"OUT_EQFX_CNPJ_Endereco_Cidade": "MARCELANDIA",
+					"OUT_EQFX_CNPJ_Endereco_Estado": "MT",
+					"OUT_EQFX_CNPJ_Endereco_CEP": 78535000,
+					"OUT_EQFX_CNPJ_Ativo": "Ativo",
+					"OUT_EQFX_CNPJ_Data_Fundacao": "26/11/2012",
+					"OUT_EQFX_CNPJ_Idade_Fundacao": 13,
+					"OUT_EQFX_CNPJ_PendenciasFinanceiras_Quantidade": 0,
+					"OUT_EQFX_CNPJ_PendenciasFinanceiras_Valor": 0,
+					"OUT_EQFX_CNPJ_Protesto_Quantidade": 0,
+					"OUT_EQFX_CNPJ_Protesto_Valor": "R$ 0,00",
+					"OUT_EQFX_CNPJ_PenFinanceiras_Faturamento_Percentual": "0.00 %",
+					"OUT_EQFX_CNPJ_Protesto_Faturamento_Percentual": "0.00 %",
+					"OUT_EQFX_CNPJ_Score_Nota": 840,
+					"OUT_EQFX_CNPJ_Score_Classificacao": "Risco Muito Baixo",
+					"OUT_EQFX_CNPJ_Score_ClassificacaoAlfabetica": "A",
+					"OUT_EQFX_CNPJ_Consultas_QuantidadeTotal": 66,
+					"OUT_EQFX_CNPJ_NaturezaJuridica": "SOCIEDADE EMPRESARIA LIMITADA",
+					"OUT_EQFX_CNPJ_NaturezaJuridica_Codigo": 2062,
+					"OUT_EQFX_CNPJ_RamoAtividade": "CULTIVO DE SOJA",
+					"OUT_EQFX_CNPJ_RamoAtividade_CNAE": "0115-6/00",
+					"OUT_EQFX_CNPJ_CCF_Quantidade": 0,
+					"OUT_EQFX_CPF_Numero": 765067110,
+					"OUT_EQFX_CPF_Nome": "JEFFERSON EUGENIO PINESSO",
+					"OUT_EQFX_CPF_Endereco_Logradouro": "RIO CLARO",
+					"OUT_EQFX_CPF_Endereco_Numero": "702",
+					"OUT_EQFX_CPF_Endereco_Bairro": "JD VERANEIO",
+					"OUT_EQFX_CPF_Endereco_Cidade": "CAMPO GRANDE",
+					"OUT_EQFX_CPF_Endereco_Estado": "MS",
+					"OUT_EQFX_CPF_Endereco_Complemento": "CS 24",
+					"OUT_EQFX_CPF_Endereco_CEP": 79037090,
+					"OUT_EQFX_PF_CPF": 765067110,
+					"OUT_EQFX_PF_NOME": "JEFFERSON EUGENIO PINESSO",
+					"OUT_EQFX_PF_Obito": false,
+					"OUT_EQFX_PF_DescricaoSituacao": "",
+					"OUT_EQFX_PF_Data_Nascimento": "10/11/1985",
+					"OUT_EQFX_PF_Idade_Nascimento": 40,
+					"OUT_EQFX_PF_CCF_Quantidade": 0,
+					"OUT_EQFX_PF_Situacao_Receita_Codigo": 1,
+					"OUT_EQFX_PF_Debito_Quantidade": 0,
+					"OUT_EQFX_PF_Protesto_Quantidade": 0,
+					"OUT_EQFX_PF_Score_Nota": 395,
+					"OUT_EQFX_PF_Score_Classificacao": "Risco Altíssimo",
+					"OUT_EQFX_PF_Score_DescricaoNatureza": "POSITIVO PF",
+					"OUT_EQFX_PF_Score_Texto": "É provável que 87% das pessoas com esse mesmo comportamento, paguem suas   contas nos próximos 6 meses."
+				},
+				"quod": {
+					"OUT_Quod_CNPJ_Response_Status": 0,
+					"OUT_Quod_CNPJ_Response_Status_Message": null,
+					"OUT_Quod_CNPJ_Endereco_Logradouro": "FAZ DE NAZARE",
+					"OUT_Quod_CNPJ_Endereco_Numero": "S/N",
+					"OUT_Quod_CNPJ_Endereco_Bairro": "ZONA RURAL",
+					"OUT_Quod_CNPJ_Endereco_Cidade": "MARCELANDIA",
+					"OUT_Quod_CNPJ_Endereco_Estado": "MT",
+					"OUT_Quod_CNPJ_Endereco_Regiao": "Centro-Oeste",
+					"OUT_Quod_CNPJ_Endereco_Complemento": null,
+					"OUT_Quod_CNPJ_Endereco_CEP": "78535-000",
+					"OUT_Quod_CNPJ_Status": "ATIVO",
+					"OUT_Quod_CNPJ_Name": "NAZARE AGROPECUARIA LTDA",
+					"OUT_Quod_CNPJ_TradeName": null,
+					"OUT_Quod_CNPJ_Foundation": "26/11/2012",
+					"OUT_Quod_CNPJ_Recuperacao_Judicial": false,
+					"OUT_Quod_CNPJ_Recuperacao_Judicial_Quantidade": 0,
+					"OUT_Quod_CNPJ_CCF_Quantidade": 0,
+					"OUT_Quod_CNPJ_Data_Fundacao": "26/11/2012",
+					"OUT_Quod_CNPJ_Score": 632,
+					"OUT_Quod_CNPJ_Score_Classificacao": "Risco Médio",
+					"OUT_Quod_Partnership_Document": "00765067110",
+					"OUT_Quod_Partnership_Date": "13/12/2017",
+					"OUT_Quod_Partnership_Idade_Atualizacao": 8,
+					"OUT_Quod_CNPJ_Consultas_QuantidadeUltimos30Dias": 2,
+					"OUT_Quod_CNPJ_Lucro_Presumido_StatusCode": 0,
+					"OUT_Quod_CNPJ_Lucro_Presumido_Status_Descricao": "CNPJ válido",
+					"OUT_Quod_CNPJ_Lucro_Presumido_Faixa_Faturamento_Anual": "Entre R$100.000.001 e R$150.000.000",
+					"OUT_Quod_CNPJ_Lucro_Presumido_Media_Anual": "R$ 125.000.000,50",
+					"OUT_Quod_CNPJ_Lucro_Presumido_Media_Mensal": "R$ 10.416.666,71",
+					"OUT_Quod_CNPJ_Lucro_Presumido_Porte_Empresa": "5 - Demais portes"
+				},
+				"scr": {
+					"OUT_SCR_CNPJ_Valores_Vencidos_Ate_14Dias": "R$ 0,00",
+					"OUT_SCR_CNPJ_Carteira_Ate_360Dias": "R$ 16.570.681,24",
+					"OUT_SCR_Valores_Vencidos_Acima_60Dias": 0,
+					"OUT_SCR_Valores_Vencidos_Ate_60Dias": 0,
+					"OUT_SCR_Valores_Creditos_Baixados_Prejuizo": 0,
+					"OUT_SCR_CNPJ_Comprometimento_Mensal_Cheque_Especial": "12.00 %",
+					"OUT_SCR_CNPJ_Comprometimento_Mensal_Cheque_Especial_Valor": "R$ 2.035.875,29",
+					"OUT_SCR_CNPJ_Limite_Aprovado_Nao_Utilizado": "R$ 164.051,22",
+					"OUT_SCR_CNPJ_Valor_Total_Carteira_Credito": "R$ 37.196.015,74",
+					"OUT_SCR_CNPJ_Representatividade_Cheque_Especial": "5.00 %",
+					"OUT_SCR_CNPJ_Representatividade_Cheque_Especial_Valor": "R$ 2.035.875,29",
+					"OUT_SCR_CNPJ_Representatividade_Credito_Rotativo": "0.00 %",
+					"OUT_SCR_CNPJ_Representatividade_Credito_Rotativo_Valor": "R$ 0,00",
+					"OUT_SCR_CNPJ_Data_Inicio_Relacionamento": "2014-06-27T00:00:00",
+					"OUT_SCR_CNPJ_Data_Inicio_Relacionamento_Meses": 141,
+					"OUT_SCR_CNPJ_Comprometimento_Mensal_Operacoes_Financeiras": "159.00 %",
+					"OUT_SCR_CNPJ_Comprometimento_Operacoes_Financeiras": "159.00 %"
+				},
+				"bigdata": {
+					"OUT_BIGDATA_OwnerParticipation_Document": "00765067110",
+					"OUT_BIGDATA_Ownership_Idade_Atualizacao": 2,
+					"OUT_BIGDATA_Ownership_Data_Atualizacao_QSA": "2024-02-16T00:00:00",
+					"OUT_BIGDATA_ProcessosJudiciais": true,
+					"OUT_BIGDATA_ProcessosJudiciaisQuantidade": 405,
+					"OUT_BIGDATA_ISPEP": false
+				},
+				"other": {}
+			},
+			"rawVariables": {
+				"OUT_EQFX_CNPJ_Numero": "17211227000189",
+				"OUT_EQFX_CNPJ_Nome_Social": "NAZARE AGROPECUARIA LTDA",
+				"OUT_EQFX_CNPJ_Nome_Fantasia": null,
+				"OUT_EQFX_CNPJ_Endereco_Logradouro": "FAZENDA NOSSA SENHORA DE NAZARE, S/N",
+				"OUT_EQFX_CNPJ_Endereco_Bairro": "ZONA RURAL",
+				"OUT_EQFX_CNPJ_Endereco_Cidade": "MARCELANDIA",
+				"OUT_EQFX_CNPJ_Endereco_Estado": "MT",
+				"OUT_EQFX_CNPJ_Endereco_CEP": 78535000,
+				"OUT_EQFX_CNPJ_Ativo": "Ativo",
+				"OUT_EQFX_CNPJ_Data_Fundacao": "26/11/2012",
+				"OUT_EQFX_CNPJ_Idade_Fundacao": 13,
+				"OUT_EQFX_CNPJ_PendenciasFinanceiras_Quantidade": 0,
+				"OUT_EQFX_CNPJ_PendenciasFinanceiras_Valor": 0,
+				"OUT_EQFX_CNPJ_Protesto_Quantidade": 0,
+				"OUT_EQFX_CNPJ_Protesto_Valor": "R$ 0,00",
+				"OUT_EQFX_CNPJ_PenFinanceiras_Faturamento_Percentual": "0.00 %",
+				"OUT_EQFX_CNPJ_Protesto_Faturamento_Percentual": "0.00 %",
+				"OUT_EQFX_CNPJ_Score_Nota": 840,
+				"OUT_EQFX_CNPJ_Score_Classificacao": "Risco Muito Baixo",
+				"OUT_EQFX_CNPJ_Score_ClassificacaoAlfabetica": "A",
+				"OUT_EQFX_CNPJ_Consultas_QuantidadeTotal": 66,
+				"OUT_BIGDATA_OwnerParticipation_Document": "00765067110",
+				"OUT_BIGDATA_Ownership_Idade_Atualizacao": 2,
+				"OUT_BIGDATA_Ownership_Data_Atualizacao_QSA": "2024-02-16T00:00:00",
+				"OUT_EQFX_CNPJ_NaturezaJuridica": "SOCIEDADE EMPRESARIA LIMITADA",
+				"OUT_EQFX_CNPJ_NaturezaJuridica_Codigo": 2062,
+				"OUT_EQFX_CNPJ_RamoAtividade": "CULTIVO DE SOJA",
+				"OUT_EQFX_CNPJ_RamoAtividade_CNAE": "0115-6/00",
+				"OUT_EQFX_CNPJ_CCF_Quantidade": 0,
+				"OUT_Quod_CNPJ_Response_Status": 0,
+				"OUT_Quod_CNPJ_Response_Status_Message": null,
+				"OUT_Quod_CNPJ_Endereco_Logradouro": "FAZ DE NAZARE",
+				"OUT_Quod_CNPJ_Endereco_Numero": "S/N",
+				"OUT_Quod_CNPJ_Endereco_Bairro": "ZONA RURAL",
+				"OUT_Quod_CNPJ_Endereco_Cidade": "MARCELANDIA",
+				"OUT_Quod_CNPJ_Endereco_Estado": "MT",
+				"OUT_Quod_CNPJ_Endereco_Regiao": "Centro-Oeste",
+				"OUT_Quod_CNPJ_Endereco_Complemento": null,
+				"OUT_Quod_CNPJ_Endereco_CEP": "78535-000",
+				"OUT_Quod_CNPJ_Status": "ATIVO",
+				"OUT_Quod_CNPJ_Name": "NAZARE AGROPECUARIA LTDA",
+				"OUT_Quod_CNPJ_TradeName": null,
+				"OUT_Quod_CNPJ_Foundation": "26/11/2012",
+				"OUT_Quod_CNPJ_Recuperacao_Judicial": false,
+				"OUT_Quod_CNPJ_Recuperacao_Judicial_Quantidade": 0,
+				"OUT_Quod_CNPJ_CCF_Quantidade": 0,
+				"OUT_Quod_CNPJ_Data_Fundacao": "26/11/2012",
+				"OUT_Quod_CNPJ_Score": 632,
+				"OUT_Quod_CNPJ_Score_Classificacao": "Risco Médio",
+				"OUT_Quod_Partnership_Document": "00765067110",
+				"OUT_Quod_Partnership_Date": "13/12/2017",
+				"OUT_Quod_Partnership_Idade_Atualizacao": 8,
+				"OUT_Quod_CNPJ_Consultas_QuantidadeUltimos30Dias": 2,
+				"OUT_BIGDATA_ProcessosJudiciais": true,
+				"OUT_BIGDATA_ProcessosJudiciaisQuantidade": 405,
+				"OUT_EQFX_CPF_Numero": 765067110,
+				"OUT_EQFX_CPF_Nome": "JEFFERSON EUGENIO PINESSO",
+				"OUT_EQFX_CPF_Endereco_Logradouro": "RIO CLARO",
+				"OUT_EQFX_CPF_Endereco_Numero": "702",
+				"OUT_EQFX_CPF_Endereco_Bairro": "JD VERANEIO",
+				"OUT_EQFX_CPF_Endereco_Cidade": "CAMPO GRANDE",
+				"OUT_EQFX_CPF_Endereco_Estado": "MS",
+				"OUT_EQFX_CPF_Endereco_Complemento": "CS 24",
+				"OUT_EQFX_CPF_Endereco_CEP": 79037090,
+				"OUT_EQFX_PF_CPF": 765067110,
+				"OUT_EQFX_PF_NOME": "JEFFERSON EUGENIO PINESSO",
+				"OUT_EQFX_PF_Obito": false,
+				"OUT_EQFX_PF_DescricaoSituacao": "",
+				"OUT_EQFX_PF_Data_Nascimento": "10/11/1985",
+				"OUT_EQFX_PF_Idade_Nascimento": 40,
+				"OUT_EQFX_PF_CCF_Quantidade": 0,
+				"OUT_EQFX_PF_Situacao_Receita_Codigo": 1,
+				"OUT_EQFX_PF_Debito_Quantidade": 0,
+				"OUT_EQFX_PF_Protesto_Quantidade": 0,
+				"OUT_EQFX_PF_Score_Nota": 395,
+				"OUT_EQFX_PF_Score_Classificacao": "Risco Altíssimo",
+				"OUT_EQFX_PF_Score_DescricaoNatureza": "POSITIVO PF",
+				"OUT_EQFX_PF_Score_Texto": "É provável que 87% das pessoas com esse mesmo comportamento, paguem suas   contas nos próximos 6 meses.",
+				"OUT_SCR_CNPJ_Valores_Vencidos_Ate_14Dias": "R$ 0,00",
+				"OUT_SCR_CNPJ_Carteira_Ate_360Dias": "R$ 16.570.681,24",
+				"OUT_SCR_Valores_Vencidos_Acima_60Dias": 0,
+				"OUT_SCR_Valores_Vencidos_Ate_60Dias": 0,
+				"OUT_SCR_Valores_Creditos_Baixados_Prejuizo": 0,
+				"OUT_SCR_CNPJ_Comprometimento_Mensal_Cheque_Especial": "12.00 %",
+				"OUT_SCR_CNPJ_Comprometimento_Mensal_Cheque_Especial_Valor": "R$ 2.035.875,29",
+				"OUT_SCR_CNPJ_Limite_Aprovado_Nao_Utilizado": "R$ 164.051,22",
+				"OUT_SCR_CNPJ_Valor_Total_Carteira_Credito": "R$ 37.196.015,74",
+				"OUT_SCR_CNPJ_Representatividade_Cheque_Especial": "5.00 %",
+				"OUT_SCR_CNPJ_Representatividade_Cheque_Especial_Valor": "R$ 2.035.875,29",
+				"OUT_SCR_CNPJ_Representatividade_Credito_Rotativo": "0.00 %",
+				"OUT_SCR_CNPJ_Representatividade_Credito_Rotativo_Valor": "R$ 0,00",
+				"OUT_SCR_CNPJ_Data_Inicio_Relacionamento": "2014-06-27T00:00:00",
+				"OUT_SCR_CNPJ_Data_Inicio_Relacionamento_Meses": 141,
+				"OUT_Quod_CNPJ_Lucro_Presumido_StatusCode": 0,
+				"OUT_Quod_CNPJ_Lucro_Presumido_Status_Descricao": "CNPJ válido",
+				"OUT_Quod_CNPJ_Lucro_Presumido_Faixa_Faturamento_Anual": "Entre R$100.000.001 e R$150.000.000",
+				"OUT_Quod_CNPJ_Lucro_Presumido_Media_Anual": "R$ 125.000.000,50",
+				"OUT_Quod_CNPJ_Lucro_Presumido_Media_Mensal": "R$ 10.416.666,71",
+				"OUT_Quod_CNPJ_Lucro_Presumido_Porte_Empresa": "5 - Demais portes",
+				"OUT_SCR_CNPJ_Comprometimento_Mensal_Operacoes_Financeiras": "159.00 %",
+				"OUT_SCR_CNPJ_Comprometimento_Operacoes_Financeiras": "159.00 %",
+				"OUT_BIGDATA_ISPEP": false
+			}
+		}
+	}
+}

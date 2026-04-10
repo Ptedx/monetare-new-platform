@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"C:\\\\Users\\\\vinic\\\\OneDrive\\\\Área de Trabalho\\\\programação\\\\monetare-new-platform\" -name \"*.tsx\" -not -path \"*/node_modules/*\" -not -path \"*/dist/*\" -exec basename {})",
+      "Bash(npx tsc:*)",
+      "Bash(find 'C:\\\\Users\\\\vinic\\\\OneDrive\\\\Área de Trabalho\\\\programação\\\\monetare-new-platform' -maxdepth 2 -name *FNO* -o -name *fno*)",
+      "Bash(find 'C:\\\\Users\\\\vinic\\\\OneDrive\\\\Área de Trabalho\\\\programação\\\\siga\\\\client\\\\src\\\\components' -path *proposal* -o -path *cadastro* -o -path *produto*)",
+      "Bash(python:*)",
+      "Bash(node:*)",
+      "Bash(node -e \"console.log\\(''hello''\\)\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(cat:*)",
+      "Bash(cd /c/Users/vinic/OneDrive/\"Área de Trabalho\"/programação/monetare-new-platform)"
+    ]
+  }
+}

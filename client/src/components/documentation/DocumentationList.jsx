@@ -1,33 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Search, Folder, Clock, User, AlertTriangle, ChevronDown } from "lucide-react";
-
-const mockClients = [
-    { id: 1, name: "Fernando Fagundes", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: true },
-    { id: 2, name: "Colheita Alegre", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 3, name: "Faz. Água Límpida", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 4, name: "Cláudio & Ronaldo Agro", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 5, name: "Atlântida Farm", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 6, name: "Faz. Vale do Cedro", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 7, name: "Faz. Barra Funda", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 8, name: "Cerano", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 9, name: "Fernando & CIA", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 10, name: "Souza&Santos Agro", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 11, name: "TerraFina", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 12, name: "Ouro de Prata", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 13, name: "Canto das Águas", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 14, name: "Faz. Sr. Sereno", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 15, name: "Faz. Pleiades", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 16, name: "Faz. Híades", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-    { id: 17, name: "Ceres Agro", date: "12/11/25 18:20", user: "Ronaldo", hasAlert: false },
-];
 
 export function DocumentationList({ onSelectClient }) {
     const [searchTerm, setSearchTerm] = useState("");
+    const [clients, setClients] = useState([]);
 
-    const filteredClients = mockClients.filter(client =>
+    useEffect(() => {
+        const proposals = JSON.parse(localStorage.getItem("proposals") || "[]");
+        const derived = proposals.map(p => ({
+            id: p.id,
+            name: p.name || p.companyName || "Proposta " + p.id,
+            date: p.createdAt ? new Date(p.createdAt).toLocaleString("pt-BR") : new Date().toLocaleString("pt-BR"),
+            user: p.analystId || "Ronaldo",
+            hasAlert: false,
+        }));
+        setClients(derived);
+    }, []);
+
+    const filteredClients = clients.filter(client =>
         client.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -37,11 +29,11 @@ export function DocumentationList({ onSelectClient }) {
                 <div className="relative w-96">
                     <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
                     <Input
-                        placeholder="Data de adição" // Placeholder matching image design hint, though functionalities as search
+                        placeholder="Buscar proposta..."
                         className="pl-10 bg-white rounded-full"
-                        readOnly // Based on image it looks like a dropdown or strict filter, keeping simple for now
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
-                    <ChevronDown className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
                 </div>
             </div>
 
@@ -76,7 +68,7 @@ export function DocumentationList({ onSelectClient }) {
             </div>
 
             <p className="text-sm text-gray-400">
-                Mostrando {filteredClients.length} de {mockClients.length} resultados
+                Mostrando {filteredClients.length} de {clients.length} resultados
             </p>
         </div>
     );
