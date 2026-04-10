@@ -30,7 +30,12 @@ export function Carteira() {
     useEffect(() => {
         const stored = JSON.parse(localStorage.getItem("proposals") || "[]");
         if (userRole === 'analista') {
-            setProposals(stored.filter(p => p.status === "PENDENTE_COMITE"));
+            // Same filter as PipelineBoard — shows exactly what the pipeline shows
+            const skipStages = new Set([
+                "EM_ANALISE_JURIDICA", "EM_SEGURO", "SEGURO_COTADO",
+                "FINALIZADA", "REPROVADA", "APROVADA"
+            ]);
+            setProposals(stored.filter(p => !skipStages.has(p.stage)));
         } else {
             setProposals(stored);
         }

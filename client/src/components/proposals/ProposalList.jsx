@@ -54,8 +54,12 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
       setJuridicoProposals(stored.filter(p => p.status === "EM_ANALISE_JURIDICA"));
     } else if (userRole === 'analista') {
       const stored = JSON.parse(localStorage.getItem("proposals") || "[]");
-      // Analista vê apenas propostas pendentes de análise (PENDENTE_COMITE)
-      setProposals(stored.filter(p => p.status === "PENDENTE_COMITE"));
+      // Same filter as PipelineBoard
+      const skipStages = new Set([
+        "EM_ANALISE_JURIDICA", "EM_SEGURO", "SEGURO_COTADO",
+        "FINALIZADA", "REPROVADA", "APROVADA"
+      ]);
+      setProposals(stored.filter(p => !skipStages.has(p.stage)));
     } else {
       const stored = localStorage.getItem("proposals");
       setProposals(stored ? JSON.parse(stored) : []);

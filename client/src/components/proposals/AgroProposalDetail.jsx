@@ -1643,11 +1643,22 @@ export function AgroProposalDetail({ proposal, onBack }) {
                         <Card className="col-span-12 lg:col-span-6 p-4 border-gray-200 shadow-sm">
                             <p className="text-xs text-gray-500 mb-3">Score de Crédito</p>
                             <div className="grid grid-cols-2 gap-4 items-center">
-                                <div className="flex items-center justify-center">
-                                    <div className="relative w-48 h-48 rounded-full bg-gradient-to-b from-red-100 to-white border border-red-100 flex items-center justify-center">
-                                        <div className="absolute -left-2 top-6 h-24 w-8 rounded-full bg-[#ef5350] rotate-[35deg]"></div>
-                                        <AlertTriangle className="w-8 h-8 text-red-500 absolute top-[56px]" />
-                                        <p className="text-5xl text-gray-900 mt-16">400</p>
+                                <div className="bg-[#fff5f5] rounded-2xl p-6 flex flex-col items-center justify-center relative overflow-hidden">
+                                    {/* Score Gauge Arc — same as Análise de Perfil */}
+                                    <div className="relative w-56 h-28 mt-2 flex justify-center items-end">
+                                        <svg viewBox="0 0 100 50" className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-visible">
+                                            {/* Background Arc */}
+                                            <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#fca5a5" strokeWidth="6" strokeLinecap="round" />
+                                            {/* Progress Arc based on score */}
+                                            <path d="M 10 50 A 40 40 0 0 1 45 18" fill="none" stroke="#ef4444" strokeWidth="6" strokeLinecap="round" />
+                                        </svg>
+                                        {/* Score Content */}
+                                        <div className="flex flex-col items-center z-10 -mb-2">
+                                            <div className="mb-2 bg-red-100 p-2 rounded-full">
+                                                <AlertTriangle className="w-6 h-6 text-red-500" />
+                                            </div>
+                                            <span className="text-5xl font-bold text-gray-900 tracking-tighter">400</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div>
@@ -2214,7 +2225,32 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                         <div><p className="text-gray-500">Imóvel em assentamento rural</p><p className="text-2xl">Não</p></div>
                                     </div>
                                     <div className="border-t border-gray-200 pt-3"><p className="text-gray-500 mb-2">Titulares</p><div className="grid grid-cols-2 gap-4"><p className="text-2xl">Agropecuária Santa Aurora LTDA<br /><span className="text-xl">Titular Principal - CNPJ 12.345.678/0001-90</span></p><p className="text-2xl">João Carlos Ferreira<br /><span className="text-xl">Segundo titular — CPF 123.456.789-10</span></p></div></div>
-                                    <div className="border-t border-gray-200 pt-3"><p className="text-gray-500 mb-2">Polígono CAR</p><div className="h-[260px] rounded-xl overflow-hidden border border-gray-200"><img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/14/9158/6455" alt="Polígono CAR" className="w-full h-full object-cover" /></div></div>
+                                    <div className="border-t border-gray-200 pt-3">
+                                        <p className="text-gray-500 mb-2">Polígono CAR</p>
+                                        <div className="h-[300px] rounded-xl overflow-hidden border border-gray-200 relative">
+                                            <img
+                                                src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/16/36555/24855"
+                                                alt="Polígono CAR"
+                                                className="w-full h-full object-cover"
+                                            />
+                                            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 600 300" preserveAspectRatio="none">
+                                                {/* Octagon-like polygon — irregular terrain boundary */}
+                                                <polygon
+                                                    points="120,240 60,180 80,110 180,60 300,45 420,70 510,140 540,210 480,260 350,280 220,270"
+                                                    fill="rgba(146, 220, 73, 0.22)"
+                                                    stroke="#92dc49"
+                                                    strokeWidth="2.5"
+                                                    strokeLinejoin="round"
+                                                />
+                                                {/* Vertex dots */}
+                                                {[
+                                                    [120,240],[60,180],[80,110],[180,60],[300,45],[420,70],[510,140],[540,210],[480,260],[350,280],[220,270]
+                                                ].map(([cx, cy], i) => (
+                                                    <circle key={i} cx={cx} cy={cy} r="4" fill="#92dc49" stroke="white" strokeWidth="1.5" />
+                                                ))}
+                                            </svg>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
