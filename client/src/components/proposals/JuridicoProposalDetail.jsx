@@ -214,17 +214,17 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                         <p className="text-sm text-gray-500 font-medium mb-1">Linha de crédito</p>
                         <span className="text-xl font-bold text-gray-900">{proposal.line || proposal.creditType || "FNO"}</span>
                     </div>
-                    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium mb-1">Status</p>
-                            <span className={`inline-block px-8 py-1.5 text-sm font-bold rounded-full shadow-sm ${proposal.status === 'REPROVADA' ? 'bg-red-200 text-red-800' : proposal.status === 'EM_ANALISE_JURIDICA' ? 'bg-yellow-200 text-yellow-800' : 'bg-[#92dc49] text-white'}`}>{proposal.status || "Ok"}</span>
-                        </div>
-                        <div className="flex flex-col items-center border-l border-gray-100 pl-4 justify-center">
-                            <p className="text-sm text-gray-500 font-medium mb-1">Andamento</p>
-                            <div className="flex items-center gap-2">
-                                <span className="text-2xl font-bold text-gray-900">{proposal.percent || "58"}%</span>
-                                <div className="w-6 h-6 rounded-full border-4 border-gray-100 border-t-[#92dc49] border-r-[#92dc49] transform rotate-45"></div>
-                            </div>
+                    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-sm text-gray-500 font-medium mb-2">Status</p>
+                        <span className={`inline-block px-4 py-1.5 text-sm font-bold rounded-full shadow-sm ${proposal.status === 'REPROVADA' ? 'bg-red-200 text-red-800' : proposal.status === 'EM_ANALISE_JURIDICA' ? 'bg-yellow-200 text-yellow-800' : 'bg-[#92dc49] text-white'}`}>
+                            {proposal.status || "Ok"}
+                        </span>
+                    </div>
+                    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm text-center">
+                        <p className="text-sm text-gray-500 font-medium mb-2">Andamento</p>
+                        <div className="flex items-center justify-center gap-3">
+                            <span className="text-2xl font-bold text-gray-900">{proposal.percent || "58"}%</span>
+                            <div className="w-6 h-6 rounded-full border-4 border-gray-100 border-t-[#92dc49] border-r-[#92dc49] transform rotate-45"></div>
                         </div>
                     </div>
                 </div>

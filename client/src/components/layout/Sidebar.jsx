@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard,
@@ -18,7 +19,8 @@ import {
   DollarSign,
   ShieldCheck,
   MapPin,
-  GraduationCap
+  GraduationCap,
+  ChevronLeft
 } from "lucide-react";
 
 const menuItems = {
@@ -42,9 +44,19 @@ const menuItems = {
   ]
 };
 
+function isActivePath(location, path) {
+  if (path === '/dashboard') return location === '/' || location === '/dashboard';
+  if (path === '/propostas') return location.startsWith('/propostas');
+  return location === path || location.startsWith(path + '/');
+}
+
+const iconRailWidth = 72;
+const menuPanelWidth = 232;
+
 export function Sidebar() {
   const [location] = useLocation();
   const userRole = localStorage.getItem('userRole') || 'gerente';
+  const [expanded, setExpanded] = useState(false);
 
   const roleNames = {
     gerente: 'Gerente de Contas',
@@ -55,146 +67,96 @@ export function Sidebar() {
     juridico: 'Jurídico'
   };
 
-  // Filter logic
-  const filteredMenuItems = {
-    analise: menuItems.analise.filter(item => {
-      // Gerencial and Ambregulatorio: Only Dashboard
-      if (userRole === 'ambregulatorio' || userRole === 'gerencial') {
-        return item.label === 'Dashboard';
-      }
-
-      // Cliente: Only Propostas
-      if (userRole === 'cliente') {
-        return item.label === 'Propostas';
-      }
-
-      // Posvenda: Only Cobrança and Seguros
-      if (userRole === 'posvenda') {
-        return item.label === 'Cobrança' || item.label === 'Seguros';
-      }
-
-      // Carteira: Only for Analista and Projetista
-      if (item.label === "Carteira") {
-        return userRole === 'analista' || userRole === 'projetista';
-      }
-      // Propostas: Only for Gerente AND Cliente
-      if (item.label === "Propostas") {
-        return userRole === 'gerente' || userRole === 'cliente';
-      }
-
-      // Cobrança and Seguros: Only for Posvenda and maybe someone else? Hide for others for now.
-      if (item.label === "Cobrança" || item.label === "Seguros") {
-        return userRole === 'posvenda';
-      }
-
-      // Canais and Visitas: Only for Gerente
-      if (item.label === "Canais" || item.label === "Visitas") {
-        return userRole === 'gerente';
-      }
-
-      // Default: show for all (Dashboard, Pipeline)
-      return true;
-    }),
-    ferramentas: menuItems.ferramentas.filter(item => {
-      // Ambregulatorio, Posvenda and Gerencial: No tools
-      if (userRole === 'ambregulatorio' || userRole === 'posvenda' || userRole === 'gerencial') {
-        return false;
-      }
-
-      // Cliente: Specific tools
-      if (userRole === 'cliente') {
-        // "ferramentas de cadastrar propostas, documentação e histórico., simulador"
-        return ["Cadastro de Proposta", "Documentação", "Histórico", "Simulador"].includes(item.label);
-      }
-
-      // Cadastro de Proposta: Only for Projetista, Cliente and Gerente
-      if (item.label === "Cadastro de Proposta") {
-        return userRole === 'projetista' || userRole === 'cliente' || userRole === 'gerente';
-      }
-
-      // Análise de Perfil: Not for Cliente
-      if (item.label === "Análise de Perfil" && userRole === 'cliente') {
-        return false;
-      }
-
-      // Simulador: Hide for analista
-      if (item.label === "Simulador" && userRole === 'analista') {
-        return false;
-      }
-
-      // Others (Simulador, Perfil, Docs, Histórico) are for everyone
-      return true;
-    })
-  };
-
   const getHomeLink = () => {
-    if (userRole === 'cliente' || userRole === 'juridico') return '/propostas';
     if (userRole === 'posvenda') return '/cobranca';
     return '/dashboard';
   };
 
+  const filteredMenuItems = {
+    analise: menuItems.analise.filter(item => {
+      if (userRole === 'ambregulatorio' || userRole === 'gerencial') return item.label === 'Dashboard';
+      if (item.label === "Carteira") return userRole === 'analista' || userRole === 'projetista';
+      if (item.label === "Propostas") return userRole === 'gerente';
+      if (item.label === "Cobrança" || item.label === "Seguros") return userRole === 'posvenda';
+      if (item.label === "Canais" || item.label === "Visitas") return userRole === 'gerente';
+      return true;
+    }),
+    ferramentas: menuItems.ferramentas.filter(item => {
+      if (userRole === 'ambregulatorio' || userRole === 'posvenda' || userRole === 'gerencial') return false;
+      if (item.label === "Cadastro de Proposta") return userRole === 'projetista' || userRole === 'gerente';
+      if (item.label === "Simulador" && userRole === 'analista') return false;
+      return true;
+    })
+  };
+
+  const totalWidth = iconRailWidth + (expanded ? menuPanelWidth : 0);
+
   return (
-    <div className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white">
-      <div className="w-[72px] border-r border-gray-200 flex flex-col items-center justify-between py-6 px-2 bg-white">
-        <div className="flex flex-col gap-4 items-center">
-          {userRole !== 'ambregulatorio' && (
-            <>
-              <Link href={getHomeLink()}>
-                <div className="flex flex-col items-center gap-1 cursor-pointer">
-                  <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/' || location === '/dashboard' || ((userRole === 'cliente' || userRole === 'juridico') && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                    <Home className={`w-8 h-8 ${location === '/' || location === '/dashboard' || ((userRole === 'cliente' || userRole === 'juridico') && location === '/propostas') || (userRole === 'posvenda' && location === '/cobranca') ? 'text-white' : 'text-gray-600'}`} />
-                  </div>
-                  <span className="text-[11px] text-gray-600">Home</span>
-                </div>
-              </Link>
-              {userRole === 'projetista' && (
-                <Link href="/aprender">
-                  <div className="flex flex-col items-center gap-1 cursor-pointer">
-                    <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location.startsWith('/aprender') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                      <GraduationCap className={`w-8 h-8 ${location.startsWith('/aprender') ? 'text-white' : 'text-gray-600'}`} />
-                    </div>
-                    <span className="text-[11px] text-gray-600 font-medium">Aprender</span>
-                  </div>
-                </Link>
-              )}
-              {userRole !== 'gerencial' && userRole !== 'juridico' && (
-                <Link href="/chat">
-                  <div className="flex flex-col items-center gap-1 cursor-pointer">
-                    <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/chat' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                      <MessageSquare className={`w-8 h-8 ${location === '/chat' ? 'text-white' : 'text-gray-600'}`} />
-                    </div>
-                    <span className="text-[11px] text-gray-600">Chat</span>
-                  </div>
-                </Link>
-              )}
-            </>
-          )}
-          {userRole === 'ambregulatorio' && (
-            <Link href="/dashboard">
+    <div
+      className="flex h-full overflow-hidden rounded-2xl shadow-lg bg-white relative"
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      style={{ width: `${totalWidth}px`, transition: 'width 0.25s ease' }}
+    >
+      {/* ── Icon Rail (always visible, 72px) ── */}
+      <div className="w-[72px] flex-shrink-0 border-r border-gray-200 flex flex-col items-center justify-between py-6 px-2 bg-white">
+        <div className="flex flex-col gap-4 items-center w-full">
+
+          {/* Home */}
+          <Link href={getHomeLink()}>
+            <div className="flex flex-col items-center gap-1 cursor-pointer">
+              <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${
+                isActivePath(location, getHomeLink()) ? 'bg-[#92dc49]' : 'hover:bg-gray-100'
+              }`}>
+                <Home className={`w-8 h-8 ${isActivePath(location, getHomeLink()) ? 'text-white' : 'text-gray-600'}`} />
+              </div>
+              <span className="text-[11px] text-gray-600 whitespace-nowrap">Home</span>
+            </div>
+          </Link>
+
+          {/* Aprender */}
+          {userRole === 'projetista' && (
+            <Link href="/aprender">
               <div className="flex flex-col items-center gap-1 cursor-pointer">
-                <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${location === '/dashboard' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'}`}>
-                  <Home className={`w-8 h-8 ${location === '/dashboard' ? 'text-white' : 'text-gray-600'}`} />
+                <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${
+                  location.startsWith('/aprender') ? 'bg-[#92dc49]' : 'hover:bg-gray-100'
+                }`}>
+                  <GraduationCap className={`w-8 h-8 ${location.startsWith('/aprender') ? 'text-white' : 'text-gray-600'}`} />
                 </div>
-                <span className="text-[11px] text-gray-600">Home</span>
+                <span className="text-[11px] text-gray-600 whitespace-nowrap">Aprender</span>
               </div>
             </Link>
           )}
+
+          {/* Chat */}
+          <Link href="/chat">
+            <div className="flex flex-col items-center gap-1 cursor-pointer">
+              <div className={`rounded-2xl p-2 w-full flex justify-center transition-colors ${
+                location === '/chat' ? 'bg-[#92dc49]' : 'hover:bg-gray-100'
+              }`}>
+                <MessageSquare className={`w-8 h-8 ${location === '/chat' ? 'text-white' : 'text-gray-600'}`} />
+              </div>
+              <span className="text-[11px] text-gray-600 whitespace-nowrap">Chat</span>
+            </div>
+          </Link>
         </div>
+
+        {/* Bottom action icons */}
         <div className="flex flex-col gap-2">
           {userRole !== 'gerencial' && userRole !== 'juridico' ? (
             <>
-              <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
+              <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300" title="Suporte">
                 <Headphones className="w-4 h-4 text-gray-700" />
               </div>
-              <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
+              <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300" title="Notificações">
                 <Megaphone className="w-4 h-4 text-gray-700" />
               </div>
-              <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300">
+              <div className="bg-gray-200 rounded-lg p-2 cursor-pointer hover:bg-gray-300" title="Configurações">
                 <Settings className="w-4 h-4 text-gray-700" />
               </div>
             </>
           ) : (
-            <div className="flex flex-col gap-3 pb-2">
+            <>
               <div className="bg-gray-100 rounded-lg p-2 w-10 h-10 mx-auto flex items-center justify-center cursor-pointer hover:bg-gray-200">
                 <Settings className="w-5 h-5 text-gray-700" />
               </div>
@@ -203,64 +165,97 @@ export function Sidebar() {
                   <LogOut className="w-5 h-5 text-gray-700" />
                 </div>
               </Link>
-            </div>
+            </>
           )}
         </div>
       </div>
 
-      {userRole !== 'gerencial' && userRole !== 'juridico' && !location.startsWith('/aprender') && (
-        <div className="flex-1 flex flex-col justify-between py-6 px-4 bg-white w-[248px]">
-          <div className="flex flex-col gap-6">
-            <button className="flex items-center justify-between bg-gray-100 border border-black rounded-full px-3 py-1.5 text-sm text-gray-500">
-              <div className="flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                <span>Faça uma pesquisa...</span>
-              </div>
-              <span className="bg-gray-300 rounded-full px-2 py-0.5 text-xs">⌘ + K</span>
-            </button>
+      {/* ── Menu Panel (animated) ── */}
+      <div
+        className="flex flex-col justify-between py-6 px-4 bg-white overflow-y-auto"
+        style={{
+          width: `${menuPanelWidth}px`,
+          opacity: expanded ? 1 : 0,
+          transition: 'opacity 0.2s ease',
+          pointerEvents: expanded ? 'auto' : 'none',
+        }}
+      >
+        <div className="flex flex-col gap-6">
 
+          {/* Search bar */}
+          <div className="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-full px-3 py-1.5 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4" />
+              <span className="truncate">Faça uma pesquisa...</span>
+            </div>
+          </div>
+
+          {/* Análise */}
+          {filteredMenuItems.analise.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-sm font-semibold text-gray-900">Análise</span>
               <div className="flex flex-col gap-1">
                 {filteredMenuItems.analise.map((item) => (
                   <Link key={item.path} href={item.path}>
-                    <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                      }`}>
-                      <item.icon className="w-4 h-4" />
-                      <span className="text-base">{item.label}</span>
+                    <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${
+                      isActivePath(location, item.path) ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                    }`}>
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-base truncate">{item.label}</span>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
+          )}
 
+          {/* Ferramentas */}
+          {filteredMenuItems.ferramentas.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="text-sm font-semibold text-gray-900">Ferramentas</span>
               <div className="flex flex-col gap-1">
                 {filteredMenuItems.ferramentas.map((item) => (
                   <Link key={item.path} href={item.path}>
-                    <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${location === item.path ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
-                      }`}>
-                      <item.icon className="w-4 h-4" />
-                      <span className="text-base">{item.label}</span>
+                    <div className={`flex items-center gap-2 px-2 py-1 rounded-lg cursor-pointer ${
+                      isActivePath(location, item.path) ? 'bg-[#e8f5e0]' : 'hover:bg-gray-100'
+                    }`}>
+                      <item.icon className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-base truncate">{item.label}</span>
                     </div>
                   </Link>
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2 bg-gray-100 rounded-3xl p-2">
-            <div className="w-7 h-7 rounded-full bg-[#c8ff93] flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-700" />
-            </div>
-            <span className="text-[11px] font-medium flex-1">{roleNames[userRole] || 'Usuário'}</span>
-            <Link href="/">
-              <LogOut className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700" />
-            </Link>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* User pill */}
+        <div className="flex items-center gap-2 bg-gray-100 rounded-3xl p-2">
+          <div className="w-7 h-7 rounded-full bg-[#c8ff93] flex items-center justify-center flex-shrink-0">
+            <User className="w-4 h-4 text-gray-700" />
+          </div>
+          <span className="text-[11px] font-medium flex-1 truncate">{roleNames[userRole] || 'Usuário'}</span>
+          <Link href="/">
+            <LogOut className="w-4 h-4 text-gray-500 cursor-pointer hover:text-gray-700 flex-shrink-0" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Collapse arrow */}
+      <div
+        className="absolute top-6 flex items-center justify-center cursor-pointer z-10 group"
+        style={{ left: `${expanded ? menuPanelWidth : 0}px`, transition: 'left 0.25s ease' }}
+      >
+        <button
+          className="w-5 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center hover:bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+        >
+          <ChevronLeft className="w-3 h-3 text-gray-500" />
+        </button>
+      </div>
     </div>
   );
 }
