@@ -69,15 +69,20 @@ export function Sidebar() {
 
   const getHomeLink = () => {
     if (userRole === 'posvenda') return '/cobranca';
+    if (userRole === 'analista') return '/carteira';
+    if (userRole === 'juridico') return '/propostas';
+    if (userRole === 'cliente') return '/propostas';
+    if (userRole === 'projetista') return '/pipeline';
     return '/dashboard';
   };
 
   const filteredMenuItems = {
     analise: menuItems.analise.filter(item => {
       if (userRole === 'ambregulatorio' || userRole === 'gerencial') return item.label === 'Dashboard';
+      if (userRole === 'posvenda') return item.label === 'Cobrança' || item.label === 'Seguros';
       if (item.label === "Carteira") return userRole === 'analista' || userRole === 'projetista';
       if (item.label === "Propostas") return userRole === 'gerente';
-      if (item.label === "Cobrança" || item.label === "Seguros") return userRole === 'posvenda';
+      if (item.label === "Cobrança" || item.label === "Seguros") return false;
       if (item.label === "Canais" || item.label === "Visitas") return userRole === 'gerente';
       return true;
     }),
