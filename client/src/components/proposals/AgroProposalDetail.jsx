@@ -67,7 +67,20 @@ const resumoData = {
 
 export function AgroProposalDetail({ proposal, onBack }) {
     const [, setLocation] = useLocation();
-    const userRole = localStorage.getItem('userRole') || 'gerente';
+    const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'gerente');
+
+    useEffect(() => {
+        const handler = () => {
+            setUserRole(localStorage.getItem('userRole') || 'gerente');
+        };
+        window.addEventListener('storage', handler);
+        window.addEventListener('roleChanged', handler);
+        return () => {
+            window.removeEventListener('storage', handler);
+            window.removeEventListener('roleChanged', handler);
+        };
+    }, []);
+
     const [activeTab, setActiveTab] = useState("Resumo");
     const [showReport, setShowReport] = useState(false);
     const [showDocAnalysis, setShowDocAnalysis] = useState(false);
@@ -90,6 +103,8 @@ export function AgroProposalDetail({ proposal, onBack }) {
         advanceProposal(proposal.id, "APROVADA", actionReason);
         setShowApproveModal(false);
         setActionReason("");
+        setLocation("/propostas");
+        setTimeout(() => window.location.reload(), 100);
     };
 
     const handleReject = () => {
@@ -135,7 +150,29 @@ export function AgroProposalDetail({ proposal, onBack }) {
         { id: "sig-1", name: "Parecer técnico", analyst: "Daniel Alves", completed: 2, total: 3, status: "PENDENTE", msg: "Sua assinatura está pendente." },
         { id: "sig-2", name: "Parecer de análise", analyst: "Daniel Alves", completed: 3, total: 3, status: "OK", msg: "" },
     ];
-    const [documentRegistry, setDocumentRegistry] = useState(initialDocumentRegistry);
+    // Load uploaded documents from proposal
+    const uploadedDocsForProposal = (proposal?.documents || []).map((doc, i) => ({
+        id: `uploaded-${i}`,
+        name: doc.name,
+        emission: new Date(doc.uploadedAt || Date.now()).toLocaleDateString("pt-BR"),
+        valid: "Sem validade",
+        status: "OK",
+        analysisStatus: "AGUARDANDO",
+        fileSize: doc.size > 0 ? (doc.size / (1024 * 1024)).toFixed(1) + " MB" : "—",
+        fileName: doc.fileName || doc.name,
+        data: doc.data || null,
+    }));
+
+    const dynamicInitialRegistry = uploadedDocsForProposal.length > 0
+        ? uploadedDocsForProposal
+        : initialDocumentRegistry;
+    const [documentRegistry, setDocumentRegistry] = useState(dynamicInitialRegistry);
+
+    // Update documents when proposal changes
+    useEffect(() => {
+        setDocumentRegistry(dynamicInitialRegistry);
+    }, [proposal?.id]);
+
     const [signatureRegistry, setSignatureRegistry] = useState(initialSignaturesRegistry);
 
     const guaranteesData = {
@@ -370,6 +407,8 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                     className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
                                     onClick={() => {
                                         advanceProposal(proposal.id, "PENDENTE_COMITE");
+                                        setLocation("/propostas");
+                                        setTimeout(() => window.location.reload(), 100);
                                     }}
                                 >
                                     <ArrowRight className="w-5 h-5 text-gray-600" />
@@ -413,7 +452,11 @@ export function AgroProposalDetail({ proposal, onBack }) {
                     {userRole === 'gerente' && (
                         <Button
                             className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
-                            onClick={() => advanceProposal(proposal.id, "PENDENTE_COMITE")}
+                            onClick={() => {
+                                advanceProposal(proposal.id, "PENDENTE_COMITE");
+                                setLocation("/propostas");
+                                setTimeout(() => window.location.reload(), 100);
+                            }}
                         >
                             <Send className="w-4 h-4 mr-2" />
                             Enviar para comitê
@@ -2494,13 +2537,19 @@ export function AgroProposalDetail({ proposal, onBack }) {
                             <p className="text-sm text-gray-500">Tempo de espera: 2d</p>
                         </Card>
                         <div className="bg-white rounded-xl overflow-hidden">
-                            <div className="h-20 bg-[#00523a]"></div>
-                            <div className="p-6 text-sm text-gray-800 leading-6">
-                                <p className="font-semibold mb-2">IX - OUTRAS CONSIDERAÇÕES</p>
-                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vulputate dui non mauris pellentesque, eu ornare eros porttitor...</p>
-                                <p className="font-semibold mt-6 mb-2">X - CONCLUSÃO</p>
-                                <p>De acordo com as informações apresentadas na peça técnica, econômica e financeira, o crédito demonstra viabilidade...</p>
-                            </div>
+                            {selectedDocumentPreview?.data ? (
+                                <iframe src={selectedDocumentPreview.data} className="w-full h-full min-h-[90%]" title={selectedDocumentPreview.name || "Documento"} />
+                            ) : (
+                                <>
+                                    <div className="h-20 bg-[#00523a]"></div>
+                                    <div className="p-6 text-sm text-gray-800 leading-6">
+                                        <p className="font-semibold mb-2">IX - OUTRAS CONSIDERAÇÕES</p>
+                                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam vulputate dui non mauris pellentesque, eu ornare eros porttitor...</p>
+                                        <p className="font-semibold mt-6 mb-2">X - CONCLUSÃO</p>
+                                        <p>De acordo com as informações apresentadas na peça técnica, econômica e financeira, o crédito demonstra viabilidade...</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <Card className="p-4 bg-white/95">
                             <h4 className="text-2xl mb-3">Status de Assinatura (2/3)</h4>

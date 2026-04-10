@@ -1,22 +1,89 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { advanceProposal } from "@/lib/proposalFlow";
-import { ChevronLeft, ChevronDown, Paperclip, MoreHorizontal, ArrowUpRight, Search, Filter, PenTool, CheckCircle, Clock, Download, Check, FileText, CheckCircle2 } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ChevronLeft, ChevronDown, Paperclip, MoreHorizontal, ArrowUpRight, Search, Filter, PenTool, CheckCircle, Clock, Download, Check, FileText, CheckCircle2, X as XIcon, Shield, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function JuridicoProposalDetail({ proposal, onBack }) {
     const [, setLocation] = useLocation();
+    const userRole = localStorage.getItem('userRole') || 'juridico';
     const [activeTab, setActiveTab] = useState("Dossiê");
     const [showSignatureModal, setShowSignatureModal] = useState(false);
     const [signed, setSigned] = useState(false);
     const [showDocAnalysis, setShowDocAnalysis] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState('Matrícula');
+    const [guaranteiesValidated, setGuaranteiesValidated] = useState(false);
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [actionReason, setActionReason] = useState("");
+    const [showSendToPosVendaModal, setShowSendToPosVendaModal] = useState(false);
+    const [sendToPosVendaReason, setSendToPosVendaReason] = useState("");
+
+    // Reactive role
+    useEffect(() => {
+        const handler = () => {
+            // Re-read role from localStorage for reactivity
+        };
+        window.addEventListener('storage', handler);
+        window.addEventListener('roleChanged', handler);
+        return () => {
+            window.removeEventListener('storage', handler);
+            window.removeEventListener('roleChanged', handler);
+        };
+    }, []);
+
     const tabs = ["Dossiê", "Documentos", "Assinaturas", "Registro de Garantias"];
 
+    // Determine button text and visibility based on tab
+    useEffect(() => {
+        if (activeTab === "Registro de Garantias") {
+            // Juridico is on the guarantees tab — button enables validation
+        }
+    }, [activeTab]);
+
+    const handleSendToPosVenda = () => {
+        advanceProposal(proposal.id, "EM_SEGURO", sendToPosVendaReason);
+        localStorage.setItem('userRole', 'posvenda');
+        window.dispatchEvent(new Event('storage'));
+        setShowSendToPosVendaModal(false);
+        setLocation('/seguros');
+        setTimeout(() => window.location.reload(), 100);
+    };
+
+    const handleReject = () => {
+        if (!actionReason.trim()) return;
+        advanceProposal(proposal.id, "REPROVADA", actionReason);
+        setShowRejectModal(false);
+        setActionReason("");
+        setLocation('/propostas');
+    };
+
+    const toggleGuaranteeStatus = (index) => {
+        setCheckedGuarantees(prev => {
+            const next = { ...prev };
+            next[index] = !prev[index];
+            return next;
+        });
+    };
+
+    const [checkedGuarantees, setCheckedGuarantees] = useState({});
+
+    useEffect(() => {
+        const allChecked = guaranteeItems.length > 0 && Object.values(checkedGuarantees).every(v => v === true);
+        setGuaranteiesValidated(allChecked);
+    }, [checkedGuarantees]);
+
+    const guaranteeItems = [
+        { type: "Imóvel", name: "Fazenda Boa Vista", desc: "Matrícula 152.098 — Cuiabá/MT" },
+        { type: "Imóvel", name: "Sítio Esperança", desc: "Matrícula 88.421 — Várzea Grande/MT" },
+        { type: "Máquina", name: "Trator John Deere 6175J", desc: "Renavam 00182745763" },
+        { type: "Penhor", name: "Penhor Safra 2025/2026", desc: "Soja — 500 hectares" },
+    ];
+
     const primaryButtonText = activeTab === "Registro de Garantias"
-        ? "Enviar garantias para registro"
-        : (signed ? "Enviar para Cotação e Seguro" : "Gerar Contrato / Instrumento");
+        ? (guaranteiesValidated ? "Enviar para Pós-Venda" : "Valide as garantias")
+        : (signed ? "Enviar para Pós-Venda" : "Gerar Contrato");
 
     const renderDossie = () => (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -311,28 +378,64 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
     );
 
     const renderGarantias = () => (
-        <div className="space-y-4">
-            <h3 className="text-base font-medium text-gray-800">Imóveis rurais</h3>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-base font-medium text-gray-800">Garantias Registradas</h3>
+                    <p className="text-sm text-gray-500 mt-1">Valide cada garantia antes de enviar para o Pós-Venda</p>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    <Shield className="w-3.5 h-3.5" />
+                    {Object.values(checkedGuarantees).filter(v => v).length} / {guaranteeItems.length} validadas
+                </div>
+            </div>
+
             <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-transparent border-b-gray-100">
                         <TableRow className="hover:bg-transparent">
-                            <TableHead className="font-medium text-gray-500">Nome/Descrição</TableHead>
-                            <TableHead className="font-medium text-gray-500">CPF/CNPJ</TableHead>
-                            <TableHead className="font-medium text-gray-500">Matrícula</TableHead>
+                            <TableHead className="font-medium text-gray-500 w-[50px]"></TableHead>
+                            <TableHead className="font-medium text-gray-500">Tipo</TableHead>
+                            <TableHead className="font-medium text-gray-500">Nome</TableHead>
+                            <TableHead className="font-medium text-gray-500">Descrição</TableHead>
+                            <TableHead className="text-right font-medium text-gray-500">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow className="hover:bg-gray-50/50 border-b-gray-50">
-                            <TableCell className="font-medium text-gray-800">Fazenda Boa Vista</TableCell>
-                            <TableCell className="text-gray-600">82.341.222/0001-99</TableCell>
-                            <TableCell className="text-gray-600 font-mono">152.098</TableCell>
-                        </TableRow>
-                        <TableRow className="hover:bg-gray-50/50 border-white">
-                            <TableCell className="font-medium text-gray-800">Sítio Esperança</TableCell>
-                            <TableCell className="text-gray-600">12.441.555/0001-33</TableCell>
-                            <TableCell className="text-gray-600 font-mono">88.421</TableCell>
-                        </TableRow>
+                        {guaranteeItems.map((item, i) => (
+                            <TableRow key={i} className="hover:bg-gray-50/50 border-b-gray-50">
+                                <TableCell>
+                                    <input
+                                        type="checkbox"
+                                        checked={checkedGuarantees[i] || false}
+                                        onChange={() => toggleGuaranteeStatus(i)}
+                                        className="w-4 h-4 rounded border-gray-300 text-[#92dc49] focus:ring-[#92dc49] cursor-pointer"
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                        item.type === "Imóvel" ? "bg-blue-100 text-blue-700" :
+                                        item.type === "Máquina" ? "bg-orange-100 text-orange-700" :
+                                        "bg-purple-100 text-purple-700"
+                                    }`}>
+                                        {item.type}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="font-medium text-gray-800">{item.name}</TableCell>
+                                <TableCell className="text-gray-600">{item.desc}</TableCell>
+                                <TableCell className="text-right">
+                                    {checkedGuarantees[i] ? (
+                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                            <CheckCircle className="w-3 h-3" /> Validada
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                                            Pendente
+                                        </span>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
             </div>
@@ -361,34 +464,27 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 text-gray-700 bg-white shadow-sm">
-                            <ChevronDown className="w-4 h-4" /> Ações
+                        <button
+                            className="flex items-center gap-2 px-4 py-2 border border-red-300 rounded-full text-sm font-medium hover:bg-red-50 text-red-700 bg-white shadow-sm"
+                            onClick={() => setShowRejectModal(true)}
+                        >
+                            <XIcon className="w-4 h-4" /> Reprovar
                         </button>
-                        {signed ? (
-                            <button
-                                className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors"
-                                onClick={() => {
-                                    localStorage.setItem('userRole', 'posvenda');
-                                    window.dispatchEvent(new Event('storage'));
-                                    setLocation(`/seguros/${proposal.id}`);
-                                    setTimeout(() => window.location.reload(), 100);
-                                }}
-                            >
-                                Enviar para Cotação e Seguro
-                            </button>
-                        ) : (
-                            <button
-                                className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors"
-                                onClick={() => {
-                                    const updated = advanceProposal(proposal.id, "EM_SEGURO");
-                                    localStorage.setItem('userRole', 'posvenda');
-                                    window.dispatchEvent(new Event('storage'));
-                                    setLocation('/seguros');
-                                }}
-                            >
-                                {primaryButtonText}
-                            </button>
-                        )}
+                        <button
+                            className="px-5 py-2 bg-[#92dc49] hover:bg-[#7ab635] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-full text-sm font-medium shadow-sm shadow-[#92dc49]/30 transition-colors"
+                            onClick={() => {
+                                if (activeTab === "Registro de Garantias" && !guaranteiesValidated) return;
+                                if (activeTab === "Assinaturas" && !signed) return;
+                                setShowSendToPosVendaModal(true);
+                            }}
+                        >
+                            <Send className="w-4 h-4 mr-1" />
+                            {activeTab === "Registro de Garantias" && guaranteiesValidated
+                                ? "Enviar para Pós-Venda"
+                                : activeTab === "Assinaturas" && signed
+                                    ? "Enviar para Pós-Venda"
+                                    : primaryButtonText}
+                        </button>
                     </div>
                 </div>
                 <div className="ml-12 text-sm text-gray-500">
@@ -608,6 +704,63 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
                     </div>
                 </div>
             )}
+
+            {/* Rejection Modal */}
+            <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Rejeitar proposta</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <p className="text-sm text-gray-600">
+                            Informe o motivo da rejeição. Esta informação será registrada no histórico da proposta.
+                        </p>
+                        <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
+                            placeholder="Ex: Documentação inconsistente, garantias não atendem aos critérios..."
+                            value={actionReason}
+                            onChange={(e) => setActionReason(e.target.value)}
+                        />
+                        <div className="flex gap-3 justify-end">
+                            <Button variant="outline" onClick={() => { setShowRejectModal(false); setActionReason(""); }}>
+                                Cancelar
+                            </Button>
+                            <Button className="bg-red-600 hover:bg-red-700" onClick={handleReject} disabled={!actionReason.trim()}>
+                                Confirmar rejeição
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Send to Pós-Venda Modal */}
+            <Dialog open={showSendToPosVendaModal} onOpenChange={setShowSendToPosVendaModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Enviar para Pós-Venda</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <p className="text-sm text-gray-600">
+                            A proposta será enviada para o Pós-Venda iniciar a cotação do seguro.
+                            Adicione observações (opcional):
+                        </p>
+                        <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-[#92dc49]"
+                            placeholder="Ex: Todas as garantias validadas, documentos assinados..."
+                            value={sendToPosVendaReason}
+                            onChange={(e) => setSendToPosVendaReason(e.target.value)}
+                        />
+                        <div className="flex gap-3 justify-end">
+                            <Button variant="outline" onClick={() => { setShowSendToPosVendaModal(false); setSendToPosVendaReason(""); }}>
+                                Cancelar
+                            </Button>
+                            <Button className="bg-[#92dc49] hover:bg-[#7ab635] text-white" onClick={handleSendToPosVenda}>
+                                Enviar para Pós-Venda
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -19,13 +19,57 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 
-const initialDocs = [
-  { id: 1, name: "Documento 1", status: "idle" },
-  { id: 2, name: "Documento 2", status: "error", error: "Uma ### foi anexada no lugar. Envie o documento correto." },
-  { id: 3, name: "Documento 3", subtitle: "Descritivo", status: "idle" },
-  { id: 4, name: "Documento 4", status: "done" },
-  { id: 5, name: "Documento 5", status: "idle" },
-];
+function getInitialDocs(formData) {
+  const segment = formData.segment || "Agro";
+  const personType = formData.personType || "Pessoa física";
+
+  const commonDocs = [
+    { name: "RG / CNH (frente)", status: "idle" },
+    { name: "RG / CNH (verso)", status: "idle" },
+    { name: personType === "Pessoa jurídica" ? "Cartão CNPJ" : "Cartão CPF", status: "idle" },
+    { name: "Comprovante de endereço", status: "idle" },
+    { name: "Comprovante de renda", status: "idle" },
+    { name: "Certidão de estado civil", status: "idle" },
+  ];
+
+  if (segment === "Agro" || segment === "Rural") {
+    return [
+      ...commonDocs,
+      { name: "CAR (Cadastro Ambiental Rural)", status: "idle" },
+      { name: "Matrícula do imóvel rural", status: "idle" },
+      { name: "ITR (Imposto Territorial Rural) — último exercício", status: "idle" },
+      { name: "CCB (Certidão de Crédito Bancário)", status: "idle" },
+      { name: "Projeto técnico / orçamentário", status: "idle" },
+    ];
+  }
+
+  if (segment === "Corporate") {
+    return [
+      ...commonDocs,
+      { name: "Contrato social e alterações", status: "idle" },
+      { name: "Balanço patrimonial — último exercício", status: "idle" },
+      { name: "Balancete mensal", status: "idle" },
+      { name: "Relatório gerencial", status: "idle" },
+      { name: "Declaração de faturamento", status: "idle" },
+    ];
+  }
+
+  if (segment === "Middle market") {
+    return [
+      ...commonDocs,
+      { name: "Contrato social e alterações", status: "idle" },
+      { name: "Balanço patrimonial — último exercício", status: "idle" },
+      { name: "Declaração de faturamento", status: "idle" },
+    ];
+  }
+
+  // Varejo / default
+  return [
+    ...commonDocs,
+    { name: "Comprovante de vínculo empregatício", status: "idle" },
+    { name: "Declaração de bens", status: "idle" },
+  ];
+}
 
 export function CadastroProposta() {
   const [, setLocation] = useLocation();
@@ -33,8 +77,69 @@ export function CadastroProposta() {
   const [flow, setFlow] = useState("solicitacao");
   const [step, setStep] = useState(1);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [docs, setDocs] = useState(initialDocs);
+  const [docs, setDocs] = useState(() => getInitialDocs({ segment: "Agro", personType: "Pessoa física" }));
   const [uploadingIds, setUploadingIds] = useState([]);
+  const [activeDocUpload, setActiveDocUpload] = useState(null);
+  const fileInputRef = { current: null };
+
+  const handleUploadClick = (id) => {
+    // Trigger hidden file input
+    setActiveDocUpload(id);
+    setTimeout(() => {
+      const input = document.getElementById('doc-file-input');
+      if (input) input.click();
+    }, 0);
+  };
+
+  const handleFileSelected = (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeDocUpload) return;
+
+    setUploadingIds((p) => [...p, activeDocUpload]);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const fileData = {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        data: reader.result, // base64
+      };
+
+      // Save to localStorage under proposal-docs key
+      const existingDocs = JSON.parse(localStorage.getItem("uploadedDocs") || "{}");
+      existingDocs[String(activeDocUpload)] = fileData;
+      localStorage.setItem("uploadedDocs", JSON.stringify(existingDocs));
+
+      setDocs((prev) => prev.map((d) => (d.id === activeDocUpload ? { ...d, status: "done", fileName: file.name, error: "" } : d)));
+      setUploadingIds((p) => p.filter((x) => x !== activeDocUpload));
+      setActiveDocUpload(null);
+    };
+    reader.onerror = () => {
+      setDocs((prev) => prev.map((d) => (d.id === activeDocUpload ? { ...d, status: "error", error: "Erro ao ler o arquivo. Tente novamente." } : d)));
+      setUploadingIds((p) => p.filter((x) => x !== activeDocUpload));
+      setActiveDocUpload(null);
+    };
+    reader.readAsDataURL(file);
+    // Reset input
+    e.target.value = "";
+  };
+
+  const handleDeleteDoc = (id) => {
+    setDocs((prev) => prev.map((d) => (d.id === id ? { ...d, status: "idle", fileName: "", error: "" } : d)));
+    const existingDocs = JSON.parse(localStorage.getItem("uploadedDocs") || "{}");
+    delete existingDocs[String(id)];
+    localStorage.setItem("uploadedDocs", JSON.stringify(existingDocs));
+  };
+
+  const handleViewDoc = (id) => {
+    const existingDocs = JSON.parse(localStorage.getItem("uploadedDocs") || "{}");
+    const doc = existingDocs[String(id)];
+    if (doc?.data) {
+      const win = window.open();
+      win.document.write(`<iframe src="${doc.data}" width="100%" height="100%" style="border:none;"></iframe>`);
+    }
+  };
 
   const [formData, setFormData] = useState({
     cpfCnpj: "000.000.000-00",
@@ -71,7 +176,16 @@ export function CadastroProposta() {
     assetValue: "R$ 2.400",
   });
 
-  const setField = (k, v) => setFormData((p) => ({ ...p, [k]: v }));
+  const setField = (k, v) => {
+    setFormData((p) => {
+      const updated = { ...p, [k]: v };
+      // Regenerate docs when segment or personType changes
+      if (k === "segment" || k === "personType") {
+        setDocs(getInitialDocs(updated));
+      }
+      return updated;
+    });
+  };
   const handleBack = () => (flow === "documentacao" ? setFlow("solicitacao") : window.history.back());
 
   const handleUpload = (id) => {
@@ -85,14 +199,18 @@ export function CadastroProposta() {
   const finalizeProposal = () => {
     const newProposal = {
       id: Date.now(),
-      name: "Fernando Fagundes",
+      name: formData.name,
       score: "B",
       status: "OK",
-      segment: "Rural",
+      segment: formData.segment === "Corporate" ? "Corporate" : "Rural",
+      type: formData.segment === "Corporate" ? "Corporate" : "Rural",
       stage: "1. CECAD",
       value: formData.projectValue,
+      rawValue: parseFloat(formData.projectValue.replace(/[^0-9.,]/g, '').replace(',', '.')) || 0,
       date: new Date().toLocaleDateString("pt-BR"),
-      line: "FNO - Agro",
+      line: formData.creditLine + " - " + formData.product,
+      companyName: formData.name,
+      createdAt: new Date().toISOString(),
       registrationData: {
         personType: formData.personType,
         birthDate: formData.birthDate,
@@ -118,8 +236,37 @@ export function CadastroProposta() {
         totalArea: "1.200 ha",
       },
     };
+
+    // Attach uploaded documents data
+    const uploadedDocs = JSON.parse(localStorage.getItem("uploadedDocs") || "{}");
+    newProposal.documents = docs
+      .filter((d) => d.status === "done")
+      .map((d) => ({
+        name: d.name,
+        fileName: d.fileName || uploadedDocs[String(d.id)]?.name || "",
+        type: uploadedDocs[String(d.id)]?.type || "",
+        size: uploadedDocs[String(d.id)]?.size || 0,
+        data: uploadedDocs[String(d.id)]?.data || null, // base64
+        uploadedAt: new Date().toISOString(),
+      }));
+
     const all = JSON.parse(localStorage.getItem("proposals") || "[]");
     localStorage.setItem("proposals", JSON.stringify([newProposal, ...all]));
+
+    // Sync to client proposals
+    const clientAll = JSON.parse(localStorage.getItem("clientProposals") || "[]");
+    clientAll.unshift({
+      id: newProposal.id,
+      name: newProposal.name,
+      value: newProposal.value,
+      date: newProposal.date,
+      hash: `#${newProposal.id}`,
+      statusBadge: "Rascunho",
+      statusType: "neutral",
+      tab: "Em aberto",
+    });
+    localStorage.setItem("clientProposals", JSON.stringify(clientAll));
+
     setIsSuccess(true);
   };
 
@@ -351,6 +498,14 @@ export function CadastroProposta() {
 
           {flow === "documentacao" && (
             <div className="space-y-4">
+              {/* Hidden file input for real uploads */}
+              <input
+                id="doc-file-input"
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                className="hidden"
+                onChange={handleFileSelected}
+              />
               <h2 className="text-5xl text-gray-900">Documentos</h2>
               <div className="space-y-2">
                 {docs.map((doc) => (
@@ -359,19 +514,20 @@ export function CadastroProposta() {
                       <div>
                         <p className="text-2xl text-gray-900">{doc.name}</p>
                         {doc.subtitle ? <p className="text-xs text-gray-500">{doc.subtitle}</p> : null}
+                        {doc.status === "done" && doc.fileName && <p className="text-xs text-green-700 mt-1">{doc.fileName}</p>}
                       </div>
                       <div className="flex items-center gap-2">
                         {doc.status === "done" ? (
                           <>
-                            <button type="button" className="text-red-500"><Trash2 className="w-4 h-4" /></button>
-                            <button type="button" className="text-green-600"><Eye className="w-4 h-4" /></button>
+                            <button type="button" className="text-red-500" onClick={() => handleDeleteDoc(doc.id)}><Trash2 className="w-4 h-4" /></button>
+                            <button type="button" className="text-green-600" onClick={() => handleViewDoc(doc.id)}><Eye className="w-4 h-4" /></button>
                           </>
                         ) : uploadingIds.includes(doc.id) ? (
-                          <span className="text-sm text-gray-500">...</span>
+                          <span className="text-sm text-gray-500">Enviando...</span>
                         ) : (
                           <>
                             {doc.status === "error" ? <span className="w-12 h-12 rounded-xl bg-red-200 text-red-700 inline-flex items-center justify-center"><AlertCircle className="w-5 h-5" /></span> : null}
-                            <button type="button" onClick={() => handleUpload(doc.id)} className="text-[#92dc49]"><Upload className="w-5 h-5" /></button>
+                            <button type="button" onClick={() => handleUploadClick(doc.id)} className="text-[#92dc49]"><Upload className="w-5 h-5" /></button>
                           </>
                         )}
                       </div>

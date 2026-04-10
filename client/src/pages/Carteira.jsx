@@ -5,8 +5,27 @@ import { ProposalDetail } from "@/components/proposals/ProposalDetail";
 
 export function Carteira() {
     const [selectedProposal, setSelectedProposal] = useState(null);
-    const userRole = localStorage.getItem('userRole');
+    const [userRole, setUserRole] = useState(localStorage.getItem('userRole') || 'gerente');
     const [proposals, setProposals] = useState([]);
+    const [, setTick] = useState(0);
+
+    useEffect(() => {
+        const handler = () => {
+            setUserRole(localStorage.getItem('userRole') || 'gerente');
+            setTick(t => t + 1);
+        };
+        window.addEventListener('storage', handler);
+        // Detect manual role changes via custom event too
+        const onProfile = () => {
+            setUserRole(localStorage.getItem('userRole') || 'gerente');
+            setTick(t => t + 1);
+        };
+        window.addEventListener('roleChanged', onProfile);
+        return () => {
+            window.removeEventListener('storage', handler);
+            window.removeEventListener('roleChanged', onProfile);
+        };
+    }, []);
 
     useEffect(() => {
         const stored = JSON.parse(localStorage.getItem("proposals") || "[]");
@@ -21,6 +40,7 @@ export function Carteira() {
         <Layout>
             {selectedProposal ? (
                 <ProposalDetail
+                    key={selectedProposal.id + userRole}
                     proposal={selectedProposal}
                     onBack={() => setSelectedProposal(null)}
                 />
