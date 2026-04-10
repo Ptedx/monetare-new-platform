@@ -61,6 +61,13 @@ export function advanceProposal(proposalId, actionKey, reason = "") {
     prop.status = "EM_ANALISE_JURIDICA";
     prop.stage = "EM_ANALISE_JURIDICA";
     if (reason) prop.approvalReason = reason;
+    if (!prop.user) {
+      // Attach user info for Juridico display
+      const users = JSON.parse(localStorage.getItem("sigaplatform:users") || '[]');
+      const u = users[0]; // first user as fallback
+      if (u) prop.user = { ...u.user };
+      if (u) prop.user = { name: u.name, email: u.email };
+    }
   }
 
   // Analista ou jurídico reprova

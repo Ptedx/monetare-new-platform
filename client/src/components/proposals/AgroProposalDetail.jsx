@@ -369,25 +369,19 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                 <DropdownMenuItem
                                     className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
                                     onClick={() => {
-                                        advanceProposal(proposal.id, "next");
+                                        advanceProposal(proposal.id, "PENDENTE_COMITE");
                                     }}
                                 >
                                     <ArrowRight className="w-5 h-5 text-gray-600" />
-                                    Avançar no pipeline
+                                    Enviar para comitê
                                 </DropdownMenuItem>
                             )}
 
-                            {(userRole === 'gerente' || userRole === 'analista') && (
+                            {userRole === 'gerente' && (
                                 <DropdownMenuItem
                                     className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
                                     onClick={() => {
                                         advanceProposal(proposal.id, "EM_ANALISE_JURIDICA");
-                                        localStorage.setItem('userRole', 'juridico');
-                                        window.dispatchEvent(new Event('storage'));
-                                        setLocation('/propostas');
-                                        if (window.location.pathname === '/propostas') {
-                                            window.location.reload();
-                                        }
                                     }}
                                 >
                                     <Scale className="w-5 h-5 text-gray-600" />
@@ -396,62 +390,56 @@ export function AgroProposalDetail({ proposal, onBack }) {
                             )}
 
                             <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
-                                <ArrowRight className="w-5 h-5 text-gray-600" />
-                                Mover para An. de Risco
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
-                                <Send className="w-5 h-5 text-gray-600" />
-                                Enviar para comitê
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
-                                <Send className="w-5 h-5 text-gray-600" />
-                                Encaminhar para aprovação
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1">
                                 <RefreshCw className="w-5 h-5 text-gray-600" />
                                 Solicitar Open Finance
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator className="my-2 bg-gray-100" />
 
-                            <DropdownMenuItem
-                                className="gap-3 py-3 cursor-pointer hover:bg-red-50 text-red-700 font-medium"
-                                onClick={() => {
-                                    const all = JSON.parse(localStorage.getItem("proposals") || "[]");
-                                    const idx = all.findIndex(p => String(p.id) === String(proposal.id));
-                                    if (idx !== -1) {
-                                        all[idx].status = "REJEITADA";
-                                        all[idx].updatedAt = new Date().toISOString();
-                                        localStorage.setItem("proposals", JSON.stringify(all));
-                                    }
-                                    // Sync client proposals
-                                    const client = JSON.parse(localStorage.getItem("clientProposals") || "[]");
-                                    const cIdx = client.findIndex(p => String(p.id) === String(proposal.id));
-                                    if (cIdx !== -1) {
-                                        client[cIdx].statusBadge = "Rejeitada";
-                                        client[cIdx].statusType = "error";
-                                        localStorage.setItem("clientProposals", JSON.stringify(client));
-                                    }
-                                }}
-                            >
-                                <XIcon className="w-5 h-5" />
-                                Reprovar proposta
-                            </DropdownMenuItem>
+                            {userRole === 'analista' && (
+                                <DropdownMenuItem
+                                    className="gap-3 py-3 cursor-pointer hover:bg-red-50 text-red-700 font-medium"
+                                    onClick={() => setShowRejectModal(true)}
+                                >
+                                    <XIcon className="w-5 h-5" />
+                                    Reprovar proposta
+                                </DropdownMenuItem>
+                            )}
 
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button
-                        className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
-                        onClick={() => {
-                            advanceProposal(proposal.id, "next");
-                        }}
-                    >
-                        <Send className="w-4 h-4 mr-2" />
-                        {userRole === 'gerente' ? 'Enviar para comitê' : 'Avançar no pipeline'}
-                    </Button>
+
+                    {/* Gerente: Enviar para comitê */}
+                    {userRole === 'gerente' && (
+                        <Button
+                            className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
+                            onClick={() => advanceProposal(proposal.id, "PENDENTE_COMITE")}
+                        >
+                            <Send className="w-4 h-4 mr-2" />
+                            Enviar para comitê
+                        </Button>
+                    )}
+
+                    {/* Analista: Aprovar → Jurídico e Reprovar */}
+                    {userRole === 'analista' && (
+                        <>
+                            <Button
+                                className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
+                                onClick={() => setShowApproveModal(true)}
+                            >
+                                <Check className="w-4 h-4 mr-2" />
+                                Aprovar → Jurídico
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                className="rounded-full px-6"
+                                onClick={() => setShowRejectModal(true)}
+                            >
+                                <XIcon className="w-4 h-4 mr-2" />
+                                Reprovar
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -2916,6 +2904,63 @@ export function AgroProposalDetail({ proposal, onBack }) {
                     </div>
                 </div>
             )}
+
+            {/* Approve Modal (Analista) */}
+            <Dialog open={showApproveModal} onOpenChange={setShowApproveModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Aprovar proposta → Enviar ao Jurídico</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <p className="text-sm text-gray-600">
+                            Ao aprovar, a proposta será enviada para análise jurídica.
+                            Adicione o motivo para embasar sua decisão (opcional):
+                        </p>
+                        <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-[#92dc49]"
+                            placeholder="Ex: Documentação completa, garantias adequadas, scoring dentro do limite..."
+                            value={actionReason}
+                            onChange={(e) => setActionReason(e.target.value)}
+                        />
+                        <div className="flex gap-3 justify-end">
+                            <Button variant="outline" onClick={() => { setShowApproveModal(false); setActionReason(""); }}>
+                                Cancelar
+                            </Button>
+                            <Button className="bg-[#92dc49] hover:bg-[#7ab635] text-white" onClick={handleApprove}>
+                                Confirmar aprovação
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reject Modal */}
+            <Dialog open={showRejectModal} onOpenChange={setShowRejectModal}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Reprovar proposta</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <p className="text-sm text-gray-600">
+                            Informe o motivo da reprovação. Esta informação será registrada no histórico da proposta.
+                        </p>
+                        <textarea
+                            className="w-full border border-gray-300 rounded-lg p-3 h-32 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
+                            placeholder="Ex: Documentação incompleta, garantias insuficientes..."
+                            value={actionReason}
+                            onChange={(e) => setActionReason(e.target.value)}
+                        />
+                        <div className="flex gap-3 justify-end">
+                            <Button variant="outline" onClick={() => { setShowRejectModal(false); setActionReason(""); }}>
+                                Cancelar
+                            </Button>
+                            <Button variant="destructive" onClick={handleReject} disabled={!actionReason.trim()}>
+                                Confirmar reprovação
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

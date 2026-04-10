@@ -176,24 +176,11 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
 
                         <div className="text-gray-400 flex items-center justify-end gap-2"><div className="w-3 h-3 bg-gray-200 rounded-sm"></div> Prazo</div>
                         <div className="text-gray-900">{proposal.term ? proposal.term + " meses" : "Não informado"}</div>
-{proposal.user && (
-                        <>
                         <div className="text-gray-400 flex items-center justify-end gap-2"><UserIcon /> Cliente</div>
-                        <div className="text-gray-900">{proposal.user.name || proposal.user.email || "Não informado"}</div>
-
-                        <div className="text-gray-400 flex items-center justify-end gap-2"><HashIcon /> CPF</div>
-                        <div className="text-gray-900">{proposal.user.cpf || proposal.user.documentNumber || "Não informado"}</div>
+                        <div className="text-gray-900">{proposal.user?.name || proposal.name || proposal.companyName || "Não informado"}</div>
 
                         <div className="text-gray-400 flex items-center justify-end gap-2"><MailIcon /> E-mail</div>
-                        <div className="text-gray-900">{proposal.user.email || "Não informado"}</div>
-
-                        <div className="text-gray-400 flex items-center justify-end gap-2"><MapPinIcon /> Endereço</div>
-                        <div className="text-gray-900">{proposal.user.address || "Não informado"}</div>
-                        </>
-)}
-{!proposal.user && (
-                        <div className="text-gray-400 text-sm col-span-2">Dados do cliente não disponíveis</div>
-)}
+                        <div className="text-gray-900">{proposal.user?.email || proposal.email || "Não informado"}</div>
                     </div>
                 </div>
 
