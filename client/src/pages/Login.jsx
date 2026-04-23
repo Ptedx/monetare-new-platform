@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
+import { userPersistence } from "@/lib/userPersistence";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,34 +33,22 @@ export function Login() {
       return;
     }
 
-    const cleanEmail = email.toLowerCase().trim();
+    const user = userPersistence.validateLogin(email, password);
 
-    if (cleanEmail === "gerente@gmail.com") {
-      localStorage.setItem('userRole', 'gerente');
-      setLocation("/dashboard");
-    } else if (cleanEmail === "analista@gmail.com") {
-      localStorage.setItem('userRole', 'analista');
-      setLocation("/dashboard");
-    } else if (cleanEmail === "projetista@gmail.com") {
-      localStorage.setItem('userRole', 'projetista');
-      setLocation("/dashboard");
-    } else if (cleanEmail === "ambregulatorio@gmail.com") {
-      localStorage.setItem('userRole', 'ambregulatorio');
-      setLocation("/dashboard");
-    } else if (cleanEmail === "cliente@gmail.com") {
-      localStorage.setItem('userRole', 'cliente');
-      setLocation("/propostas");
-    } else if (cleanEmail === "posvenda@gmail.com") {
-      localStorage.setItem('userRole', 'posvenda');
-      setLocation("/cobranca");
-    } else if (cleanEmail === "gerencial@gmail.com") {
-      localStorage.setItem('userRole', 'gerencial');
-      setLocation("/dashboard");
-    } else if (cleanEmail === "juridico@gmail.com") {
-      localStorage.setItem('userRole', 'juridico');
-      setLocation("/propostas");
+    if (user) {
+      localStorage.setItem('userRole', user.userRole);
+      // For mock purposes, save the whole user object too
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      if (user.userRole === 'cliente') {
+        setLocation("/propostas");
+      } else if (user.userRole === 'posvenda') {
+        setLocation("/cobranca");
+      } else {
+        setLocation("/dashboard");
+      }
     } else {
-      setError("Email não reconhecido. Use: gerente@gmail.com, analista@gmail.com, projetista@gmail.com, ambregulatorio@gmail.com, cliente@gmail.com, posvenda@gmail.com, gerencial@gmail.com ou juridico@gmail.com");
+      setError("Credenciais inválidas. Verifique seu e-mail e senha.");
     }
   };
 
@@ -89,12 +79,14 @@ export function Login() {
         {/* Branding Section (Left) */}
         <div className="hidden lg:flex flex-col text-white space-y-6">
           <div>
-            <div className="flex items-end gap-3 mb-2">
-              <h1 className="text-7xl font-bold tracking-tighter">S.I.G.A</h1>
-            </div>
-            <p className="text-2xl font-light text-white/90">
-              Sistema Integrado <br /> de Gestão Amazônica
-            </p>
+            <Link href="/" className="cursor-pointer group">
+              <div className="flex items-end gap-3 mb-2">
+                <h1 className="text-7xl font-bold tracking-tighter transition-colors group-hover:text-white/80">S.I.G.A</h1>
+              </div>
+              <p className="text-2xl font-light text-white/90 group-hover:text-white/70 transition-colors">
+                Sistema Integrado <br /> de Gestão Amazônica
+              </p>
+            </Link>
           </div>
 
           <div className="w-16 h-1 bg-white/50 rounded-full my-6"></div>
@@ -181,8 +173,9 @@ export function Login() {
                   </Button>
                 </div>
 
-                <div className="flex justify-between items-center pt-2">
-                  <p className="text-xs text-gray-500 font-medium">Perdeu seu acesso? <a href="#" className="underline hover:text-[#7ab635]">Entre em contato.</a></p>
+                <div className="flex flex-col gap-2 pt-2 text-center">
+                  <p className="text-xs text-gray-500 font-medium">Não tem uma conta? <Link href="/registro" className="text-[#7ab635] font-bold hover:underline">Cadastre-se aqui.</Link></p>
+                  <p className="text-xs text-gray-400">Esqueceu sua senha? <a href="#" className="underline hover:text-[#7ab635]">Recuperar acesso.</a></p>
                 </div>
               </form>
             </div>

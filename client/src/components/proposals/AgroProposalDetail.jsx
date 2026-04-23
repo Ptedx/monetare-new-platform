@@ -20,6 +20,7 @@ import {
 import { RatingCard, DetailItem, StatCard, StatusBadge, ScoreCircle, TimelineStep } from "./ProposalHelpers";
 import { ProfileResult } from "../profile/ProfileResult";
 import { advanceProposal, ROLE_ACTIONS } from "@/lib/proposalFlow";
+import { logActivity } from "@/lib/activityLog";
 
 const proposalTabs = [
     "Resumo", "Cadastro", "Agro", "Financeiro", "Crédito e Compliance",
@@ -101,6 +102,7 @@ export function AgroProposalDetail({ proposal, onBack }) {
 
     const handleApprove = () => {
         advanceProposal(proposal.id, "APROVADA", actionReason);
+        logActivity("analista", "Aprovou proposta", proposal.id, proposal.name);
         setShowApproveModal(false);
         setActionReason("");
         setLocation("/propostas");
@@ -110,8 +112,11 @@ export function AgroProposalDetail({ proposal, onBack }) {
     const handleReject = () => {
         if (!actionReason.trim()) return;
         advanceProposal(proposal.id, "REPROVADA", actionReason);
+        logActivity("analista", "Reprovou proposta", proposal.id, proposal.name);
         setShowRejectModal(false);
         setActionReason("");
+        setLocation("/propostas");
+        setTimeout(() => window.location.reload(), 100);
     };
 
     const handleDownload = () => {
@@ -407,6 +412,7 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                     className="gap-3 py-3 cursor-pointer hover:bg-gray-50 text-gray-700 font-medium my-1"
                                     onClick={() => {
                                         advanceProposal(proposal.id, "PENDENTE_COMITE");
+                                        logActivity("gerente", "Enviou proposta para comitê", proposal.id, proposal.name);
                                         setLocation("/propostas");
                                         setTimeout(() => window.location.reload(), 100);
                                     }}
@@ -454,6 +460,7 @@ export function AgroProposalDetail({ proposal, onBack }) {
                             className="rounded-full px-6 bg-[#92dc49] hover:bg-[#7ab635] text-white border-0 shadow-lg shadow-green-100"
                             onClick={() => {
                                 advanceProposal(proposal.id, "PENDENTE_COMITE");
+                                logActivity("gerente", "Enviou proposta para comitê", proposal.id, proposal.name);
                                 setLocation("/propostas");
                                 setTimeout(() => window.location.reload(), 100);
                             }}

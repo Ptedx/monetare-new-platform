@@ -6,7 +6,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 
 import { Login } from "@/pages/Login";
+import { LandingPage } from "@/pages/LandingPage";
 import { Dashboard } from "@/pages/Dashboard";
+
 import { Pipeline } from "@/pages/Pipeline";
 import { Propostas } from "@/pages/Propostas";
 import { Simulador } from "@/pages/Simulador";
@@ -14,6 +16,8 @@ import { AnalisePerfil } from "@/pages/AnalisePerfil";
 import { Documentacao } from "@/pages/Documentacao";
 import { Historico } from "@/pages/Historico";
 import { Chat } from "@/pages/Chat";
+import { Registro } from "@/pages/Registro";
+import { SolicitacaoCredito } from "@/pages/SolicitacaoCredito";
 import { CadastroProposta } from "@/pages/CadastroProposta";
 import { Carteira } from "@/pages/Carteira";
 import { Pagamentos } from "@/pages/Pagamentos";
@@ -37,7 +41,10 @@ import { Clientes } from "@/pages/Clientes";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Login} />
+      <Route path="/" component={LandingPage} />
+      <Route path="/login" component={Login} />
+      <Route path="/registro" component={Registro} />
+      <Route path="/solicitar-credito" component={SolicitacaoCredito} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/pipeline" component={Pipeline} />
       <Route path="/clientes" component={Clientes} />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { advanceProposal } from "@/lib/proposalFlow";
+import { logActivity } from "@/lib/activityLog";
 import { ChevronLeft, ChevronDown, Paperclip, MoreHorizontal, ArrowUpRight, Search, Filter, PenTool, CheckCircle, Clock, Download, Check, FileText, CheckCircle2, X as XIcon, Shield, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,6 +45,7 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
 
     const handleSendToPosVenda = () => {
         advanceProposal(proposal.id, "EM_SEGURO", sendToPosVendaReason);
+        logActivity("juridico", "Enviou para Pós-Venda", proposal.id, proposal.name);
         localStorage.setItem('userRole', 'posvenda');
         window.dispatchEvent(new Event('storage'));
         setShowSendToPosVendaModal(false);
@@ -54,6 +56,7 @@ export function JuridicoProposalDetail({ proposal, onBack }) {
     const handleReject = () => {
         if (!actionReason.trim()) return;
         advanceProposal(proposal.id, "REPROVADA", actionReason);
+        logActivity("juridico", "Reprovou proposta", proposal.id, proposal.name);
         setShowRejectModal(false);
         setActionReason("");
         setLocation('/propostas');
