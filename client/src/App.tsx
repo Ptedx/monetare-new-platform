@@ -37,6 +37,8 @@ import { Aprender } from "@/pages/Aprender";
 import { AprenderArticle } from "@/pages/AprenderArticle";
 import { Produtos } from "@/pages/Produtos";
 import { Clientes } from "@/pages/Clientes";
+import { NovaPropostaCliente } from "@/pages/NovaPropostaCliente.jsx";
+import { PerfilCliente } from "@/pages/PerfilCliente";
 
 function Router() {
   return (
@@ -52,6 +54,7 @@ function Router() {
       <Route path="/carteira" component={Carteira} />
       <Route path="/simulador" component={Simulador} />
       <Route path="/perfil" component={AnalisePerfil} />
+      <Route path="/meu-perfil" component={PerfilCliente} />
       <Route path="/documentacao" component={Documentacao} />
       <Route path="/historico" component={Historico} />
       <Route path="/chat" component={Chat} />
@@ -67,6 +70,7 @@ function Router() {
       <Route path="/aprender" component={Aprender} />
       <Route path="/aprender/:id" component={AprenderArticle} />
       <Route path="/produtos" component={Produtos} />
+      <Route path="/solicitacao-proposta" component={NovaPropostaCliente} />
       <Route component={NotFound} />
     </Switch>
   );

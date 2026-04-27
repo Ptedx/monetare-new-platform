@@ -34,7 +34,7 @@ export function Produtos() {
                     </div>
                     <button
                         className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full px-6 h-10 flex items-center gap-2 font-medium"
-                        onClick={() => setLocation("/cadastro-proposta")}
+                        onClick={() => setLocation("/solicitacao-proposta")}
                     >
                         Cadastrar proposta <ArrowRight className="w-4 h-4" />
                     </button>

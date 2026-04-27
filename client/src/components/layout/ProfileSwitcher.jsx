@@ -48,7 +48,7 @@ export function ProfileSwitcher() {
     };
 
     return (
-        <div className="fixed top-2 right-8 z-[100] flex items-center bg-white rounded-full shadow border border-gray-200 pr-2 pl-1 py-1 transition-all hover:shadow-md scale-90 origin-top-right">
+        <div className={`fixed ${currentRole === 'cliente' ? 'top-24' : 'top-2'} right-8 z-[100] flex items-center bg-white rounded-full shadow border border-gray-200 pr-2 pl-1 py-1 transition-all hover:shadow-md scale-90 origin-top-right`}>
             <div className={`w-8 h-8 flex items-center justify-center rounded-full mr-2 ${isLoading ? 'bg-green-100' : 'bg-[#f0f4f1]'}`}>
                 {isLoading ? (
                     <Loader2 className="w-4 h-4 text-green-700 animate-spin" />

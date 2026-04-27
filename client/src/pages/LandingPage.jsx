@@ -1,8 +1,9 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ArrowRight, Home, LayoutDashboard, Calculator, UserPlus, Info } from "lucide-react";
 
 export function LandingPage() {
+  const [, setLocation] = useLocation();
   return (
     <div className="min-h-screen bg-white">
       {/* Header / Navbar */}
@@ -18,11 +19,17 @@ export function LandingPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Link href="/login">
-            <Button variant="outline" className="hidden md:flex rounded-full border-[#92dc49] text-[#7ab635] hover:bg-[#92dc49]/10 h-11 px-6">
-              Acessar propostas
-            </Button>
-          </Link>
+          <Button 
+            variant="outline" 
+            className="hidden md:flex rounded-full border-[#92dc49] text-[#7ab635] hover:bg-[#92dc49]/10 h-11 px-6"
+            onClick={() => {
+              const user = localStorage.getItem('user');
+              if (user) setLocation('/propostas');
+              else setLocation('/login');
+            }}
+          >
+            Acessar propostas
+          </Button>
           <Link href="/registro">
             <Button className="rounded-full bg-[#1e293b] hover:bg-[#0f172a] text-white h-11 px-8 shadow-lg shadow-gray-200">
               Cadastrar-se

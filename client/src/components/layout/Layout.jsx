@@ -8,10 +8,10 @@ export function Layout({ children }) {
   if (userRole === 'cliente') {
     return (
       <div className="flex flex-col min-h-screen bg-[#eef0f3]">
-        <ProfileSwitcher />
         <ClientHeader />
-        <main className="flex-1 w-full max-w-5xl mx-auto p-6 mt-4">
-          <div className="bg-[#f8f9fa] rounded-2xl border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.05)] p-0 md:p-8 min-h-[600px] overflow-hidden">
+        <ProfileSwitcher />
+        <main className="flex-1 w-full pt-28 pb-12 px-6 overflow-x-hidden">
+          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             {children}
           </div>
         </main>

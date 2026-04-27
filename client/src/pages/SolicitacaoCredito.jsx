@@ -143,16 +143,22 @@ export function SolicitacaoCredito() {
       else {
         setIsLoading(true);
         setTimeout(() => {
-          userPersistence.saveUser({
+          const newUser = {
             email: formData.access.email,
             password: formData.access.password,
             name: formData.personal.fullName,
             userRole: 'cliente',
             creditRequest: formData // Atrela todo o fluxo ao usuário
-          });
+          };
+          userPersistence.saveUser(newUser);
+          
+          // Log in the user
+          localStorage.setItem('userRole', newUser.userRole);
+          localStorage.setItem('user', JSON.stringify({ ...newUser, permissionId: 1004 }));
+          
           userPersistence.clearDraftRequest();
           setIsLoading(false);
-          setLocation("/dashboard");
+          setLocation("/solicitacao-proposta");
         }, 1500);
       }
     }

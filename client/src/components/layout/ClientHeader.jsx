@@ -6,11 +6,12 @@ export function ClientHeader() {
     const [location] = useLocation();
     const [showNotifications, setShowNotifications] = useState(false);
     const notifRef = useRef(null);
+    const [user] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
 
     const navItems = [
+        { label: "Início", path: "/propostas" },
         { label: "Produtos", path: "/produtos" },
-        { label: "Simulador", path: "/simulador" },
-        { label: "Propostas", path: "/propostas" },
+        { label: "Solicitação", path: "/solicitacao-proposta" },
         { label: "Pagamentos", path: "/pagamentos" },
     ];
 
@@ -41,86 +42,90 @@ export function ClientHeader() {
     };
 
     return (
-        <div className="w-full flex justify-center pt-6 px-6">
-            <div className="w-full max-w-5xl bg-white rounded-2xl shadow-sm px-6 py-3 flex items-center justify-between">
-                {/* Navigation */}
-                <div className="flex items-center gap-6">
-                    {navItems.map((item) => {
-                        const isActive = location === item.path || (location.startsWith('/propostas') && item.path === '/propostas');
-                        const content = (
+        <header className="w-full h-20 bg-white shadow-sm flex items-center px-6 md:px-12 fixed top-0 left-0 z-[60] border-b border-gray-100">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+                <Link href="/propostas">
+                    <div className="flex items-center gap-2 cursor-pointer">
+                        <div className="w-10 h-10 bg-[#92dc49] rounded-lg rotate-12 flex items-center justify-center shadow-lg shadow-[#92dc49]/20">
+                            <span className="text-white font-bold text-xl -rotate-12 italic">A</span>
+                        </div>
+                    </div>
+                </Link>
+            </div>
+
+            {/* Navigation (Centered) */}
+            <nav className="flex-1 flex justify-center items-center gap-8">
+                {navItems.map((item) => {
+                    const isActive = location === item.path || (location.startsWith('/propostas') && item.path === '/propostas');
+                    return (
+                        <Link key={item.path} href={item.path}>
                             <span
-                                className={`text-sm font-medium cursor-pointer transition-colors px-3 py-1.5 rounded-full ${isActive
-                                    ? "bg-[#cceebd] text-gray-900"
-                                    : "text-gray-500 hover:text-gray-900"
+                                className={`text-sm font-medium cursor-pointer transition-all ${isActive
+                                    ? "text-gray-900 after:content-[''] after:block after:w-1 after:h-1 after:bg-[#92dc49] after:rounded-full after:mx-auto after:mt-1 font-bold"
+                                    : "text-gray-400 hover:text-gray-900"
                                     }`}
                             >
                                 {item.label}
                             </span>
-                        );
-                        // If it's already active on propostas, let's use an anchor tag to force a top-level unmount/remount in wouter 
-                        // or just simple reload. To be safe with wouter, clicking a link to the current path doesn't do much. 
-                        // The user wants clicking 'Propostas' to go back.
-                        return item.path === '/propostas' ? (
-                            <a key={item.path} href={item.path} onClick={() => window.location.href = item.path}>
-                                {content}
-                            </a>
-                        ) : (
-                            <Link key={item.path} href={item.path}>
-                                {content}
-                            </Link>
-                        );
-                    })}
-                </div>
+                        </Link>
+                    );
+                })}
+            </nav>
 
-                {/* Actions */}
-                <div className="flex items-center gap-3 relative">
-                    <div ref={notifRef}>
-                        <button
-                            className="relative p-2 bg-[#fbe7e8] rounded-full text-red-500 hover:bg-red-100 transition-colors"
-                            onClick={() => setShowNotifications(!showNotifications)}
-                        >
-                            <Bell className="w-5 h-5" />
-                            {notifications.length > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-[1.5px] border-white rounded-full flex items-center justify-center text-[9px] font-bold text-white">
-                                    {notifications.length}
-                                </span>
-                            )}
-                        </button>
+            {/* Actions */}
+            <div className="flex-shrink-0 flex items-center gap-4 relative">
+                <div ref={notifRef} className="relative">
+                    <button
+                        className="p-2.5 bg-[#fbe7e8] rounded-2xl text-red-500 hover:bg-red-100 transition-all active:scale-95"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                    >
+                        <Bell className="w-5 h-5" />
+                        {notifications.length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold text-white">
+                                {notifications.length}
+                            </span>
+                        )}
+                    </button>
 
-                        {/* Notifications Dropdown */}
-                        {showNotifications && (
-                            <div className="absolute right-0 top-14 w-[450px] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-200 ease-out origin-top-right">
-                                <div className="flex flex-col">
-                                    {notifications.map((notif, index) => (
-                                        <div
-                                            key={notif.id}
-                                            className={`p-4 flex gap-4 hover:bg-gray-50 transition-colors cursor-pointer ${index !== notifications.length - 1 ? 'border-b border-gray-100' : ''}`}
-                                        >
+                    {/* Notifications Dropdown */}
+                    {showNotifications && (
+                        <div className="absolute right-0 top-14 w-[450px] bg-white rounded-[32px] shadow-2xl border border-gray-100 z-50 overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-300 ease-out origin-top-right p-2">
+                            <div className="flex flex-col gap-1">
+                                {notifications.map((notif) => (
+                                    <div
+                                        key={notif.id}
+                                        className="p-5 rounded-3xl flex gap-4 hover:bg-[#f8f9fa] transition-colors cursor-pointer group"
+                                    >
+                                        <div className="transition-transform group-hover:scale-105">
                                             {getNotifIcon(notif.type)}
-                                            <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                                <p className="font-semibold text-gray-900 text-[14px]">{notif.title}</p>
-                                                <div className="flex items-center justify-between mt-1">
-                                                    <p className="text-gray-500 text-[13px] truncate">{notif.subtitle}</p>
-                                                    <p className="text-gray-400 text-[12px] whitespace-nowrap ml-4">{notif.date}</p>
-                                                </div>
+                                        </div>
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                            <p className="font-bold text-gray-900 text-[15px]">{notif.title}</p>
+                                            <div className="flex items-center justify-between mt-1.5">
+                                                <p className="text-gray-400 text-[13px] font-medium truncate">{notif.subtitle}</p>
+                                                <p className="text-gray-400 text-[11px] font-medium whitespace-nowrap ml-4 uppercase tracking-wider">{notif.date.split(' ')[0]}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ))}
                             </div>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-full p-2">
-                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                            <User className="w-5 h-5 text-gray-600" />
                         </div>
-                        <Link href="/">
-                            <LogOut className="w-5 h-5 text-gray-500 cursor-pointer hover:text-gray-700 ml-1" />
-                        </Link>
-                    </div>
+                    )}
                 </div>
+
+                <Link href="/meu-perfil">
+                    <div className="flex items-center gap-3 p-1 pl-1 bg-gray-50/50 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-gray-100/50 transition-all cursor-pointer group">
+                        <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-white">
+                            <img
+                                src="https://i.pravatar.cc/150?u=diego"
+                                alt="User"
+                                className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500"
+                            />
+                        </div>
+                    </div>
+                </Link>
             </div>
-        </div>
+        </header>
     );
 }

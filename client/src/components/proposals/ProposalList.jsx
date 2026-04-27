@@ -110,7 +110,7 @@ export function ProposalList({ onSelectProposal, title, userRole }) {
           <h1 className="text-3xl lg:text-4xl text-gray-900">Suas propostas</h1>
           <Button
             className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full px-4 h-10 gap-2 font-medium"
-            onClick={() => setLocation('/cadastro-proposta')}
+            onClick={() => setLocation('/solicitacao-proposta')}
           >
             <Plus className="w-4 h-4" /> Nova proposta
           </Button>
