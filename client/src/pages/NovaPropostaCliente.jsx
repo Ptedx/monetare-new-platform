@@ -6,20 +6,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
-  Trash2, 
-  Eye, 
-  Upload, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Eye,
+  Upload,
   Loader2,
   CheckCircle2,
   FileText,
@@ -41,78 +47,115 @@ const formatCurrency = (v) => {
   return `R$ ${amount}`;
 };
 
+const formatDocument = (doc) => {
+  if (!doc) return "000.000.000-00";
+  const clean = String(doc).replace(/\D/g, "");
+  if (clean.length === 11) return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  if (clean.length === 14) return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+  return doc;
+};
+
 export function NovaPropostaCliente() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedDocumentPreview, setSelectedDocumentPreview] = useState(null);
 
-  const [formData, setFormData] = useState({
-    financial: {
-      activityRevenue: "",
-      harvestRevenue: "",
-      propertyArea: "",
-      productionCost: "",
-      hasOwnProperty: false,
-    },
-    activity: {
-      mainCulture: "Soja",
-      secondaryCultures: "",
-      plantedArea: "1400 ha",
-      expectedProductivity: "1200 sc/ha",
-      harvestBudget: "",
-      revenueExpectation: "",
-      hasSalesContract: "Não",
-      municipality: "Santarém",
-      state: "PA",
-      carNumber: "",
-    },
-    guarantees: [
-      { id: Date.now(), type: "Imóvel", ownership: "Meu nome", description: "Matrícula nº 1234", value: "60000000" },
-    ],
-    documents: [
-      { id: 1, name: "RG / CNH (frente)", category: "pessoais", status: "idle" },
-      { id: 2, name: "RG / CNH (verso)", category: "pessoais", status: "error", error: "O documento enviado está ilegível. Por favor, envie novamente." },
-      { id: 3, name: "Comprovante de residência", category: "pessoais", status: "idle", subtitle: "Desritivo" },
-      { id: 4, name: "Matrícula do imóvel rural", category: "rural", status: "done", fileName: "matricula_fazenda.pdf" },
-      { id: 5, name: "CAR (Cadastro Ambiental Rural)", category: "rural", status: "idle" },
-      { id: 6, name: "Projeto técnico", category: "rural", status: "idle" },
-    ]
+  const [formData, setFormData] = useState(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const draft = user.creditRequest || {};
+
+    return {
+      personal: {
+        name: user.name || "João Branco de Souza Alves",
+        cpf: draft.personal?.document || "000.000.000-00",
+        birthDate: draft.personal?.birthDate || "01/01/1992",
+        email: user.email || "joao.branco@email.com",
+        phone: draft.access?.phone || "(00) 0000-0000",
+        occupation: draft.personal?.occupation || "Produtor Rural",
+        rg: draft.personal?.rg || "",
+        rgIssuer: draft.personal?.rgIssuer || "",
+        civilStatus: draft.personal?.civilState || "Solteiro(a)",
+      },
+      address: {
+        zipCode: draft.address?.zipCode || "00.000-000",
+        street: draft.address?.street || "Área Rural",
+        neighborhood: draft.address?.neighborhood || "Interior",
+        city: draft.address?.city || "Santarém",
+        state: draft.address?.state || "PA",
+        number: draft.address?.number || "S/N",
+      },
+      financial: {
+        activityRevenue: "",
+        harvestRevenue: "",
+        propertyArea: "",
+        productionCost: "",
+        hasOwnProperty: false,
+      },
+      activity: {
+        mainCulture: "Soja",
+        secondaryCultures: "",
+        plantedArea: "1400 ha",
+        expectedProductivity: "1200 sc/ha",
+        harvestBudget: draft.amountDisplay || "",
+        months: draft.months || 36,
+        revenueExpectation: "",
+        hasSalesContract: "Não",
+        municipality: draft.address?.city || "Santarém",
+        state: draft.address?.state || "PA",
+        carNumber: "",
+      },
+      guarantees: [
+        { id: Date.now(), type: "Imóvel", ownership: "Meu nome", description: "Matrícula nº 1234", value: "60000000" },
+      ],
+      documents: [
+        { id: 1, name: "RG / CNH (frente)", category: "pessoais", status: "idle" },
+        { id: 2, name: "RG / CNH (verso)", category: "pessoais", status: "error", error: "O documento enviado está ilegível. Por favor, envie novamente." },
+        { id: 3, name: "Comprovante de residência", category: "pessoais", status: "idle", subtitle: "Desritivo" },
+        { id: 4, name: "Matrícula do imóvel rural", category: "rural", status: "done", fileName: "matricula_fazenda.pdf" },
+        { id: 5, name: "CAR (Cadastro Ambiental Rural)", category: "rural", status: "idle" },
+        { id: 6, name: "Projeto técnico", category: "rural", status: "idle" },
+      ]
+    };
   });
 
   const updateFinancial = (f, v) => setFormData(p => ({ ...p, financial: { ...p.financial, [f]: v } }));
   const updateActivity = (f, v) => setFormData(p => ({ ...p, activity: { ...p.activity, [f]: v } }));
 
   const finalizeProposal = () => {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const userName = user.name || "João Branco de Souza Alves";
-    
+    const requestedValue = formData.activity.harvestBudget ? parseFloat(formData.activity.harvestBudget) : 25000000; // 250k default in cents
+    const formattedValue = formatCurrency(requestedValue);
+
     const newProposal = {
       id: Date.now(),
-      name: userName,
+      name: formData.personal.name,
       score: "B",
       status: "OK",
       segment: "Rural",
       type: "Rural",
       stage: "1. CECAD",
-      value: "R$ 250.000,00",
-      rawValue: 250000,
+      value: formattedValue,
+      rawValue: requestedValue / 100,
       date: new Date().toLocaleDateString("pt-BR"),
       line: "FNO Custeio - Amazônia Rural",
-      companyName: userName,
+      companyName: formData.personal.name,
       createdAt: new Date().toISOString(),
       registrationData: {
-        contactEmail: user.email || "joao.branco@email.com",
-        contactPhone: user.phone || "(00) 0000-0000",
-        city: formData.activity.municipality || "Santarém",
-        uf: formData.activity.state || "PA",
+        ...formData.personal,
+        ...formData.address,
+        contactEmail: formData.personal.email,
+        contactPhone: formData.personal.phone,
+        monthlyRevenue: formData.financial.harvestRevenue ? formatCurrency(formData.financial.harvestRevenue) : "R$ 0,00",
+        personType: "Pessoa física",
+        months: formData.activity.months || 36,
       },
       documents: formData.documents
         .filter((d) => d.status === "done")
         .map((d) => ({
           name: d.name,
-          fileName: d.fileName || "",
-          uploadedAt: new Date().toISOString(),
+          url: "#",
+          date: new Date().toLocaleDateString("pt-BR"),
         })),
     };
 
@@ -182,7 +225,7 @@ export function NovaPropostaCliente() {
           <div className="flex gap-2 mb-10 h-1.5 px-1">
             {[1, 2, 3].map((s) => {
               const filledSegments = step >= 8 ? 3 : step >= 7 ? 2 : step >= 5 ? 1 : step >= 3 ? 2 : 1;
-              
+
               return (
                 <div key={s} className={`flex-1 rounded-full transition-all duration-700 ${filledSegments >= s ? 'bg-[#92dc49]' : 'bg-gray-200'}`} />
               );
@@ -194,9 +237,9 @@ export function NovaPropostaCliente() {
               {step === 1 && <StepFinancial formData={formData} updateFinancial={updateFinancial} />}
               {step === 2 && <StepRuralActivity formData={formData} updateActivity={updateActivity} />}
               {step === 3 && <StepGuarantees formData={formData} setFormData={setFormData} />}
-              {step === 4 && <StepDocs formData={formData} setFormData={setFormData} />}
-              {step === 5 && <StepResult />}
-              {step === 6 && <StepSummary formData={formData} />}
+              {step === 4 && <StepDocs formData={formData} setFormData={setFormData} onPreview={(doc) => setSelectedDocumentPreview(doc)} />}
+              {step === 5 && <StepResult formData={formData} />}
+              {step === 6 && <StepSummary formData={formData} onPreview={(doc) => setSelectedDocumentPreview(doc)} />}
               {step === 7 && <StepChecks />}
               {step === 8 && <StepSuccess />}
             </div>
@@ -208,14 +251,14 @@ export function NovaPropostaCliente() {
                     Ajustar parâmetros da simulação
                   </Button>
                 )}
-                <Button 
-                  onClick={handleNext} 
-                  disabled={isLoading} 
+                <Button
+                  onClick={handleNext}
+                  disabled={isLoading}
                   className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full h-12 px-10 flex items-center gap-3 font-bold shadow-lg shadow-[#92dc49]/20 transition-all active:scale-95"
                 >
                   {isLoading ? <Loader2 className="animate-spin" /> : (
                     <>
-                      {step === 5 ? "Revisar e formalizar" : step === 6 ? "Confirmar" : step === 7 ? "Enviar pedido de proposta" : "Continuar"} 
+                      {step === 5 ? "Revisar e formalizar" : step === 6 ? "Confirmar" : step === 7 ? "Enviar pedido de proposta" : "Continuar"}
                       {step !== 7 && <ChevronRight className="w-4 h-4" />}
                       {step === 7 && <TrendingUp className="w-4 h-4" />}
                     </>
@@ -224,6 +267,11 @@ export function NovaPropostaCliente() {
               </div>
             )}
           </Card>
+
+          <DocumentPreviewModal
+            document={selectedDocumentPreview}
+            onClose={() => setSelectedDocumentPreview(null)}
+          />
         </div>
       </div>
     </Layout>
@@ -245,7 +293,13 @@ function StepReview() {
 }
 
 // Sub-components as per screenshots
-function StepSummary({ formData }) {
+function StepSummary({ formData, onPreview }) {
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const harvestBudgetRaw = formData.activity.harvestBudget ? parseFloat(formData.activity.harvestBudget) : 25000000;
+  const areaTotal = formData.financial.propertyArea || "2.400 ha";
+  const areaProd = formData.activity.plantedArea || "1.400 ha";
+  const faturamento = formData.financial.harvestRevenue ? formatCurrency(formData.financial.harvestRevenue) : "R$ 0,00";
+
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
       <div className="space-y-2">
@@ -255,39 +309,40 @@ function StepSummary({ formData }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-12">
         <SummarySection title="Dados pessoais">
           <SummaryField label="Tipo de pessoa" value="Pessoa física" />
-          <SummaryField label="CPF" value="000.000.000-00" />
-          <SummaryField label="Nome" value="João Branco de Souza Alves" />
-          <SummaryField label="Data de nascimento" value="01/01/1992" />
-          <SummaryField label="Telefone" value="(00) 0000-0000" />
-          <SummaryField label="E-mail" value="joao.branco@email.com" />
-          <SummaryField label="Ocupação" value="Produtor Rural — Agricultura" />
+          <SummaryField label="CPF" value={formatDocument(formData.personal.cpf)} />
+          <SummaryField label="Nome" value={formData.personal.name} />
+          <SummaryField label="Data de nascimento" value={formData.personal.birthDate} />
+          <SummaryField label="Telefone" value={formData.personal.phone} />
+          <SummaryField label="E-mail" value={formData.personal.email} />
+          <SummaryField label="Ocupação" value={formData.personal.occupation} />
         </SummarySection>
 
         <SummarySection title="Endereço">
-          <SummaryField label="CEP" value="00.000-000" />
-          <SummaryField label="UF" value="PA" />
-          <SummaryField label="Logradouro" value="Rua do Corvo, Zumbi do Pacheco" />
-          <SummaryField label="Bairro" value="Rua do Corvo" />
-          <SummaryField label="Cidade" value="Zumbi do Pacheco" />
-          <SummaryField label="Número" value="14" />
+          <SummaryField label="CEP" value={formData.address.zipCode} />
+          <SummaryField label="UF" value={formData.address.state} />
+          <SummaryField label="Logradouro" value={formData.address.street} />
+          <SummaryField label="Bairro" value={formData.address.neighborhood} />
+          <SummaryField label="Cidade" value={formData.address.city} />
+          <SummaryField label="Número" value={formData.address.number} />
         </SummarySection>
 
         <SummarySection title="Produção">
-          <SummaryField label="Área total" value="2400 ha" />
-          <SummaryField label="Área produtiva" value="1400 ha" />
-          <SummaryField label="Faturamento mensal" value="R$ 270.000.000,00" />
+          <SummaryField label="Área total" value={areaTotal} />
+          <SummaryField label="Área produtiva" value={areaProd} />
+          <SummaryField label="Expectativa de faturamento" value={faturamento} />
+          <SummaryField label="Prazo da solicitação" value={`${formData.activity.months || 36} meses`} />
         </SummarySection>
 
         <div className="col-span-full">
           <SummarySection title="Garantias">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SummaryField label="Tipo" value="Equipamento" />
-              <SummaryField label="Nome do ativo" value="Trator" />
-              <SummaryField label="Valor do ativo" value="R$ 530.000,00" />
-              
-              <SummaryField label="Tipo" value="Equipamento" />
-              <SummaryField label="Nome do ativo" value="Plantadeira" />
-              <SummaryField label="Valor do ativo" value="R$ 530.000,00" />
+              {formData.guarantees.map((g, idx) => (
+                <div key={g.id || idx} className="contents">
+                  <SummaryField label="Tipo" value={g.type} />
+                  <SummaryField label="Descrição" value={g.description} />
+                  <SummaryField label="Valor do ativo" value={formatCurrency(g.value)} />
+                </div>
+              ))}
             </div>
           </SummarySection>
         </div>
@@ -299,12 +354,9 @@ function StepSummary({ formData }) {
               <SummaryField label="CET" value="9,2% a.a." />
               <SummaryField label="Fonte" value="FNO (Fundo do Norte)" />
               <SummaryField label="Amortização" value="SAC" />
-              <SummaryField label="Valor aprovado" value="R$ 250.000,00" />
-              <SummaryField label="1ª parcela" value="R$ 8.819" />
-              <SummaryField label="Prazo" value="36 meses" />
-              <SummaryField label="Última parcela" value="R$ 6.961" />
+              <SummaryField label="Valor solicitado" value={formatCurrency(harvestBudgetRaw)} />
+              <SummaryField label="Prazo" value={`${formData.activity.months || 36} meses`} />
               <SummaryField label="Carência" value="12 meses" />
-              <SummaryField label="Total a pagar" value="R$ 281.430" />
               <SummaryField label="Taxa de juros" value="7,5% a.a." />
             </div>
           </SummarySection>
@@ -313,34 +365,25 @@ function StepSummary({ formData }) {
         <div className="col-span-full border-t border-gray-100 pt-10">
           <SummarySection title="Documentos">
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-50 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
-                    <FileText className="w-5 h-5" />
+              {formData.documents.filter(d => d.status === 'done').map(doc => (
+                <div key={doc.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-50 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-bold text-gray-900">{doc.name} <span className="text-[10px] font-black text-gray-300 uppercase ml-1">PDF</span></p>
+                      <p className="text-[10px] text-gray-400 font-medium tracking-wide">Modificado agora mesmo</p>
+                    </div>
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-bold text-gray-900">Documento 4 <span className="text-[10px] font-black text-gray-300 uppercase ml-1">PDF</span></p>
-                    <p className="text-[10px] text-gray-400 font-medium tracking-wide">Modificado em 23/03/2026 15:00</p>
-                  </div>
+                  <button
+                    onClick={() => onPreview(doc)}
+                    className="p-2 bg-[#f0f9eb] text-[#7ab635] rounded-xl hover:bg-[#92dc49] hover:text-white transition-all cursor-pointer"
+                  >
+                    <Eye className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="p-2 bg-[#f0f9eb] text-[#7ab635] rounded-xl cursor-not-allowed">
-                  <Eye className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-50 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-bold text-gray-900">Documento 2 <span className="text-[10px] font-black text-gray-300 uppercase ml-1">PDF</span></p>
-                    <p className="text-[10px] text-gray-400 font-medium tracking-wide">Modificado em 23/03/2026 15:00</p>
-                  </div>
-                </div>
-                <div className="p-2 bg-[#f0f9eb] text-[#7ab635] rounded-xl cursor-not-allowed">
-                  <Eye className="w-4 h-4" />
-                </div>
-              </div>
+              ))}
             </div>
           </SummarySection>
         </div>
@@ -393,8 +436,8 @@ function StepChecks() {
 
       <div className="space-y-4">
         {items.map((item) => (
-          <div 
-            key={item.id} 
+          <div
+            key={item.id}
             className={`p-6 rounded-2xl border-2 transition-all flex items-start gap-4 cursor-pointer ${checks[item.id] ? 'bg-white border-[#92dc49] shadow-lg shadow-[#92dc49]/5' : 'bg-white border-transparent hover:border-gray-100'}`}
             onClick={() => setChecks(p => ({ ...p, [item.id]: !p[item.id] }))}
           >
@@ -435,11 +478,11 @@ function StepSuccess() {
 
       <div className="w-full max-w-4xl space-y-10 pt-10">
         <p className="text-sm font-black text-gray-900 uppercase tracking-widest">O que acontece agora?</p>
-        
+
         <div className="relative px-6">
           <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-gray-100 rounded-full" />
           <div className="absolute left-6 w-[35%] top-1/2 -translate-y-1/2 h-1 bg-[#92dc49] rounded-full transition-all duration-1000" />
-          
+
           <div className="relative flex justify-between">
             <SuccessTimelineItem status="complete" icon={<CheckCircle2 className="w-4 h-4" />} label="Pedido formalizado" date="20/01/2026 - 15:24" />
             <SuccessTimelineItem status="active" label="Análise" date="Em andamento..." />
@@ -472,54 +515,83 @@ function SuccessTimelineItem({ status, icon, label, date }) {
   );
 }
 
-function StepResult() {
+function StepResult({ formData }) {
+  const harvestBudgetRaw = formData.activity.harvestBudget ? parseFloat(formData.activity.harvestBudget) : 25000000;
+  const requestedValue = harvestBudgetRaw / 100;
+  const months = formData.activity.months || 36;
+
+  // More realistic SAC calculation for mockup
+  // 9.2% a.a. CET -> ~0.76% a.m.
+  const monthlyRate = 0.0076;
+  const amortization = requestedValue / months;
+  const firstInterest = requestedValue * monthlyRate;
+
+  const firstInstallment = amortization + firstInterest;
+  const lastInstallment = amortization + (amortization * monthlyRate);
+
+  // Average for mockup display
+  const avgInstallment = (firstInstallment + lastInstallment) / 2;
+  const totalWithInterest = avgInstallment * months;
+
   return (
     <div className="space-y-8 animate-in fade-in zoom-in duration-700">
       <div className="space-y-2">
         <h2 className="text-[40px] font-bold text-gray-900 tracking-tight">Aqui está o resultado da sua simulação</h2>
-        <p className="text-gray-400 text-lg font-medium">Esta é uma simulação orientativa e pode não refletir os valores após análise.</p>
+        <p className="text-gray-400 text-lg font-medium leading-relaxed">Simulação orientativa baseada no sistema de amortização SAC.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-0 rounded-[24px] border-2 border-[#92dc49] bg-white overflow-hidden shadow-xl shadow-[#92dc49]/10">
-        <div className="p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 flex flex-col justify-center bg-[#fcfdfc]">
-          <h3 className="text-2xl font-black text-gray-900 leading-tight">FNO Custeio<br />Agrícola</h3>
+      <div className="flex flex-col md:flex-row gap-0 rounded-[32px] border-2 border-[#92dc49]/30 bg-white overflow-hidden shadow-2xl shadow-[#92dc49]/10">
+        <div className="flex-[1.2] p-6 md:p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 flex flex-col justify-center bg-gray-50/40">
+          <p className="text-[10px] font-black text-[#7ab635] uppercase tracking-widest mb-1">Produto</p>
+          <h3 className="text-xl font-black text-gray-900 leading-tight">FNO Custeio<br />Agrícola</h3>
         </div>
-        <div className="p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 text-center space-y-1">
-          <p className="text-[32px] font-black text-[#295b11]">250.000</p>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-tight">Crédito pré-aprovado</p>
+
+        <div className="flex-[1.8] p-6 md:p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 text-center flex flex-col justify-center">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Crédito pré-aprovado</p>
+          <div className="flex items-baseline justify-center gap-1">
+            <span className="text-sm font-bold text-[#295b11] opacity-60">R$</span>
+            <p className={`${requestedValue > 999999 ? 'text-2xl' : 'text-3xl'} font-black text-[#295b11] tracking-tighter`}>
+              {requestedValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
         </div>
-        <div className="p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 text-center flex flex-col justify-center items-center">
-          <p className="text-[32px] font-black text-[#295b11] leading-none">9,2%</p>
-          <p className="text-xl font-black text-[#295b11] mb-1">a.a.</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Custo Efetivo Total</p>
+
+        <div className="flex-1 p-6 md:p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 text-center flex flex-col justify-center bg-gray-50/20">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">CET</p>
+          <p className="text-3xl font-black text-[#295b11] leading-none">9,2%</p>
+          <p className="text-[10px] font-bold text-[#295b11] mt-1 uppercase">ao ano</p>
         </div>
-        <div className="p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 text-center space-y-1 flex flex-col justify-center items-center">
-          <p className="text-[32px] font-black text-[#295b11]">36</p>
-          <p className="text-xl font-black text-[#295b11] mb-1 leading-none">meses</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Prazo</p>
+
+        <div className="flex-1 p-6 md:p-8 border-b md:border-b-0 md:border-r border-[#92dc49]/20 text-center flex flex-col justify-center">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Prazo</p>
+          <p className="text-3xl font-black text-[#295b11] leading-none">{months}</p>
+          <p className="text-[10px] font-bold text-[#295b11] mt-1 uppercase">meses</p>
         </div>
-        <div className="p-8 text-center bg-[#fcfdfc] flex flex-col justify-center items-center">
-          <p className="text-[32px] font-black text-[#295b11]">R$ 7.743</p>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-tight">Parcela média</p>
+
+        <div className="flex-[1.2] p-6 md:p-8 text-center bg-[#fcfdfc] flex flex-col justify-center">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Parcela média</p>
+          <p className={`${avgInstallment > 99999 ? 'text-2xl' : 'text-3xl'} font-black text-[#295b11] tracking-tighter`}>
+            R$ {avgInstallment.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+          </p>
         </div>
       </div>
 
       <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 bg-gray-50/50 border-b border-gray-100">
-           <h4 className="font-bold text-gray-900">Detalhes da simulação</h4>
+          <h4 className="font-bold text-gray-900">Detalhes da simulação</h4>
         </div>
         <div className="p-0">
           <DetailRow label="Linha de crédito" value="FNO Custeio" />
           <DetailRow label="Fonte" value="FNO (Fundo do Norte)" />
-          <DetailRow label="Valor aprovado" value="R$ 250.000,00" />
-          <DetailRow label="Prazo" value="36 meses" />
+          <DetailRow label="Valor solicitado" value={formatCurrency(harvestBudgetRaw)} />
+          <DetailRow label="Prazo" value={`${months} meses`} />
           <DetailRow label="Carência" value="12 meses" />
           <DetailRow label="Taxa de juros" value="7,5% a.a." />
           <DetailRow label="CET" value="9,2% a.a." />
           <DetailRow label="Amortização" value="SAC" />
-          <DetailRow label="1ª parcela" value="R$ 8.819" />
-          <DetailRow label="Última parcela" value="R$ 6.961" />
-          <DetailRow label="Total a pagar" value="R$ 281.430" isLast />
+          <DetailRow label="1ª parcela (estimada)" value={`R$ ${firstInstallment.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} />
+          <DetailRow label="Última parcela (estimada)" value={`R$ ${lastInstallment.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} />
+          <DetailRow label="Total estimado a pagar" value={`R$ ${totalWithInterest.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} isLast />
         </div>
       </div>
     </div>
@@ -690,7 +762,7 @@ function StepGuarantees({ formData, setFormData }) {
   );
 }
 
-function StepDocs({ formData, setFormData }) {
+function StepDocs({ formData, setFormData, onPreview }) {
   const [uploading, setUploading] = useState(null);
 
   const simulateUpload = (id) => {
@@ -728,13 +800,13 @@ function StepDocs({ formData, setFormData }) {
           {doc.status === 'done' ? (
             <>
               <button onClick={() => removeDoc(doc.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-5 h-5" /></button>
-              <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"><Eye className="w-5 h-5" /></button>
+              <button onClick={() => onPreview(doc)} className="p-2 text-[#92dc49] hover:bg-[#f0f9eb] rounded-lg transition-colors"><Eye className="w-5 h-5" /></button>
             </>
           ) : (
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => simulateUpload(doc.id)} 
-                disabled={uploading === doc.id} 
+              <button
+                onClick={() => simulateUpload(doc.id)}
+                disabled={uploading === doc.id}
                 className="p-2 text-[#92dc49] hover:bg-[#92dc49]/10 rounded-lg transition-colors disabled:opacity-50"
               >
                 {uploading === doc.id ? <Loader2 className="animate-spin w-6 h-6" /> : <Upload className="w-6 h-6" />}
@@ -785,5 +857,45 @@ function InputField({ label, value, onChange, placeholder, type = "text" }) {
       <Label className="text-xs font-bold text-gray-500 ml-1 group-focus-within:text-[#7ab635] transition-colors">{label}</Label>
       <Input type={type} className="h-14 bg-white border-none rounded-xl px-6 font-medium text-gray-900 shadow-sm focus:shadow-md transition-all placeholder:text-gray-300 ring-0" value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} />
     </div>
+  );
+}
+
+function DocumentPreviewModal({ document, onClose }) {
+  if (!document) return null;
+
+  return (
+    <Dialog open={!!document} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl h-[85vh] p-0 overflow-hidden bg-white rounded-3xl border-none">
+        <div className="flex flex-col h-full">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-[#92dc49] rounded-xl text-white">
+                <FileText className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">{document.name}</h3>
+                <p className="text-xs text-gray-400">arquivo_enviado.pdf • 1.2 MB</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="rounded-full gap-2 border-gray-200">
+                <Upload className="w-4 h-4" /> Substituir
+              </Button>
+              <Button className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full gap-2 font-bold px-6">
+                Confirmar documento
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-[#323639] flex justify-center overflow-hidden">
+            <iframe 
+               src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf#toolbar=0&navpanes=0&scrollbar=0"
+               className="w-full h-full border-0 shadow-2xl max-w-5xl"
+               title="Visualização do Documento"
+            />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

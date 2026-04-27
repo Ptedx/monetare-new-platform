@@ -21,7 +21,7 @@ export function Pipeline() {
   };
 
   const handleCardClick = (card) => {
-    setSelectedCard(card);
+    setSelectedCard(card._raw || card);
   };
 
   const handleBack = () => {

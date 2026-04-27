@@ -22,6 +22,18 @@ import { ProfileResult } from "../profile/ProfileResult";
 import { advanceProposal, ROLE_ACTIONS } from "@/lib/proposalFlow";
 import { logActivity } from "@/lib/activityLog";
 
+const formatDocument = (doc) => {
+    if (!doc) return "000.000.000-00";
+    const clean = String(doc).replace(/\D/g, "");
+    if (clean.length === 11) {
+        return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    }
+    if (clean.length === 14) { 
+        return clean.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+    }
+    return doc;
+};
+
 const proposalTabs = [
     "Resumo", "Cadastro", "Agro", "Financeiro", "Crédito e Compliance",
     "Garantias", "Documentos", "Linha do tempo"
@@ -30,40 +42,10 @@ const proposalTabs = [
 const resumoData = {
     cliente: "Fernando Freire Oliveira",
     segmento: "Agro",
-    tamanho: "20-50 funcionários",
-    faturamento: "R$ 2.630.000 / ano",
     cultura: "Soja",
-    endereco: "Residencial Cláudio Marchetti, Rua Três – Cuiabá, MT 78076-308",
-    telefone: "(00) 000000-0000",
-    cpf: "000.000.000-00",
-    email: "fernando@fffagundes.com.br",
     dataInicio: "02/01/2026",
-    produto: "FNO",
-    valorSolicitado: "R$ 850.000,00",
-    prazo: "60 meses",
-    taxaEstimadas: "1,2–1,5% a.m.",
     statusOperacao: "Ok",
     etapa: "Crédito",
-    etapaDetalhe: "há 6 dias",
-    fila: "GEOPE",
-    responsavel: "Daniel Alves (analista)",
-    aprovacao: "Aprovado com Condições",
-    condicoes: [
-        "Manter garantias reais acima de 130%",
-        "Apresentar atualização semestral dos balanços",
-        "Seguro agrícola obrigatório"
-    ],
-    motivos: [
-        "Forte histórico de pagamentos",
-        "Garantias robustas (imóvel rural)",
-        "Setor do Agronegócio crescendo",
-        "Score de crédito elevado"
-    ],
-    mitigadores: [
-        "Reforço de garantia pessoal",
-        "Acompanhamento trimestral de fluxo de caixa",
-        "Restrição para novos financiamentos acima de 20%"
-    ]
 };
 
 export function AgroProposalDetail({ proposal, onBack }) {
@@ -328,26 +310,49 @@ export function AgroProposalDetail({ proposal, onBack }) {
         },
     ];
     const selectedFarm = agroProperties.find((farm) => farm.id === selectedFarmId) || agroProperties[0];
+    const dynamicResumo = {
+        cliente: proposal?.name || "Fernando Freire Oliveira",
+        segmento: proposal?.segment || "Agro",
+        tamanho: "20-50 funcionários",
+        faturamento: proposal?.registrationData?.monthlyRevenue || "R$ 2.630.000 / ano",
+        cultura: proposal?.line?.toLowerCase().includes("soja") ? "Soja" : "Milho/Diversos",
+        endereco: `${proposal?.registrationData?.street || "Área Rural"}, ${proposal?.registrationData?.city || "Cuiabá"}, ${proposal?.registrationData?.uf || "MT"}`,
+        telefone: proposal?.registrationData?.contactPhone || "(00) 00000-0000",
+        cpf: formatDocument(proposal?.registrationData?.cpf || proposal?.registrationData?.document || "00000000000"),
+        email: proposal?.registrationData?.contactEmail || proposal?.registrationData?.email || "cliente@email.com.br",
+        dataInicio: proposal?.date || "02/01/2026",
+        produto: proposal?.line || "FNO",
+        valorSolicitado: proposal?.value || "R$ 850.000,00",
+        prazo: proposal?.registrationData?.months ? `${proposal.registrationData.months} meses` : proposal?.months ? `${proposal.months} meses` : proposal?.creditRequest?.months ? `${proposal.creditRequest.months} meses` : "36 meses",
+        taxaEstimadas: "9,2% a.a.",
+        statusOperacao: proposal?.status || "Ok",
+        etapa: proposal?.stage || "Crédito",
+        etapaDetalhe: "há pouco",
+        fila: "GEOPE",
+        responsavel: "Daniel Alves (analista)",
+        aprovacao: "Aprovado com Condições",
+    };
+
     const cadastroData = {
         personType: proposal?.registrationData?.personType || "Pessoa física",
         birthDate: proposal?.registrationData?.birthDate || "24/05/1968",
-        cpf: proposal?.registrationData?.cpf || "000.000.000-00",
+        cpf: dynamicResumo.cpf,
         civilStatus: proposal?.registrationData?.civilStatus || "Casado",
         dependents: proposal?.registrationData?.dependents || "2",
         rg: proposal?.registrationData?.rg || "000.000-00",
-        issuingAgency: proposal?.registrationData?.issuingAgency || "SSP/PA",
+        issuingAgency: proposal?.registrationData?.rgIssuer || proposal?.registrationData?.issuingAgency || "SSP/PA",
         nationality: proposal?.registrationData?.nationality || "Brasileiro",
         gender: proposal?.registrationData?.gender || "Masculino",
-        contactEmail: proposal?.registrationData?.contactEmail || "diego.santos@email.com",
-        contactPhone: proposal?.registrationData?.contactPhone || "(00) 0000-0000",
+        contactEmail: proposal?.registrationData?.contactEmail || dynamicResumo.email,
+        contactPhone: proposal?.registrationData?.contactPhone || dynamicResumo.telefone,
         sourceChannel: proposal?.registrationData?.sourceChannel || "Agência",
-        cep: proposal?.registrationData?.cep || "00.000-000",
-        georeference: proposal?.registrationData?.georeference || "Nova Canaã do Norte, MT",
-        street: proposal?.registrationData?.street || "Rua do Corvo, Zumbi do Pacheco",
-        neighborhood: proposal?.registrationData?.neighborhood || "Zumbi do Pacheco",
-        city: proposal?.registrationData?.city || "Jaboatão dos Guararapes",
-        uf: proposal?.registrationData?.uf || "PE",
-        number: proposal?.registrationData?.number || "14",
+        cep: proposal?.registrationData?.zipCode || proposal?.registrationData?.cep || "00.000-000",
+        georeference: `${proposal?.registrationData?.city || "Cuiabá"}, ${proposal?.registrationData?.uf || "MT"}`,
+        street: proposal?.registrationData?.street || "Área Rural",
+        neighborhood: proposal?.registrationData?.neighborhood || "Interior",
+        city: proposal?.registrationData?.city || "Cuiabá",
+        uf: proposal?.registrationData?.uf || "MT",
+        number: proposal?.registrationData?.number || "S/N",
         latitude: proposal?.registrationData?.latitude || "-3.2975",
         longitude: proposal?.registrationData?.longitude || "-3.2975",
         totalArea: proposal?.registrationData?.totalArea || "1.200 ha",
@@ -518,27 +523,27 @@ export function AgroProposalDetail({ proposal, onBack }) {
                                 <p className="text-sm text-gray-600 mb-3">Dados cadastrais</p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <div className="flex gap-2 text-sm"><User className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Cliente</p><p className="text-gray-900">Fernando Freire Oliveira</p></div>
-                                        <div className="flex gap-2 text-sm"><Building2 className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Segmento</p><p className="text-gray-900">Agro</p></div>
-                                        <div className="flex gap-2 text-sm"><Users className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Tamanho</p><p className="text-gray-900">20-50 funcionários</p></div>
-                                        <div className="flex gap-2 text-sm"><Hash className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Faturamento</p><p className="text-gray-900">R$ 2.630.000 / ano</p></div>
-                                        <div className="flex gap-2 text-sm"><Sprout className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Cultura principal</p><p className="text-gray-900">Soja</p></div>
-                                        <div className="flex gap-2 text-sm"><MapPin className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Endereço</p><p className="text-gray-900 leading-5">Residencial Cláudio Marchetti, Rua Três – Cuiabá, MT 78076-308</p></div>
+                                        <div className="flex gap-2 text-sm"><User className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Cliente</p><p className="text-gray-900">{dynamicResumo.cliente}</p></div>
+                                        <div className="flex gap-2 text-sm"><Building2 className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Segmento</p><p className="text-gray-900">{dynamicResumo.segmento}</p></div>
+                                        <div className="flex gap-2 text-sm"><Users className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Tamanho</p><p className="text-gray-900">{dynamicResumo.tamanho}</p></div>
+                                        <div className="flex gap-2 text-sm"><Hash className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Faturamento</p><p className="text-gray-900">{dynamicResumo.faturamento}</p></div>
+                                        <div className="flex gap-2 text-sm"><Sprout className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Cultura principal</p><p className="text-gray-900">{dynamicResumo.cultura}</p></div>
+                                        <div className="flex gap-2 text-sm"><MapPin className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Endereço</p><p className="text-gray-900 leading-5">{dynamicResumo.endereco}</p></div>
                                     </div>
                                     <div className="space-y-2">
-                                        <div className="flex gap-2 text-sm"><Phone className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Telefone</p><p className="text-gray-900">(00) 000000-0000</p></div>
-                                        <div className="flex gap-2 text-sm"><Hash className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">CPF</p><p className="text-gray-900">000.000.000-00</p></div>
-                                        <div className="flex gap-2 text-sm"><Mail className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">E-mail</p><p className="text-gray-900">fernando@fffagundes.com.br</p></div>
-                                        <div className="flex gap-2 text-sm"><Timer className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Data de início</p><p className="text-gray-900">02/01/2026</p></div>
+                                        <div className="flex gap-2 text-sm"><Phone className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Telefone</p><p className="text-gray-900">{dynamicResumo.telefone}</p></div>
+                                        <div className="flex gap-2 text-sm"><Hash className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">CPF</p><p className="text-gray-900">{dynamicResumo.cpf}</p></div>
+                                        <div className="flex gap-2 text-sm"><Mail className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">E-mail</p><p className="text-gray-900">{dynamicResumo.email}</p></div>
+                                        <div className="flex gap-2 text-sm"><Timer className="w-4 h-4 mt-0.5 text-gray-400" /><p className="text-gray-400 min-w-[96px]">Data de início</p><p className="text-gray-900">{dynamicResumo.dataInicio}</p></div>
                                     </div>
                                 </div>
                                 <div className="mt-4 border-t border-gray-200 pt-3">
                                     <p className="text-sm text-gray-600 mb-2">Solicitação</p>
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Produto</p><p className="text-lg text-gray-900">FNO</p></div>
-                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Valor solicitado</p><p className="text-lg text-gray-900">R$ 850.000,00</p></div>
-                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Prazo</p><p className="text-lg text-gray-900">60 meses</p></div>
-                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Taxa estimada</p><p className="text-lg text-gray-900">1,2–1,5% a.m.</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Produto</p><p className="text-lg text-gray-900">{dynamicResumo.produto}</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Valor solicitado</p><p className="text-lg text-gray-900">{dynamicResumo.valorSolicitado}</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Prazo</p><p className="text-lg text-gray-900">{dynamicResumo.prazo}</p></div>
+                                        <div className="rounded-md border border-gray-200 p-2"><p className="text-[10px] text-gray-400">Taxa estimada</p><p className="text-lg text-gray-900">{dynamicResumo.taxaEstimadas}</p></div>
                                     </div>
                                 </div>
                             </Card>

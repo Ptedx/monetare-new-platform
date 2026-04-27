@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ChevronRight, Clock, FileWarning, AlertCircle, Briefcase, DollarSign, Building2, Users, Receipt, MapPin, ReceiptText, Download, Sprout, Map, Banknote, ArrowDownUp, Trash2, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 // Mock data for the Resumo tab
 const mockResumoData = {
@@ -74,18 +75,60 @@ const getBadgeStyle = (status) => {
 
 export function ClientProposalDetail({ proposal, onBack }) {
     const [activeTab, setActiveTab] = useState("Resumo");
+    const [selectedDocument, setSelectedDocument] = useState(null);
+
+    const rawProps = proposal._raw || proposal;
+    const registrationData = rawProps?.registrationData || {};
+    const creditRequest = rawProps?.creditRequest || {};
+    const activity = rawProps?.activity || {};
+
+    const addressObj = registrationData.address;
+    const addressStr = addressObj 
+        ? `${addressObj.street || 'Rua'}, ${addressObj.neighborhood || 'Bairro'} - ${addressObj.city || 'Cidade'}, ${addressObj.state || 'UF'} ${addressObj.zipCode || ''}` 
+        : "Residencial Claúdio Marchetti, Rua Três - Cuiabá, MT 78076-308";
+
+    const formatCurrency = (val) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val || 0);
+
+    const dynamicResumo = {
+        etapa: proposal.stage || "Análise de crédito",
+        andamento: proposal.status === "APROVADA" ? "100%" : proposal.status === "EM_ANALISE_JURIDICA" || proposal.status === "EM_SEGURO" ? "75%" : "15%",
+        status: proposal.status || "Em espera",
+        cadastrais: {
+            empresa: registrationData.personal?.fullName || proposal.companyName || proposal.name || "Fernando Fagundes",
+            valor: creditRequest.amount ? formatCurrency(creditRequest.amount) : "R$ 50.000.000",
+            industria: creditRequest.profile === "rural" ? "Agronegócio" : "Geral",
+            tamanho: "20-50 funcionários",
+            faturamento: activity.revenue ? `${formatCurrency(activity.revenue)} / ano` : "R$ 300.000.000 / ano",
+            endereco: addressStr
+        },
+        seguro: {
+            seguradora: {
+                tipo: "Rural / Safra",
+                premio: "R$ 3.950/ano",
+                franquia: "10%",
+                coberturas: ["Seca", "Granizo"],
+                emissao: "1 dia"
+            },
+            objeto: {
+                cultura: activity.culture || "Miho/Diversos",
+                area: activity.area ? `${activity.area} ha` : "120 ha",
+                municipio: addressObj ? `${addressObj.city}/${addressObj.state}` : "Santarém/PA",
+                valorSegurado: creditRequest.amount ? formatCurrency(creditRequest.amount) : "R$ 800.000"
+            }
+        }
+    };
 
     return (
         <div className="w-full text-gray-900 pb-10">
             {/* Header */}
             <div className="mb-8 cursor-pointer" onClick={onBack}>
                 <span className="text-sm font-medium text-gray-400 hover:text-gray-900 transition-colors">
-                    Suas propostas / {proposal.name} {proposal.hash}
+                    Suas propostas / {dynamicResumo.cadastrais.empresa} {proposal.hash || ""}
                 </span>
             </div>
 
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-4xl font-semibold text-gray-900">{proposal.name}</h1>
+                <h1 className="text-4xl font-semibold text-gray-900">{dynamicResumo.cadastrais.empresa}</h1>
                 {activeTab === 'Documentação' && (
                     <Button className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full px-6 gap-2">
                         <ReceiptText className="w-4 h-4" /> Subir documento
@@ -144,12 +187,12 @@ export function ClientProposalDetail({ proposal, onBack }) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
                             <span className="text-sm text-gray-500 mb-2 block">Etapa</span>
-                            <span className="text-xl font-semibold">{mockResumoData.etapa}</span>
+                            <span className="text-xl font-semibold">{dynamicResumo.etapa}</span>
                         </div>
                         <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 flex justify-between items-center">
                             <div>
                                 <span className="text-sm text-gray-500 mb-2 block">Andamento</span>
-                                <span className="text-xl font-semibold">{mockResumoData.andamento}</span>
+                                <span className="text-xl font-semibold">{dynamicResumo.andamento}</span>
                             </div>
                             <div className="relative w-10 h-10 flex items-center justify-center">
                                 <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
@@ -162,7 +205,7 @@ export function ClientProposalDetail({ proposal, onBack }) {
                                     />
                                     <path
                                         className="text-[#92dc49]"
-                                        strokeDasharray={`${parseInt(mockResumoData.andamento)}, 100`}
+                                        strokeDasharray={`${parseInt(dynamicResumo.andamento)}, 100`}
                                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                                         fill="none"
                                         stroke="currentColor"
@@ -175,7 +218,7 @@ export function ClientProposalDetail({ proposal, onBack }) {
                         <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
                             <span className="text-sm text-gray-500 mb-2 block">Status</span>
                             <span className="inline-flex bg-[#f5b027] text-white px-8 py-2 rounded-lg font-bold w-full justify-center">
-                                {mockResumoData.status}
+                                {dynamicResumo.status}
                             </span>
                         </div>
                     </div>
@@ -215,32 +258,32 @@ export function ClientProposalDetail({ proposal, onBack }) {
                             <div className="flex items-center gap-3">
                                 <Briefcase className="w-4 h-4 text-gray-400" />
                                 <span className="w-24 text-sm text-gray-500">Empresa</span>
-                                <span className="text-sm font-medium text-gray-900">{mockResumoData.cadastrais.empresa}</span>
+                                <span className="text-sm font-medium text-gray-900">{dynamicResumo.cadastrais.empresa}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <DollarSign className="w-4 h-4 text-gray-400" />
                                 <span className="w-24 text-sm text-gray-500">Valor</span>
-                                <span className="text-sm font-medium text-gray-900">{mockResumoData.cadastrais.valor}</span>
+                                <span className="text-sm font-medium text-gray-900">{dynamicResumo.cadastrais.valor}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Building2 className="w-4 h-4 text-gray-400" />
                                 <span className="w-24 text-sm text-gray-500">Indústria</span>
-                                <span className="text-sm font-medium text-gray-900">{mockResumoData.cadastrais.industria}</span>
+                                <span className="text-sm font-medium text-gray-900">{dynamicResumo.cadastrais.industria}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Users className="w-4 h-4 text-gray-400" />
                                 <span className="w-24 text-sm text-gray-500">Tamanho</span>
-                                <span className="text-sm font-medium text-gray-900">{mockResumoData.cadastrais.tamanho}</span>
+                                <span className="text-sm font-medium text-gray-900">{dynamicResumo.cadastrais.tamanho}</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Receipt className="w-4 h-4 text-gray-400" />
                                 <span className="w-24 text-sm text-gray-500">Faturamento</span>
-                                <span className="text-sm font-medium text-gray-900">{mockResumoData.cadastrais.faturamento}</span>
+                                <span className="text-sm font-medium text-gray-900">{dynamicResumo.cadastrais.faturamento}</span>
                             </div>
                             <div className="flex items-start gap-3 col-span-1 md:col-span-2">
                                 <MapPin className="w-4 h-4 text-gray-400 mt-1" />
                                 <span className="w-24 text-sm text-gray-500 shrink-0">Endereço</span>
-                                <span className="text-sm font-medium text-gray-900">{mockResumoData.cadastrais.endereco}</span>
+                                <span className="text-sm font-medium text-gray-900">{dynamicResumo.cadastrais.endereco}</span>
                             </div>
                         </div>
                     </div>
@@ -262,17 +305,17 @@ export function ClientProposalDetail({ proposal, onBack }) {
                             <h3 className="text-lg font-bold text-gray-900 mb-6">Seguradora</h3>
 
                             <div className="flex flex-wrap gap-3">
-                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">{mockResumoData.seguro.seguradora.tipo}</span>
-                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">Prêmio: {mockResumoData.seguro.seguradora.premio}</span>
-                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">Franquia: {mockResumoData.seguro.seguradora.franquia}</span>
+                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">{dynamicResumo.seguro.seguradora.tipo}</span>
+                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">Prêmio: {dynamicResumo.seguro.seguradora.premio}</span>
+                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">Franquia: {dynamicResumo.seguro.seguradora.franquia}</span>
 
-                                {mockResumoData.seguro.seguradora.coberturas.map(cob => (
+                                {dynamicResumo.seguro.seguradora.coberturas.map(cob => (
                                     <span key={cob} className="px-4 py-2 border border-[#92dc49] bg-[#f4faed] rounded-lg text-sm font-medium text-gray-800 flex items-center gap-1">
                                         <span className="text-[#92dc49]">✓</span> {cob}
                                     </span>
                                 ))}
 
-                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">Emissão: {mockResumoData.seguro.seguradora.emissao}</span>
+                                <span className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-800">Emissão: {dynamicResumo.seguro.seguradora.emissao}</span>
                             </div>
                         </div>
 
@@ -282,20 +325,20 @@ export function ClientProposalDetail({ proposal, onBack }) {
                             <div className="grid grid-cols-3 gap-4 mb-4">
                                 <div className="border border-gray-200 rounded-lg p-3">
                                     <span className="text-xs text-gray-500 flex items-center gap-1 mb-1"><Sprout className="w-3 h-3" /> Cultura</span>
-                                    <span className="text-sm font-semibold text-gray-900">{mockResumoData.seguro.objeto.cultura}</span>
+                                    <span className="text-sm font-semibold text-gray-900">{dynamicResumo.seguro.objeto.cultura}</span>
                                 </div>
                                 <div className="border border-gray-200 rounded-lg p-3">
                                     <span className="text-xs text-gray-500 flex items-center gap-1 mb-1"><Map className="w-3 h-3" /> Área</span>
-                                    <span className="text-sm font-semibold text-gray-900">{mockResumoData.seguro.objeto.area}</span>
+                                    <span className="text-sm font-semibold text-gray-900">{dynamicResumo.seguro.objeto.area}</span>
                                 </div>
                                 <div className="border border-gray-200 rounded-lg p-3">
                                     <span className="text-xs text-gray-500 flex items-center gap-1 mb-1"><MapPin className="w-3 h-3" /> Município/UF</span>
-                                    <span className="text-sm font-semibold text-gray-900">{mockResumoData.seguro.objeto.municipio}</span>
+                                    <span className="text-sm font-semibold text-gray-900">{dynamicResumo.seguro.objeto.municipio}</span>
                                 </div>
                             </div>
                             <div className="w-1/2 border border-gray-200 rounded-lg p-3">
                                 <span className="text-xs text-gray-500 flex items-center gap-1 mb-1"><Banknote className="w-3 h-3" /> Valor segurado</span>
-                                <span className="text-sm font-semibold text-gray-900">{mockResumoData.seguro.objeto.valorSegurado}</span>
+                                <span className="text-sm font-semibold text-gray-900">{dynamicResumo.seguro.objeto.valorSegurado}</span>
                             </div>
                         </div>
                     </div>
@@ -309,37 +352,41 @@ export function ClientProposalDetail({ proposal, onBack }) {
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-200">
-                                    <th className="py-4 text-sm font-medium text-gray-500 flex items-center gap-1">
-                                        <ArrowDownUp className="w-3 h-3" /> Nome
+                                    <th className="py-4 px-6 text-sm font-medium text-gray-500">
+                                        <div className="flex items-center gap-1"><ArrowDownUp className="w-3 h-3" /> Nome</div>
                                     </th>
-                                    <th className="py-4 text-sm font-medium text-gray-500">
+                                    <th className="py-4 px-6 text-sm font-medium text-gray-500">
                                         <div className="flex items-center gap-1"><ArrowDownUp className="w-3 h-3" /> Data de emissão</div>
                                     </th>
-                                    <th className="py-4 text-sm font-medium text-gray-500">
+                                    <th className="py-4 px-6 text-sm font-medium text-gray-500">
                                         <div className="flex items-center gap-1"><ArrowDownUp className="w-3 h-3" /> Data de validade</div>
                                     </th>
-                                    <th className="py-4 text-sm font-medium text-gray-500">
+                                    <th className="py-4 px-6 text-sm font-medium text-gray-500">
                                         <div className="flex items-center gap-1"><ArrowDownUp className="w-3 h-3" /> Status</div>
                                     </th>
-                                    <th className="py-4 px-2 text-right text-sm font-medium text-gray-500">Abrir</th>
+                                    <th className="py-4 px-6 text-right text-sm font-medium text-gray-500">Abrir</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {mockDocs.map(doc => (
-                                    <tr key={doc.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer group">
-                                        <td className="py-4 text-sm font-medium text-gray-900 flex items-center gap-2">
+                                    <tr 
+                                        key={doc.id} 
+                                        className="border-b border-gray-100 last:border-0 hover:bg-gray-50 cursor-pointer group transition-colors"
+                                        onClick={() => setSelectedDocument(doc)}
+                                    >
+                                        <td className="py-4 px-6 text-sm font-medium text-gray-900 flex items-center gap-2">
                                             {doc.nome}
                                             {doc.hasWarning && <AlertCircle className="w-3.5 h-3.5 text-red-500" />}
                                         </td>
-                                        <td className="py-4 text-sm text-gray-600">{doc.emissao}</td>
-                                        <td className="py-4 text-sm text-gray-600">{doc.validade}</td>
-                                        <td className="py-4">
+                                        <td className="py-4 px-6 text-sm text-gray-600">{doc.emissao}</td>
+                                        <td className="py-4 px-6 text-sm text-gray-600">{doc.validade}</td>
+                                        <td className="py-4 px-6">
                                             <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${getBadgeStyle(doc.status)}`}>
                                                 {doc.status}
                                             </span>
                                         </td>
-                                        <td className="py-4 px-2 text-right">
-                                            <div className="bg-gray-100 rounded p-1.5 w-7 h-7 inline-flex items-center justify-center group-hover:bg-[#92dc49] group-hover:text-white transition-colors ml-auto">
+                                        <td className="py-4 px-6 text-right">
+                                            <div className="bg-gray-100 rounded p-1.5 w-7 h-7 inline-flex items-center justify-center group-hover:bg-[#92dc49] transition-colors ml-auto">
                                                 <ArrowUpRight className="w-4 h-4 text-gray-500 group-hover:text-white" />
                                             </div>
                                         </td>
@@ -362,6 +409,35 @@ export function ClientProposalDetail({ proposal, onBack }) {
                     </div>
                 </div>
             )}
+
+            {/* Document Preview Modal */}
+            <Dialog open={!!selectedDocument} onOpenChange={(open) => !open && setSelectedDocument(null)}>
+                <DialogContent className="max-w-4xl h-[85vh] p-0 overflow-hidden bg-white rounded-3xl border-none">
+                    <div className="flex flex-col h-full">
+                        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-[#92dc49] rounded-xl text-white">
+                                    <ReceiptText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">{selectedDocument?.nome}</h3>
+                                    <p className="text-xs text-gray-400">arquivo_enviado.pdf • 1.2 MB</p>
+                                </div>
+                            </div>
+                            <Button className="bg-[#92dc49] hover:bg-[#7ab635] text-white rounded-full font-bold px-6" onClick={() => setSelectedDocument(null)}>
+                                Fechar
+                            </Button>
+                        </div>
+                        <div className="flex-1 bg-[#323639] flex justify-center overflow-hidden">
+                            <iframe 
+                               src="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf#toolbar=0&navpanes=0&scrollbar=0"
+                               className="w-full h-full border-0 shadow-2xl max-w-5xl"
+                               title="Visualização do Documento"
+                            />
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
